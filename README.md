@@ -7,7 +7,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 - **📝 Clipboard History**: Automatically saves text and image clipboard content
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
-- **🔥 Global Hotkey**: Press `Super+V` (Windows+V) to show clipboard history
+- **🔥 Global Hotkey**: Press `Super+C` (Windows+C) to show clipboard history
 - **🎨 Modern Dark UI**: Clean, modern interface with smooth animations
 - **💾 Persistent Storage**: Uses SQLite for efficient storage (less RAM usage)
 - **🚀 System Tray**: Runs in background with system tray integration
@@ -36,7 +36,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 1. **Start the app** - it will run in the system tray
 2. **Copy anything** - text or images will be automatically saved
-3. **Press `Super+V`** (Windows+V on Windows, Super+V on Linux) to show history
+3. **Press `Super+C`** (Windows+C on Windows, Super+C on Linux) to show history
 4. **Click any item** to paste it to clipboard
 5. **Pin items** with 📌 to keep them permanently
 6. **Delete items** with 🗑 or clear all history

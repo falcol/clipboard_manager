@@ -47,7 +47,7 @@ class HotkeyManager(QObject):
                 on_press=self.on_key_press, on_release=self.on_key_release
             )
             self.listener.start()
-            logger.info("Hotkey manager started (Super+V)")
+            logger.info("Hotkey manager started (Super+C)")
 
         except Exception as e:
             logger.error(f"Failed to start hotkey manager: {e}")

@@ -19,7 +19,7 @@ class Config:
         "max_items": 25,
         "max_text_length": 10000,
         "autostart": False,
-        "hotkey": "super+v",
+        "hotkey": "super+C",
         "theme": "dark",
     }
 

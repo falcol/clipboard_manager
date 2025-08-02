@@ -193,7 +193,7 @@ class PopupWindow(QWidget):
         layout.addWidget(self.scroll_area)
 
         # Footer
-        footer_label = QLabel("Click to paste • Super+V to show")
+        footer_label = QLabel("Click to paste • Super+C to show")
         footer_label.setFont(QFont("Arial", 8))
         footer_label.setStyleSheet("color: #888;")
         footer_label.setAlignment(Qt.AlignCenter)
