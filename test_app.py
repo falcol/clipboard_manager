@@ -13,15 +13,15 @@ def test_imports():
     """Test if all modules can be imported"""
     try:
         # Test imports (these are used implicitly by the test)
-        from core.clipboard_watcher import ClipboardWatcher  # noqa: F401
-        from core.database import ClipboardDatabase  # noqa: F401
-        from core.hotkey_manager import HotkeyManager  # noqa: F401
-        from ui.popup_window import PopupWindow  # noqa: F401
-        from ui.settings_window import SettingsWindow  # noqa: F401
-        from ui.system_tray import SystemTray  # noqa: F401
-        from utils.autostart import AutostartManager  # noqa: F401
-        from utils.config import Config  # noqa: F401
-        from utils.image_utils import ImageUtils  # noqa: F401
+        from src.core.clipboard_watcher import ClipboardWatcher  # noqa: F401
+        from src.core.database import ClipboardDatabase  # noqa: F401
+        from src.core.hotkey_manager import HotkeyManager  # noqa: F401
+        from src.ui.popup_window import PopupWindow  # noqa: F401
+        from src.ui.settings_window import SettingsWindow  # noqa: F401
+        from src.ui.system_tray import SystemTray  # noqa: F401
+        from src.utils.autostart import AutostartManager  # noqa: F401
+        from src.utils.config import Config  # noqa: F401
+        from src.utils.image_utils import ImageUtils  # noqa: F401
 
         print("✅ All modules imported successfully")
         return True
@@ -33,7 +33,7 @@ def test_imports():
 def test_config():
     """Test configuration loading"""
     try:
-        from utils.config import Config
+        from src.utils.config import Config
 
         config = Config()
         print(f"✅ Config loaded: {config.get('max_items', 'default')} max items")
@@ -46,8 +46,8 @@ def test_config():
 def test_database():
     """Test database operations"""
     try:
-        from core.database import ClipboardDatabase
-        from utils.config import Config
+        from src.core.database import ClipboardDatabase
+        from src.utils.config import Config
 
         config = Config()
         db = ClipboardDatabase()
