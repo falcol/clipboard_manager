@@ -1,0 +1,12 @@
+[flake8]
+max-line-length = 79
+exclude =
+    venv/,
+    .venv/,
+    __pycache__/,
+    *.pyc,
+    build/,
+    dist/
+ignore = E402
+per-file-ignores =
+    src/main.py:E402
