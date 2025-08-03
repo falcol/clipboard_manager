@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchBar(QFrame):
-    """Modern search bar widget"""
+    """Modern search bar widget with improved clear functionality"""
 
     search_requested = pyqtSignal(str)
 
@@ -84,22 +84,28 @@ class SearchBar(QFrame):
         layout.addWidget(self.clear_btn)
 
     def on_search_changed(self, text):
-        if text:
+        """Handle search text changes"""
+        if text.strip():  # Only show clear button if there's actual content
             self.clear_btn.show()
         else:
             self.clear_btn.hide()
+        # Always emit search request, even for empty strings
         self.search_requested.emit(text)
 
     def clear_search(self):
-        self.search_input.clear()
+        """Clear search with proper signal emission"""
+        self.search_input.clear()  # This will trigger textChanged signal
         self.clear_btn.hide()
+        # Explicitly emit empty search to ensure proper reset
+        self.search_requested.emit("")
 
     def focus_search(self):
+        """Focus search input"""
         self.search_input.setFocus()
 
 
 class ClipboardItem(QFrame):
-    """Enhanced clipboard item widget with modern design"""
+    """Enhanced clipboard item widget with fixed height and no horizontal scroll"""
 
     item_selected = pyqtSignal(dict)
     pin_toggled = pyqtSignal(int, bool)
@@ -113,7 +119,7 @@ class ClipboardItem(QFrame):
         self.setup_animations()
 
     def setup_ui(self):
-        """Setup modern UI for clipboard item"""
+        """Setup modern UI for clipboard item with fixed layout"""
         self.setFixedHeight(70)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.setCursor(Qt.PointingHandCursor)
@@ -145,20 +151,21 @@ class ClipboardItem(QFrame):
 
         layout.addLayout(icon_layout)
 
-        # Main content area
+        # Main content area with ellipsis handling
         content_layout = QVBoxLayout()
         content_layout.setSpacing(4)
 
-        # Preview content
+        # Preview content with proper ellipsis
         if self.item_data["content_type"] == "text":
             preview_text = self.item_data.get("preview", "")
-            if len(preview_text) > 80:
-                preview_text = preview_text[:77] + "..."
 
             preview_label = QLabel(preview_text)
-            preview_label.setWordWrap(False)
+            preview_label.setWordWrap(False)  # No word wrap to enable ellipsis
             preview_label.setFont(QFont("Segoe UI", 10))
             preview_label.setStyleSheet("color: #ffffff; font-weight: 500;")
+            # Enable ellipsis for long text
+            preview_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+            preview_label.setMinimumWidth(0)  # Allow shrinking
 
             # Content info
             char_count = self.item_data.get("char_count", len(preview_text))
@@ -207,16 +214,17 @@ class ClipboardItem(QFrame):
 
         content_layout.addWidget(preview_label)
 
-        # Info and timestamp
+        # Info and timestamp with ellipsis handling
         info_layout = QHBoxLayout()
         info_layout.setSpacing(8)
 
         info_label = QLabel(info_text)
         info_label.setFont(QFont("Segoe UI", 8))
         info_label.setStyleSheet("color: #aaa;")
+        info_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         info_layout.addWidget(info_label)
 
-        # Timestamp
+        # Timestamp (always visible)
         timestamp = self.item_data.get("timestamp", "")
         if timestamp:
             from datetime import datetime
@@ -228,18 +236,22 @@ class ClipboardItem(QFrame):
                 timestamp_label = QLabel(time_str)
                 timestamp_label.setFont(QFont("Segoe UI", 8))
                 timestamp_label.setStyleSheet("color: #888;")
+                timestamp_label.setFixedWidth(40)  # Fixed width to prevent layout shift
                 info_layout.addWidget(timestamp_label)
             except:
                 pass
 
-        info_layout.addStretch()
         content_layout.addLayout(info_layout)
 
+        # Add content with stretch factor to take available space
         layout.addLayout(content_layout, 1)
 
-        # Action buttons (hidden by default, shown on hover)
-        self.actions_layout = QHBoxLayout()
-        self.actions_layout.setSpacing(8)
+        # Action buttons (always visible space reserved, buttons shown on hover)
+        self.actions_widget = QWidget()
+        self.actions_widget.setFixedWidth(70)  # Fixed width for buttons
+        self.actions_layout = QHBoxLayout(self.actions_widget)
+        self.actions_layout.setContentsMargins(0, 0, 0, 0)
+        self.actions_layout.setSpacing(4)
 
         # Pin button
         self.pin_btn = QPushButton()
@@ -257,11 +269,11 @@ class ClipboardItem(QFrame):
         self.delete_btn.clicked.connect(self.delete_item)
         self.actions_layout.addWidget(self.delete_btn)
 
-        # Initially hide action buttons
-        self.pin_btn.hide()
-        self.delete_btn.hide()
+        # Initially set low opacity instead of hiding
+        self.pin_btn.setStyleSheet(self.pin_btn.styleSheet() + "opacity: 0.3;")
+        self.delete_btn.setStyleSheet(self.delete_btn.styleSheet() + "opacity: 0.3;")
 
-        layout.addLayout(self.actions_layout)
+        layout.addWidget(self.actions_widget)
 
     def setup_animations(self):
         """Setup hover animations"""
@@ -302,26 +314,44 @@ class ClipboardItem(QFrame):
         super().mousePressEvent(event)
 
     def enterEvent(self, event):
-        """Handle mouse enter (hover)"""
+        """Handle mouse enter (hover) - show buttons clearly"""
         self.is_hovered = True
         self.setStyleSheet(Styles.get_modern_clipboard_item_style(hovered=True))
         self.shadow_effect.setEnabled(True)
 
-        # Show action buttons
-        self.pin_btn.show()
-        self.delete_btn.show()
+        # Show action buttons clearly
+        self.pin_btn.setStyleSheet(
+            self.pin_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
+        )
+        self.delete_btn.setStyleSheet(
+            self.delete_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
+        )
 
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        """Handle mouse leave"""
+        """Handle mouse leave - fade buttons"""
         self.is_hovered = False
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.shadow_effect.setEnabled(False)
 
-        # Hide action buttons
-        self.pin_btn.hide()
-        self.delete_btn.hide()
+        # Fade action buttons
+        current_pin_style = self.pin_btn.styleSheet()
+        current_delete_style = self.delete_btn.styleSheet()
+
+        if "opacity: 1.0;" in current_pin_style:
+            self.pin_btn.setStyleSheet(
+                current_pin_style.replace("opacity: 1.0;", "opacity: 0.3;")
+            )
+        else:
+            self.pin_btn.setStyleSheet(current_pin_style + "opacity: 0.3;")
+
+        if "opacity: 1.0;" in current_delete_style:
+            self.delete_btn.setStyleSheet(
+                current_delete_style.replace("opacity: 1.0;", "opacity: 0.3;")
+            )
+        else:
+            self.delete_btn.setStyleSheet(current_delete_style + "opacity: 0.3;")
 
         super().leaveEvent(event)
 
@@ -338,7 +368,7 @@ class ClipboardItem(QFrame):
 
 
 class PopupWindow(QWidget):
-    """Enhanced popup window with modern design"""
+    """Enhanced popup window with drag support and fixed search"""
 
     def __init__(self, database: ClipboardDatabase, config: Config):
         super().__init__()
@@ -347,6 +377,10 @@ class PopupWindow(QWidget):
         self.clipboard_items = []
         self.all_items = []  # Store all items for search
         self.current_search = ""
+
+        # Drag support variables
+        self.dragging = False
+        self.drag_start_position = None
 
         self.setup_window()
         self.setup_ui()
@@ -357,13 +391,13 @@ class PopupWindow(QWidget):
         self.hide_timer.setSingleShot(True)
         self.hide_timer.timeout.connect(self.hide)
 
-        # Focus tracking
+        # Focus tracking with better timing
         self.focus_timer = QTimer()
         self.focus_timer.setSingleShot(True)
         self.focus_timer.timeout.connect(self.check_focus)
 
     def setup_window(self):
-        """Setup modern window properties"""
+        """Setup modern window properties with drag support"""
         self.setWindowFlags(
             Qt.WindowStaysOnTopHint
             | Qt.FramelessWindowHint
@@ -381,7 +415,7 @@ class PopupWindow(QWidget):
         self.setGraphicsEffect(shadow)
 
     def setup_ui(self):
-        """Setup modern UI"""
+        """Setup modern UI with drag handle"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -393,10 +427,10 @@ class PopupWindow(QWidget):
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
 
-        # Header
-        header = QFrame()
-        header.setFixedHeight(60)
-        header.setStyleSheet(
+        # Header with drag support
+        self.header = QFrame()
+        self.header.setFixedHeight(60)
+        self.header.setStyleSheet(
             """
             QFrame {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -406,12 +440,24 @@ class PopupWindow(QWidget):
             }
         """
         )
+        # Make header draggable
+        self.header.setCursor(Qt.SizeAllCursor)
 
-        header_layout = QHBoxLayout(header)
+        header_layout = QHBoxLayout(self.header)
         header_layout.setContentsMargins(20, 15, 20, 15)
 
-        # Title with icon
+        # Title with icon and drag indicator
         title_layout = QHBoxLayout()
+
+        # Drag indicator
+        drag_icon = QLabel("⋮⋮")
+        drag_icon.setFont(QFont("Segoe UI", 12))
+        drag_icon.setStyleSheet(
+            "color: rgba(255,255,255,0.7); background: transparent;"
+        )
+        drag_icon.setToolTip("Drag to move window")
+        title_layout.addWidget(drag_icon)
+
         title_icon = QLabel("📋")
         title_icon.setFont(QFont("Segoe UI", 16))
         title_layout.addWidget(title_icon)
@@ -451,7 +497,7 @@ class PopupWindow(QWidget):
         actions_layout.addWidget(self.clear_btn)
 
         header_layout.addLayout(actions_layout)
-        container_layout.addWidget(header)
+        container_layout.addWidget(self.header)
 
         # Search bar
         self.search_bar = SearchBar()
@@ -499,7 +545,7 @@ class PopupWindow(QWidget):
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(20, 8, 20, 8)
 
-        footer_label = QLabel("Click to paste • Ctrl+F to search • Esc to close")
+        footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
         footer_label.setFont(QFont("Segoe UI", 9))
         footer_label.setStyleSheet("color: #aaa; background: transparent;")
         footer_layout.addWidget(footer_label)
@@ -513,8 +559,47 @@ class PopupWindow(QWidget):
         container_layout.addWidget(footer)
         main_layout.addWidget(self.container)
 
+    # Mouse event handlers for dragging
+    def mousePressEvent(self, event):
+        """Handle mouse press for drag start"""
+        if event.button() == Qt.LeftButton:
+            # Check if click is on header
+            header_rect = self.header.geometry()
+            if header_rect.contains(event.position().toPoint()):
+                self.dragging = True
+                self.drag_start_position = event.globalPosition().toPoint() - self.pos()
+                event.accept()
+                return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move for dragging"""
+        if (
+            self.dragging
+            and event.buttons() == Qt.LeftButton
+            and self.drag_start_position
+        ):
+            new_pos = event.globalPosition().toPoint() - self.drag_start_position
+
+            # Keep window on screen
+            screen = QApplication.primaryScreen().geometry()
+            new_pos.setX(max(0, min(new_pos.x(), screen.width() - self.width())))
+            new_pos.setY(max(0, min(new_pos.y(), screen.height() - self.height())))
+
+            self.move(new_pos)
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """Handle mouse release to end drag"""
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
+            self.drag_start_position = None
+        super().mouseReleaseEvent(event)
+
     def load_items(self):
-        """Load clipboard items from database"""
+        """Load clipboard items from database with proper search handling"""
         # Clear existing items
         for item in self.clipboard_items:
             item.deleteLater()
@@ -522,7 +607,14 @@ class PopupWindow(QWidget):
 
         # Load items from database
         self.all_items = self.database.get_items(limit=self.config.get("max_items", 50))
-        items_to_show = self.filter_items(self.all_items, self.current_search)
+
+        # Apply search filter properly
+        if self.current_search.strip():
+            items_to_show = self.filter_items(
+                self.all_items, self.current_search.strip()
+            )
+        else:
+            items_to_show = self.all_items
 
         if items_to_show:
             for item_data in items_to_show:
@@ -538,27 +630,35 @@ class PopupWindow(QWidget):
                 )
         else:
             # Show empty state
-            empty_label = QLabel(
-                "🔍 No items found"
-                if self.current_search
-                else "📋 No clipboard history yet"
-            )
-            empty_label.setAlignment(Qt.AlignCenter)
-            empty_label.setStyleSheet(
+            if self.current_search.strip():
+                empty_label = QLabel(f"🔍 No results found for '{self.current_search}'")
+                empty_label.setAlignment(Qt.AlignCenter)
+                empty_label.setStyleSheet(
+                    """
+                    color: #666;
+                    font-size: 14px;
+                    padding: 40px;
+                    background: transparent;
                 """
-                color: #666;
-                font-size: 14px;
-                padding: 40px;
-                background: transparent;
-            """
-            )
+                )
+            else:
+                empty_label = QLabel("📋 No clipboard history yet")
+                empty_label.setAlignment(Qt.AlignCenter)
+                empty_label.setStyleSheet(
+                    """
+                    color: #666;
+                    font-size: 14px;
+                    padding: 40px;
+                    background: transparent;
+                """
+                )
             self.scroll_layout.insertWidget(0, empty_label)
 
         # Update stats
         self.update_stats()
 
     def filter_items(self, items, search_query):
-        """Filter items based on search query"""
+        """Filter items based on search query with improved matching"""
         if not search_query:
             return items
 
@@ -566,32 +666,56 @@ class PopupWindow(QWidget):
         query_lower = search_query.lower()
 
         for item in items:
-            # Search in content
-            content = item.get("content", "")
-            preview = item.get("preview", "")
+            # Search in multiple fields
+            searchable_content = []
 
-            if query_lower in content.lower() or query_lower in preview.lower():
+            # Add main content
+            if item.get("content"):
+                searchable_content.append(str(item["content"]).lower())
+
+            # Add preview
+            if item.get("preview"):
+                searchable_content.append(str(item["preview"]).lower())
+
+            # Add metadata search content
+            if item.get("search_content"):
+                searchable_content.append(str(item["search_content"]).lower())
+
+            # Check if query matches any searchable content
+            found = any(query_lower in content for content in searchable_content)
+
+            if found:
                 filtered.append(item)
 
         return filtered
 
     def on_search(self, query):
-        """Handle search query"""
-        self.current_search = query
+        """Handle search query with proper state management"""
+        # Update current search state
+        self.current_search = query.strip()
+
+        # Reload items with new search filter
         self.load_items()
 
+        # Reset scroll position to top
+        self.scroll_area.verticalScrollBar().setValue(0)
+
     def update_stats(self):
-        """Update statistics display"""
+        """Update statistics display with proper search context"""
         total_items = len(self.all_items)
         showing_items = len(self.clipboard_items)
 
-        if self.current_search:
+        if self.current_search.strip():
             self.stats_label.setText(f"{showing_items} of {total_items} items")
         else:
             self.stats_label.setText(f"{total_items} items")
 
     def show_at_cursor(self):
-        """Show popup at cursor position with animation"""
+        """Show popup at cursor position with animation and proper search reset"""
+        # Reset search when showing popup
+        self.current_search = ""
+        self.search_bar.clear_search()
+
         # Get cursor position
         cursor_pos = QCursor.pos()
 
@@ -627,25 +751,58 @@ class PopupWindow(QWidget):
         # Auto-hide after 15 seconds
         self.hide_timer.start(15000)
 
-        # Refresh items
+        # Refresh items (this will show all items since search is reset)
         self.load_items()
 
         # Start focus monitoring
-        self.focus_timer.start(100)
+        self.focus_timer.start(500)  # Increased interval for better stability
 
     def check_focus(self):
-        """Check if window still has focus"""
-        if self.isVisible():
-            focused_widget = QApplication.focusWidget()
-            if focused_widget is None or not self.isAncestorOf(focused_widget):
-                # Check if mouse is over the window
-                mouse_pos = self.mapFromGlobal(QCursor.pos())
-                if not self.rect().contains(mouse_pos):
-                    self.hide()
-                    return
+        """Check if window still has focus with improved detection"""
+        if not self.isVisible():
+            return
 
-            # Continue monitoring
-            self.focus_timer.start(100)
+        # Don't hide while dragging
+        if self.dragging:
+            self.focus_timer.start(500)
+            return
+
+        try:
+            focused_widget = QApplication.focusWidget()
+            mouse_pos = self.mapFromGlobal(QCursor.pos())
+
+            # Check if focus is within our window or mouse is over window
+            if (
+                focused_widget and self.isAncestorOf(focused_widget)
+            ) or self.rect().contains(mouse_pos):
+                # Still has focus or mouse over, continue monitoring
+                self.focus_timer.start(500)
+            else:
+                # Lost focus and mouse not over window, hide after short delay
+                QTimer.singleShot(300, self.hide_if_no_focus)
+
+        except Exception as e:
+            logger.error(f"Error in focus check: {e}")
+            # Continue monitoring on error
+            self.focus_timer.start(500)
+
+    def hide_if_no_focus(self):
+        """Hide window if still no focus after delay"""
+        if not self.isVisible():
+            return
+
+        try:
+            focused_widget = QApplication.focusWidget()
+            mouse_pos = self.mapFromGlobal(QCursor.pos())
+
+            # Final check - hide if no focus and mouse not over
+            if not (
+                (focused_widget and self.isAncestorOf(focused_widget))
+                or self.rect().contains(mouse_pos)
+            ):
+                self.hide()
+        except Exception as e:
+            logger.error(f"Error in hide check: {e}")
 
     def on_item_selected(self, item_data: Dict):
         """Handle item selection - paste to clipboard"""
@@ -706,7 +863,9 @@ class PopupWindow(QWidget):
             super().keyPressEvent(event)
 
     def hideEvent(self, event):
-        """Handle hide event"""
+        """Handle hide event with proper cleanup"""
         self.hide_timer.stop()
         self.focus_timer.stop()
+        self.dragging = False
+        self.drag_start_position = None
         super().hideEvent(event)
