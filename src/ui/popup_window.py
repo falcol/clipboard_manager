@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.database import ClipboardDatabase
+from core.database import EnhancedClipboardDatabase as ClipboardDatabase
 from ui.styles import Styles
 from utils.config import Config
 from utils.image_utils import ImageUtils
