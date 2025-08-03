@@ -6,9 +6,9 @@ import base64
 import logging
 from typing import Dict
 
-from PySide6.QtCore import QEasingCurve, QEvent, QPropertyAnimation, QRect, Qt, QTimer
+from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QColor, QCursor, QFont, QIcon, QPainter, QPixmap
+from PySide6.QtGui import QColor, QCursor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -105,7 +105,7 @@ class SearchBar(QFrame):
 
 
 class ClipboardItem(QFrame):
-    """Enhanced clipboard item widget with fixed height and no horizontal scroll"""
+    """Enhanced clipboard item widget with proper text display (2 lines max)"""
 
     item_selected = pyqtSignal(dict)
     pin_toggled = pyqtSignal(int, bool)
@@ -119,8 +119,9 @@ class ClipboardItem(QFrame):
         self.setup_animations()
 
     def setup_ui(self):
-        """Setup modern UI for clipboard item with fixed layout"""
-        self.setFixedHeight(70)
+        """Setup modern UI for clipboard item with proper text display"""
+        # Increased height to accommodate 2 lines of text
+        self.setFixedHeight(90)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.setCursor(Qt.PointingHandCursor)
 
@@ -151,20 +152,32 @@ class ClipboardItem(QFrame):
 
         layout.addLayout(icon_layout)
 
-        # Main content area with ellipsis handling
+        # Main content area with proper text display
         content_layout = QVBoxLayout()
         content_layout.setSpacing(4)
 
-        # Preview content with proper ellipsis
+        # Preview content with proper 2-line display
         if self.item_data["content_type"] == "text":
             preview_text = self.item_data.get("preview", "")
 
             preview_label = QLabel(preview_text)
-            preview_label.setWordWrap(False)  # No word wrap to enable ellipsis
+            # Enable word wrap for 2 lines
+            preview_label.setWordWrap(True)
             preview_label.setFont(QFont("Segoe UI", 10))
-            preview_label.setStyleSheet("color: #ffffff; font-weight: 500;")
-            # Enable ellipsis for long text
-            preview_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
+            preview_label.setStyleSheet(
+                """
+                color: #ffffff;
+                font-weight: 500;
+                line-height: 1.3;
+            """
+            )
+            # Set size policy and constraints for exactly 2 lines
+            preview_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+            # Calculate height for exactly 2 lines
+            font_metrics = preview_label.fontMetrics()
+            line_height = font_metrics.height()
+            preview_label.setFixedHeight(line_height * 2 + 4)  # 2 lines + small padding
             preview_label.setMinimumWidth(0)  # Allow shrinking
 
             # Content info
@@ -188,9 +201,10 @@ class ClipboardItem(QFrame):
 
                     pixmap = ImageUtils.bytes_to_pixmap(thumbnail_data)
                     if not pixmap.isNull():
+                        # Larger image preview to fit the increased height
                         preview_label.setPixmap(
                             pixmap.scaled(
-                                40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                                50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation
                             )
                         )
                     else:
@@ -204,6 +218,9 @@ class ClipboardItem(QFrame):
                 preview_label.setText("🖼️ Image")
                 preview_label.setAlignment(Qt.AlignCenter)
 
+            # Set fixed height for image preview
+            preview_label.setFixedHeight(50)
+
             # Image info
             width = self.item_data.get("width", 0)
             height = self.item_data.get("height", 0)
@@ -214,7 +231,7 @@ class ClipboardItem(QFrame):
 
         content_layout.addWidget(preview_label)
 
-        # Info and timestamp with ellipsis handling
+        # Info and timestamp with proper spacing
         info_layout = QHBoxLayout()
         info_layout.setSpacing(8)
 
@@ -368,7 +385,7 @@ class ClipboardItem(QFrame):
 
 
 class PopupWindow(QWidget):
-    """Enhanced popup window with drag support and fixed search"""
+    """Enhanced popup window with improved focus handling and no auto-hide timer"""
 
     def __init__(self, database: ClipboardDatabase, config: Config):
         super().__init__()
@@ -386,12 +403,9 @@ class PopupWindow(QWidget):
         self.setup_ui()
         self.load_items()
 
-        # Auto-hide timer
-        self.hide_timer = QTimer()
-        self.hide_timer.setSingleShot(True)
-        self.hide_timer.timeout.connect(self.hide)
+        # Removed auto-hide timer - popup will only close when focus is lost or ESC pressed
 
-        # Focus tracking with better timing
+        # Improved focus tracking with faster response
         self.focus_timer = QTimer()
         self.focus_timer.setSingleShot(True)
         self.focus_timer.timeout.connect(self.check_focus)
@@ -405,7 +419,7 @@ class PopupWindow(QWidget):
             | Qt.NoDropShadowWindowHint
         )
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.setFixedSize(450, 600)
+        self.setFixedSize(520, 650)  # Increased height to accommodate larger items
 
         # Add drop shadow effect
         shadow = QGraphicsDropShadowEffect()
@@ -748,23 +762,22 @@ class PopupWindow(QWidget):
         self.fade_animation.setEasingCurve(QEasingCurve.OutCubic)
         self.fade_animation.start()
 
-        # Auto-hide after 15 seconds
-        self.hide_timer.start(15000)
+        # NO AUTO-HIDE TIMER - popup stays open until manually closed or focus lost
 
         # Refresh items (this will show all items since search is reset)
         self.load_items()
 
-        # Start focus monitoring
-        self.focus_timer.start(500)  # Increased interval for better stability
+        # Start immediate focus monitoring with faster response
+        self.focus_timer.start(100)  # Much faster focus checking
 
     def check_focus(self):
-        """Check if window still has focus with improved detection"""
+        """Improved focus checking - hide immediately when focus is lost"""
         if not self.isVisible():
             return
 
         # Don't hide while dragging
         if self.dragging:
-            self.focus_timer.start(500)
+            self.focus_timer.start(100)
             return
 
         try:
@@ -772,37 +785,20 @@ class PopupWindow(QWidget):
             mouse_pos = self.mapFromGlobal(QCursor.pos())
 
             # Check if focus is within our window or mouse is over window
-            if (
-                focused_widget and self.isAncestorOf(focused_widget)
-            ) or self.rect().contains(mouse_pos):
+            has_focus = focused_widget and self.isAncestorOf(focused_widget)
+            mouse_over = self.rect().contains(mouse_pos)
+
+            if has_focus or mouse_over:
                 # Still has focus or mouse over, continue monitoring
-                self.focus_timer.start(500)
+                self.focus_timer.start(100)
             else:
-                # Lost focus and mouse not over window, hide after short delay
-                QTimer.singleShot(300, self.hide_if_no_focus)
+                # Lost focus and mouse not over window, hide immediately
+                self.hide()
 
         except Exception as e:
             logger.error(f"Error in focus check: {e}")
             # Continue monitoring on error
-            self.focus_timer.start(500)
-
-    def hide_if_no_focus(self):
-        """Hide window if still no focus after delay"""
-        if not self.isVisible():
-            return
-
-        try:
-            focused_widget = QApplication.focusWidget()
-            mouse_pos = self.mapFromGlobal(QCursor.pos())
-
-            # Final check - hide if no focus and mouse not over
-            if not (
-                (focused_widget and self.isAncestorOf(focused_widget))
-                or self.rect().contains(mouse_pos)
-            ):
-                self.hide()
-        except Exception as e:
-            logger.error(f"Error in hide check: {e}")
+            self.focus_timer.start(100)
 
     def on_item_selected(self, item_data: Dict):
         """Handle item selection - paste to clipboard"""
@@ -864,7 +860,7 @@ class PopupWindow(QWidget):
 
     def hideEvent(self, event):
         """Handle hide event with proper cleanup"""
-        self.hide_timer.stop()
+        # Stop focus monitoring when hiding
         self.focus_timer.stop()
         self.dragging = False
         self.drag_start_position = None
