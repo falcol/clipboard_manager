@@ -6,6 +6,7 @@
 """
 Database migration manager for upgrading from old schema
 """
+import datetime
 import json
 import logging
 import shutil
@@ -153,7 +154,7 @@ class MigrationManager:
             new_metadata = {
                 "migrated_from": "v1",
                 "original_id": old_item.get("id"),
-                "migration_date": "2024-01-01",  # Current date would be better
+                "migration_date": f"{datetime.now().strftime('%Y-%m-%d')}",
                 **old_metadata,
             }
 
@@ -219,7 +220,7 @@ class MigrationManager:
             new_metadata = {
                 "migrated_from": "v1",
                 "original_id": old_item.get("id"),
-                "migration_date": "2024-01-01",
+                "migration_date": f"{datetime.now().strftime('%Y-%m-%d')}",
                 "original_base64_size": len(content),
                 "optimized_size": len(optimized_image_data),
                 **old_metadata,

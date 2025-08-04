@@ -57,7 +57,7 @@ class EnhancedClipboardDatabase:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     content_type TEXT NOT NULL,
                     content_hash TEXT UNIQUE,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    timestamp DATETIME DEFAULT (datetime('now', 'localtime')),
                     is_pinned BOOLEAN DEFAULT FALSE,
                     access_count INTEGER DEFAULT 0,
                     metadata TEXT,
@@ -382,7 +382,7 @@ class EnhancedClipboardDatabase:
             cursor.execute(
                 """
                 UPDATE clipboard_items
-                SET is_pinned = ?, timestamp = CURRENT_TIMESTAMP
+                SET is_pinned = ?, timestamp = datetime('now', 'localtime')
                 WHERE id = ?
             """,
                 (pinned, item_id),
@@ -505,7 +505,7 @@ class EnhancedClipboardDatabase:
             """
             UPDATE clipboard_items
             SET access_count = access_count + 1,
-                timestamp = CURRENT_TIMESTAMP
+                timestamp = datetime('now', 'localtime')
             WHERE id = ?
         """,
             (item_id,),

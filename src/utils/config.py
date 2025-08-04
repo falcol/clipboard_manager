@@ -21,8 +21,8 @@ class Config:
 
     DEFAULT_CONFIG = {
         # Basic settings
-        "max_items": 50,  # Increased from 25
-        "max_text_length": 50000,  # Increased from 10000
+        "max_items": 25,  # Like Windows clipboard manager (25 items max)
+        "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
         "theme": "dark",
         # Enhanced Phase 1 settings
@@ -30,12 +30,12 @@ class Config:
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
         "max_search_results": 25,
-        # Performance settings
-        "cache_size_mb": 50,
-        "thumbnail_size": 128,  # Increased from 64
-        "image_quality": 95,
+        # Performance settings (optimized for RAM)
+        "cache_size_mb": 25,  # Reduced for RAM optimization
+        "thumbnail_size": 64,  # Reduced for RAM optimization
+        "image_quality": 85,  # Reduced for RAM optimization
         "background_cleanup": True,
-        "cleanup_interval_hours": 24,
+        "cleanup_interval_hours": 12,  # More frequent cleanup
         # Content management
         "intelligent_deduplication": True,
         "content_analysis": True,
@@ -45,7 +45,7 @@ class Config:
         "database_version": "v2",
         "auto_migration": True,
         "backup_before_migration": True,
-        "max_database_size_mb": 500,
+        "max_database_size_mb": 100,  # Reduced for RAM optimization
         # UI settings (for Phase 2)
         "popup_width": 400,
         "popup_height": 500,
@@ -120,6 +120,8 @@ class Config:
         # Validate certain settings
         if key == "max_items" and (value < 10 or value > 1000):
             raise ValueError("max_items must be between 10 and 1000")
+        elif key == "max_text_length" and (value < 1000 or value > 2000000):
+            raise ValueError("max_text_length must be between 1000 and 2000000")
         elif key == "cache_size_mb" and (value < 10 or value > 500):
             raise ValueError("cache_size_mb must be between 10 and 500")
         elif key == "fuzzy_search_threshold" and (value < 0.1 or value > 1.0):

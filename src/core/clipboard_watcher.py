@@ -83,7 +83,7 @@ class EnhancedClipboardWatcher(QObject):
             return
 
         # Skip very large content
-        max_length = self.config.get("max_text_length", 50000)
+        max_length = self.config.get("max_text_length", 1000000)
         if len(text) > max_length:
             logger.warning(f"Text content too large ({len(text)} chars), skipping")
             return

@@ -38,7 +38,7 @@ class SettingsWindow(QDialog):
     def setup_ui(self):
         """Setup the UI"""
         self.setWindowTitle("Clipboard Manager Settings")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 500)  # Increased height for new settings
         self.setStyleSheet(Styles.get_settings_window_style())
 
         layout = QVBoxLayout(self)
@@ -47,16 +47,16 @@ class SettingsWindow(QDialog):
         general_group = QGroupBox("General Settings")
         general_layout = QFormLayout(general_group)
 
-        # Max items
+        # Max items (like Windows clipboard manager)
         self.max_items_spin = QSpinBox()
         self.max_items_spin.setRange(10, 100)
-        self.max_items_spin.setValue(25)
+        self.max_items_spin.setValue(25)  # Windows default: 25 items
         general_layout.addRow("Max clipboard items:", self.max_items_spin)
 
-        # Max text length
+        # Max text length (like Windows clipboard manager)
         self.max_text_spin = QSpinBox()
-        self.max_text_spin.setRange(1000, 50000)
-        self.max_text_spin.setValue(10000)
+        self.max_text_spin.setRange(1000, 2000000)  # Up to 2MB like Windows
+        self.max_text_spin.setValue(1000000)  # 1MB default like Windows
         general_layout.addRow("Max text length:", self.max_text_spin)
 
         # Auto-start
@@ -75,6 +75,40 @@ class SettingsWindow(QDialog):
         appearance_layout.addRow(theme_label)
 
         layout.addWidget(appearance_group)
+
+        # Performance settings (RAM optimization)
+        performance_group = QGroupBox("Performance & RAM")
+        performance_layout = QFormLayout(performance_group)
+
+        # Cache size
+        self.cache_size_spin = QSpinBox()
+        self.cache_size_spin.setRange(10, 100)
+        self.cache_size_spin.setValue(25)
+        self.cache_size_spin.setSuffix(" MB")
+        performance_layout.addRow("Cache size:", self.cache_size_spin)
+
+        # Thumbnail size
+        self.thumbnail_size_spin = QSpinBox()
+        self.thumbnail_size_spin.setRange(32, 128)
+        self.thumbnail_size_spin.setValue(64)
+        self.thumbnail_size_spin.setSuffix(" px")
+        performance_layout.addRow("Thumbnail size:", self.thumbnail_size_spin)
+
+        # Image quality
+        self.image_quality_spin = QSpinBox()
+        self.image_quality_spin.setRange(50, 95)
+        self.image_quality_spin.setValue(85)
+        self.image_quality_spin.setSuffix("%")
+        performance_layout.addRow("Image quality:", self.image_quality_spin)
+
+        # Cleanup interval
+        self.cleanup_interval_spin = QSpinBox()
+        self.cleanup_interval_spin.setRange(1, 48)
+        self.cleanup_interval_spin.setValue(12)
+        self.cleanup_interval_spin.setSuffix(" hours")
+        performance_layout.addRow("Cleanup interval:", self.cleanup_interval_spin)
+
+        layout.addWidget(performance_group)
 
         # Buttons
         button_layout = QHBoxLayout()
@@ -98,8 +132,16 @@ class SettingsWindow(QDialog):
     def load_settings(self):
         """Load current settings"""
         self.max_items_spin.setValue(self.config.get("max_items", 25))
-        self.max_text_spin.setValue(self.config.get("max_text_length", 10000))
+        self.max_text_spin.setValue(self.config.get("max_text_length", 1000000))
         self.autostart_check.setChecked(self.config.get("autostart", False))
+
+        # Performance settings
+        self.cache_size_spin.setValue(self.config.get("cache_size_mb", 25))
+        self.thumbnail_size_spin.setValue(self.config.get("thumbnail_size", 64))
+        self.image_quality_spin.setValue(self.config.get("image_quality", 85))
+        self.cleanup_interval_spin.setValue(
+            self.config.get("cleanup_interval_hours", 12)
+        )
 
     def save_settings(self):
         """Save settings"""
@@ -107,6 +149,14 @@ class SettingsWindow(QDialog):
             self.config.set("max_items", self.max_items_spin.value())
             self.config.set("max_text_length", self.max_text_spin.value())
             self.config.set("autostart", self.autostart_check.isChecked())
+
+            # Performance settings
+            self.config.set("cache_size_mb", self.cache_size_spin.value())
+            self.config.set("thumbnail_size", self.thumbnail_size_spin.value())
+            self.config.set("image_quality", self.image_quality_spin.value())
+            self.config.set(
+                "cleanup_interval_hours", self.cleanup_interval_spin.value()
+            )
 
             self.config.save()
             self.settings_changed.emit()

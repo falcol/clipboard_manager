@@ -132,7 +132,8 @@ class ContentManager:
 
         except Exception as e:
             logger.error(f"Error optimizing text content: {e}")
-            return {"preview": content[:100] + "..." if len(content) > 100 else content}
+            # flake8: noqa: E501
+            return {"preview": f"{content[:100]}..." if len(content) > 100 else content}
 
     def cleanup_orphaned_files(self, active_file_paths: set):
         """Remove files not referenced in database"""
