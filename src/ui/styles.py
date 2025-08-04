@@ -1,28 +1,27 @@
 # clipboard_manager/src/ui/styles.py
 """
-Modern stylesheet definitions with enhanced visual design
+Modern stylesheet definitions with enhanced visual design - System compatible
 """
 
 
 class Styles:
-    """Modern CSS-like stylesheets for Qt widgets with enhanced design"""
+    """Modern CSS-like stylesheets for Qt widgets with system compatibility"""
 
     @staticmethod
     def get_modern_popup_style():
-        """Get modern popup window stylesheet with glassmorphism"""
+        """Get modern popup window stylesheet - compatible with all Linux systems"""
         return """
         QFrame {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                 stop:0 #1a1a2e, stop:1 #16213e);
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
         }
         """
 
     @staticmethod
     def get_search_bar_style():
-        """Get enhanced search bar stylesheet"""
+        """Get enhanced search bar stylesheet - system compatible"""
         return """
         QFrame {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -30,13 +29,12 @@ class Styles:
             border: none;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
         }
         """
 
     @staticmethod
     def get_modern_clipboard_item_style(hovered=False):
-        """Get enhanced clipboard item stylesheet with modern design"""
+        """Get enhanced clipboard item stylesheet - system compatible"""
         if hovered:
             return """
             QFrame {
@@ -45,7 +43,6 @@ class Styles:
                 border: 2px solid #4facfe;
                 border-radius: 16px;
                 margin: 6px;
-                box-shadow: 0 8px 32px rgba(79, 172, 254, 0.3);
             }
             QLabel {
                 color: #ffffff;
@@ -78,7 +75,7 @@ class Styles:
 
     @staticmethod
     def get_action_button_style(button_type="normal"):
-        """Get enhanced action button stylesheet"""
+        """Get enhanced action button stylesheet - system compatible"""
         base_style = """
             QPushButton {
                 border: none;
@@ -92,11 +89,9 @@ class Styles:
             QPushButton:hover {
                 background: rgba(255, 255, 255, 0.2);
                 border: 1px solid rgba(255, 255, 255, 0.3);
-                transform: scale(1.05);
             }
             QPushButton:pressed {
                 background: rgba(255, 255, 255, 0.05);
-                transform: scale(0.95);
             }
         """
 
@@ -145,7 +140,7 @@ class Styles:
 
     @staticmethod
     def get_modern_scrollbar_style():
-        """Get enhanced scrollbar stylesheet"""
+        """Get enhanced scrollbar stylesheet - system compatible"""
         return """
         QScrollArea {
             border: none;
@@ -188,15 +183,15 @@ class Styles:
         """
 
     @staticmethod
-    def get_settings_window_style():
-        """Get enhanced settings window stylesheet"""
+    def get_enhanced_settings_window_style():
+        """Get enhanced settings window stylesheet with better layout"""
         return """
         QDialog {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                 stop:0 #1a1a2e, stop:1 #16213e);
             color: #ffffff;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
             border-radius: 20px;
+            font-size: 12px;
         }
 
         QGroupBox {
@@ -206,7 +201,7 @@ class Styles:
             margin-top: 16px;
             padding-top: 16px;
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
+            font-size: 13px;
         }
 
         QGroupBox::title {
@@ -222,16 +217,18 @@ class Styles:
             color: #ffffff;
             background: transparent;
             font-size: 12px;
+            font-weight: 500;
         }
 
         QSpinBox {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 8px;
-            padding: 8px;
+            padding: 10px;
             color: #ffffff;
             font-size: 12px;
             font-weight: 500;
+            min-height: 20px;
         }
 
         QSpinBox:focus {
@@ -255,6 +252,7 @@ class Styles:
             spacing: 12px;
             font-size: 12px;
             font-weight: 500;
+            padding: 4px 0px;
         }
 
         QCheckBox::indicator {
@@ -322,7 +320,7 @@ class Styles:
 
     @staticmethod
     def get_system_tray_menu_style():
-        """Get enhanced system tray menu stylesheet"""
+        """Get enhanced system tray menu stylesheet - system compatible"""
         return """
         QMenu {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -331,10 +329,8 @@ class Styles:
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 12px 0px;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
             font-size: 12px;
             font-weight: 500;
-            backdrop-filter: blur(15px);
         }
 
         QMenu::item {
@@ -368,3 +364,7 @@ class Styles:
     @staticmethod
     def get_clipboard_item_style(hovered=False):
         return Styles.get_modern_clipboard_item_style(hovered)
+
+    @staticmethod
+    def get_settings_window_style():
+        return Styles.get_enhanced_settings_window_style()

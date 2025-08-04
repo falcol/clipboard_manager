@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchBar(QFrame):
-    """Enhanced search bar widget with modern design"""
+    """Enhanced search bar widget with modern design and system fonts"""
 
     search_requested = pyqtSignal(str)
 
@@ -54,7 +54,7 @@ class SearchBar(QFrame):
         search_icon.setStyleSheet("color: #4facfe; font-size: 16px;")
         layout.addWidget(search_icon)
 
-        # Enhanced search input
+        # Enhanced search input with system font
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search clipboard history...")
         self.search_input.setStyleSheet(
@@ -134,7 +134,7 @@ class ClipboardItem(QFrame):
         self.setup_animations()
 
     def setup_ui(self):
-        """Setup modern UI for clipboard item with proper text display"""
+        """Setup modern UI for clipboard item with system fonts"""
         # Increased height to accommodate 2 lines of text
         self.setFixedHeight(90)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
@@ -152,7 +152,7 @@ class ClipboardItem(QFrame):
         icon_label = QLabel(content_icon)
         icon_label.setFixedSize(24, 24)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setStyleSheet("color: #0078d4; font-size: 16px;")
+        icon_label.setStyleSheet("color: #4facfe; font-size: 16px;")
         icon_layout.addWidget(icon_label)
 
         # Pinned indicator
@@ -178,7 +178,7 @@ class ClipboardItem(QFrame):
             preview_label = QLabel(preview_text)
             # Enable word wrap for 2 lines
             preview_label.setWordWrap(True)
-            preview_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
+            preview_label.setFont(QFont("Sans Serif", 11))  # System font
             preview_label.setStyleSheet(
                 """
                 color: #ffffff;
@@ -256,7 +256,7 @@ class ClipboardItem(QFrame):
         info_layout.setSpacing(8)
 
         info_label = QLabel(info_text)
-        info_label.setFont(QFont("Segoe UI", 8, QFont.Weight.Normal))
+        info_label.setFont(QFont("Sans Serif", 9))  # System font
         info_label.setStyleSheet("color: #aaa;")
         info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         info_layout.addWidget(info_label)
@@ -271,11 +271,11 @@ class ClipboardItem(QFrame):
                 dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
                 time_str = dt.strftime("%H:%M")
                 timestamp_label = QLabel(time_str)
-                timestamp_label.setFont(QFont("Segoe UI", 8))
+                timestamp_label.setFont(QFont("Sans Serif", 9))  # System font
                 timestamp_label.setStyleSheet("color: #888;")
                 timestamp_label.setFixedWidth(40)  # Fixed width to prevent layout shift
                 info_layout.addWidget(timestamp_label)
-            except:
+            except Exception:
                 pass
 
         content_layout.addLayout(info_layout)
@@ -468,7 +468,7 @@ class PopupWindow(QWidget):
         self.setGraphicsEffect(shadow)
 
     def setup_ui(self):
-        """Setup modern UI with enhanced design"""
+        """Setup modern UI with enhanced design and system fonts"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -498,12 +498,12 @@ class PopupWindow(QWidget):
         header_layout = QHBoxLayout(self.header)
         header_layout.setContentsMargins(24, 18, 24, 18)
 
-        # Enhanced title with better spacing
+        # Enhanced title with system fonts
         title_layout = QHBoxLayout()
 
         # Drag indicator with better styling
         drag_icon = QLabel("⋮⋮")
-        drag_icon.setFont(QFont("Inter", 14, QFont.Weight.Bold))
+        drag_icon.setFont(QFont("Sans Serif", 14, QFont.Weight.Bold))
         drag_icon.setStyleSheet(
             "color: rgba(255,255,255,0.8); background: transparent;"
         )
@@ -511,11 +511,11 @@ class PopupWindow(QWidget):
         title_layout.addWidget(drag_icon)
 
         title_icon = QLabel("📋")
-        title_icon.setFont(QFont("Inter", 18))
+        title_icon.setFont(QFont("Sans Serif", 18))
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
-        title_label.setFont(QFont("Inter", 16, QFont.Weight.Bold))
+        title_label.setFont(QFont("Sans Serif", 16, QFont.Weight.Bold))
         title_label.setStyleSheet("color: white; background: transparent;")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
@@ -604,7 +604,7 @@ class PopupWindow(QWidget):
         footer_layout.setContentsMargins(24, 12, 24, 12)
 
         footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
-        footer_label.setFont(QFont("Inter", 10, QFont.Weight.Normal))
+        footer_label.setFont(QFont("Sans Serif", 10, QFont.Weight.Normal))
         footer_label.setStyleSheet(
             "color: rgba(255, 255, 255, 0.7); background: transparent;"
         )
@@ -612,7 +612,7 @@ class PopupWindow(QWidget):
 
         # Enhanced stats
         self.stats_label = QLabel()
-        self.stats_label.setFont(QFont("Inter", 10, QFont.Weight.Medium))
+        self.stats_label.setFont(QFont("Sans Serif", 10, QFont.Weight.Medium))
         self.stats_label.setStyleSheet(
             "color: rgba(255, 255, 255, 0.6); background: transparent;"
         )
