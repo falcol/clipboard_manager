@@ -26,7 +26,7 @@ class Config:
         "autostart": False,
         "theme": "dark",
         # Enhanced Phase 1 settings
-        "hotkey": "super+v",  # Changed from super+c to match Windows 11
+        "hotkey": "super+c",  # Changed from super+c to match Windows 11
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
         "max_search_results": 25,
@@ -164,9 +164,9 @@ class Config:
     def _migrate_config_if_needed(self):
         """Migrate old configuration format to new format"""
         # Check if we need to migrate from old hotkey setting
-        if self.config.get("hotkey") == "super+c":
-            self.config["hotkey"] = "super+v"
-            logger.info("Migrated hotkey from Super+C to Super+V")
+        if self.config.get("hotkey") == "super+v":
+            self.config["hotkey"] = "super+c"
+            logger.info("Migrated hotkey from Super+V to Super+C")
 
         # Add any missing default values
         for key, value in self.DEFAULT_CONFIG.items():

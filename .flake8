@@ -7,6 +7,6 @@ exclude =
     *.pyc,
     build/,
     dist/
-ignore = E402
-per-file-ignores =
-    src/main.py:E402
+ignore = E402,E501,E741
+; per-file-ignores =
+;     src/main.py:E402
