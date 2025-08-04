@@ -1,90 +1,102 @@
 # clipboard_manager/src/ui/styles.py
 """
-Modern stylesheet definitions inspired by GNOME Clipboard Indicator
+Modern stylesheet definitions with enhanced visual design
 """
 
 
 class Styles:
-    """Modern CSS-like stylesheets for Qt widgets"""
+    """Modern CSS-like stylesheets for Qt widgets with enhanced design"""
 
     @staticmethod
     def get_modern_popup_style():
-        """Get modern popup window stylesheet"""
+        """Get modern popup window stylesheet with glassmorphism"""
         return """
         QFrame {
-            background: #2b2b2b;
-            border-radius: 12px;
-            border: 1px solid #404040;
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #1a1a2e, stop:1 #16213e);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
         }
         """
 
     @staticmethod
     def get_search_bar_style():
-        """Get search bar stylesheet"""
+        """Get enhanced search bar stylesheet"""
         return """
         QFrame {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #333333, stop:1 #2a2a2a);
+                stop:0 rgba(255, 255, 255, 0.1), stop:1 rgba(255, 255, 255, 0.05));
             border: none;
-            border-top: 1px solid #404040;
-            border-bottom: 1px solid #404040;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
         """
 
     @staticmethod
     def get_modern_clipboard_item_style(hovered=False):
-        """Get modern clipboard item stylesheet"""
+        """Get enhanced clipboard item stylesheet with modern design"""
         if hovered:
             return """
             QFrame {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #404040, stop:1 #383838);
-                border: 1px solid #0078d4;
-                border-radius: 8px;
-                margin: 2px;
+                    stop:0 rgba(255, 255, 255, 0.15), stop:1 rgba(255, 255, 255, 0.08));
+                border: 2px solid #4facfe;
+                border-radius: 16px;
+                margin: 6px;
+                box-shadow: 0 8px 32px rgba(79, 172, 254, 0.3);
             }
             QLabel {
                 color: #ffffff;
                 background: transparent;
                 border: none;
+                font-weight: 500;
             }
             """
         else:
             return """
             QFrame {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #353535, stop:1 #2e2e2e);
-                border: 1px solid #444444;
-                border-radius: 8px;
-                margin: 2px;
+                    stop:0 rgba(255, 255, 255, 0.08), stop:1 rgba(255, 255, 255, 0.03));
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 16px;
+                margin: 6px;
             }
             QFrame:hover {
-                border: 1px solid #0078d4;
+                border: 2px solid #4facfe;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 rgba(255, 255, 255, 0.12), stop:1 rgba(255, 255, 255, 0.06));
             }
             QLabel {
                 color: #ffffff;
                 background: transparent;
                 border: none;
+                font-weight: 400;
             }
             """
 
     @staticmethod
     def get_action_button_style(button_type="normal"):
-        """Get action button stylesheet"""
+        """Get enhanced action button stylesheet"""
         base_style = """
             QPushButton {
                 border: none;
-                border-radius: 14px;
-                font-size: 12px;
-                font-weight: bold;
+                border-radius: 16px;
+                font-size: 14px;
+                font-weight: 600;
                 background: rgba(255, 255, 255, 0.1);
+                min-width: 32px;
+                min-height: 32px;
             }
             QPushButton:hover {
                 background: rgba(255, 255, 255, 0.2);
-                border: 1px solid #aaa;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                transform: scale(1.05);
             }
             QPushButton:pressed {
                 background: rgba(255, 255, 255, 0.05);
+                transform: scale(0.95);
             }
         """
 
@@ -93,11 +105,11 @@ class Styles:
                 base_style
                 + """
                 QPushButton {
-                    color: #888;
+                    color: #a0a0a0;
                 }
                 QPushButton:hover {
-                    color: #0078d4;
-                    background: rgba(0, 120, 212, 0.2);
+                    color: #4facfe;
+                    background: rgba(79, 172, 254, 0.2);
                 }
             """
             )
@@ -106,12 +118,12 @@ class Styles:
                 base_style
                 + """
                 QPushButton {
-                    color: #0078d4;
-                    background: rgba(0, 120, 212, 0.2);
+                    color: #4facfe;
+                    background: rgba(79, 172, 254, 0.2);
                 }
                 QPushButton:hover {
                     color: #ffffff;
-                    background: rgba(0, 120, 212, 0.3);
+                    background: rgba(79, 172, 254, 0.3);
                 }
             """
             )
@@ -120,11 +132,11 @@ class Styles:
                 base_style
                 + """
                 QPushButton {
-                    color: #888;
+                    color: #a0a0a0;
                 }
                 QPushButton:hover {
-                    color: #ff4444;
-                    background: rgba(255, 68, 68, 0.2);
+                    color: #ff6b6b;
+                    background: rgba(255, 107, 107, 0.2);
                 }
             """
             )
@@ -133,7 +145,7 @@ class Styles:
 
     @staticmethod
     def get_modern_scrollbar_style():
-        """Get modern scrollbar stylesheet"""
+        """Get enhanced scrollbar stylesheet"""
         return """
         QScrollArea {
             border: none;
@@ -142,24 +154,24 @@ class Styles:
 
         QScrollBar:vertical {
             background: transparent;
-            width: 8px;
+            width: 12px;
             border: none;
             margin: 0;
         }
 
         QScrollBar::handle:vertical {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            min-height: 30px;
-            margin: 2px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            min-height: 40px;
+            margin: 4px;
         }
 
         QScrollBar::handle:vertical:hover {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.4);
         }
 
         QScrollBar::handle:vertical:pressed {
-            background: rgba(0, 120, 212, 0.8);
+            background: rgba(79, 172, 254, 0.8);
         }
 
         QScrollBar::add-line:vertical,
@@ -176,250 +188,183 @@ class Styles:
         """
 
     @staticmethod
-    def get_popup_window_style():
-        """Get legacy popup window stylesheet for backward compatibility"""
-        return """
-        QWidget {
-            background-color: #2b2b2b;
-            color: #ffffff;
-            border-radius: 8px;
-            font-family: 'Segoe UI', Arial, sans-serif;
-        }
-
-        QScrollArea {
-            border: none;
-            background-color: transparent;
-        }
-
-        QScrollBar:vertical {
-            background-color: #3c3c3c;
-            width: 8px;
-            border-radius: 4px;
-        }
-
-        QScrollBar::handle:vertical {
-            background-color: #555555;
-            border-radius: 4px;
-            min-height: 20px;
-        }
-
-        QScrollBar::handle:vertical:hover {
-            background-color: #666666;
-        }
-
-        QPushButton {
-            background-color: #404040;
-            border: 1px solid #555555;
-            border-radius: 4px;
-            padding: 4px 8px;
-            color: #ffffff;
-        }
-
-        QPushButton:hover {
-            background-color: #4a4a4a;
-        }
-
-        QPushButton:pressed {
-            background-color: #363636;
-        }
-        """
-
-    @staticmethod
-    def get_clipboard_item_style(hovered=False):
-        """Get legacy clipboard item stylesheet for backward compatibility"""
-        bg_color = "#3a3a3a" if hovered else "#333333"
-        return f"""
-        QFrame {{
-            background-color: {bg_color};
-            border: 1px solid #444444;
-            border-radius: 4px;
-            margin: 2px;
-        }}
-
-        QLabel {{
-            color: #ffffff;
-            background-color: transparent;
-            border: none;
-        }}
-
-        QPushButton {{
-            background-color: #404040;
-            border: 1px solid #555555;
-            border-radius: 2px;
-            color: #ffffff;
-            font-size: 12px;
-        }}
-
-        QPushButton:hover {{
-            background-color: #4a4a4a;
-        }}
-        """
-
-    @staticmethod
     def get_settings_window_style():
-        """Get settings window stylesheet"""
+        """Get enhanced settings window stylesheet"""
         return """
         QDialog {
-            background-color: #2b2b2b;
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #1a1a2e, stop:1 #16213e);
             color: #ffffff;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            border-radius: 20px;
         }
 
         QGroupBox {
-            font-weight: bold;
-            border: 2px solid #444444;
-            border-radius: 8px;
-            margin-top: 12px;
-            padding-top: 12px;
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #333333, stop:1 #2a2a2a);
+            font-weight: 600;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            margin-top: 16px;
+            padding-top: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
         }
 
         QGroupBox::title {
             subcontrol-origin: margin;
-            left: 15px;
-            padding: 0 8px 0 8px;
-            color: #0078d4;
-            font-size: 12px;
-            font-weight: bold;
+            left: 20px;
+            padding: 0 12px 0 12px;
+            color: #4facfe;
+            font-size: 14px;
+            font-weight: 600;
         }
 
         QLabel {
             color: #ffffff;
             background: transparent;
+            font-size: 12px;
         }
 
         QSpinBox {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #404040, stop:1 #353535);
-            border: 1px solid #555555;
-            border-radius: 6px;
-            padding: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px;
             color: #ffffff;
-            font-size: 11px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         QSpinBox:focus {
-            border: 2px solid #0078d4;
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #454545, stop:1 #3a3a3a);
+            border: 2px solid #4facfe;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         QSpinBox::up-button, QSpinBox::down-button {
-            background: #555555;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
-            width: 16px;
-            border-radius: 3px;
+            width: 20px;
+            border-radius: 4px;
         }
 
         QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-            background: #0078d4;
+            background: #4facfe;
         }
 
         QCheckBox {
             color: #ffffff;
-            spacing: 8px;
-            font-size: 11px;
+            spacing: 12px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         QCheckBox::indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
         }
 
         QCheckBox::indicator:unchecked {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #404040, stop:1 #353535);
-            border: 1px solid #555555;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         QCheckBox::indicator:unchecked:hover {
-            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #454545, stop:1 #3a3a3a);
-            border: 1px solid #0078d4;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid #4facfe;
         }
 
         QCheckBox::indicator:checked {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #0078d4, stop:1 #005a9e);
-            border: 1px solid #0078d4;
+                stop:0 #4facfe, stop:1 #00f2fe);
+            border: 2px solid #4facfe;
         }
 
         QCheckBox::indicator:checked:hover {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #0086f0, stop:1 #0066b8);
+                stop:0 #5fb8ff, stop:1 #1af8ff);
         }
 
         QPushButton {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #404040, stop:1 #353535);
-            border: 1px solid #555555;
-            border-radius: 6px;
-            padding: 8px 16px;
+                stop:0 rgba(255, 255, 255, 0.1), stop:1 rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 20px;
             color: #ffffff;
-            min-width: 90px;
-            font-size: 11px;
-            font-weight: 500;
+            min-width: 100px;
+            font-size: 12px;
+            font-weight: 600;
         }
 
         QPushButton:hover {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #4a4a4a, stop:1 #3f3f3f);
-            border: 1px solid #0078d4;
+                stop:0 rgba(255, 255, 255, 0.15), stop:1 rgba(255, 255, 255, 0.08));
+            border: 1px solid #4facfe;
         }
 
         QPushButton:pressed {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #363636, stop:1 #2b2b2b);
-            border: 1px solid #005a9e;
+                stop:0 rgba(255, 255, 255, 0.05), stop:1 rgba(255, 255, 255, 0.02));
+            border: 1px solid #4facfe;
         }
 
         QPushButton:default {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #0078d4, stop:1 #005a9e);
-            border: 1px solid #0078d4;
+                stop:0 #4facfe, stop:1 #00f2fe);
+            border: 1px solid #4facfe;
         }
 
         QPushButton:default:hover {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #0086f0, stop:1 #0066b8);
+                stop:0 #5fb8ff, stop:1 #1af8ff);
         }
         """
 
     @staticmethod
     def get_system_tray_menu_style():
-        """Get system tray menu stylesheet"""
+        """Get enhanced system tray menu stylesheet"""
         return """
         QMenu {
-            background-color: #2b2b2b;
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #1a1a2e, stop:1 #16213e);
             color: #ffffff;
-            border: 1px solid #404040;
-            border-radius: 8px;
-            padding: 8px 0px;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 0px;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(15px);
         }
 
         QMenu::item {
-            padding: 8px 20px;
-            margin: 2px 4px;
-            border-radius: 4px;
+            padding: 12px 24px;
+            margin: 2px 6px;
+            border-radius: 6px;
         }
 
         QMenu::item:selected {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #0078d4, stop:1 #005a9e);
+                stop:0 #4facfe, stop:1 #00f2fe);
         }
 
         QMenu::item:pressed {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                stop:0 #005a9e, stop:1 #004578);
+                stop:0 #3a9bff, stop:1 #00e6f0);
         }
 
         QMenu::separator {
             height: 1px;
-            background: #404040;
-            margin: 4px 10px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 6px 12px;
         }
         """
+
+    # Legacy styles for backward compatibility
+    @staticmethod
+    def get_popup_window_style():
+        return Styles.get_modern_popup_style()
+
+    @staticmethod
+    def get_clipboard_item_style(hovered=False):
+        return Styles.get_modern_clipboard_item_style(hovered)

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class SearchBar(QFrame):
-    """Modern search bar widget with improved clear functionality"""
+    """Enhanced search bar widget with modern design"""
 
     search_requested = pyqtSignal(str)
 
@@ -41,41 +41,56 @@ class SearchBar(QFrame):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setFixedHeight(40)
+        self.setFixedHeight(50)  # Increased height
         self.setStyleSheet(Styles.get_search_bar_style())
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(16, 12, 16, 12)
 
-        # Search icon
+        # Enhanced search icon
         search_icon = QLabel("🔍")
-        search_icon.setFixedSize(20, 20)
+        search_icon.setFixedSize(24, 24)
         search_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        search_icon.setStyleSheet("color: #4facfe; font-size: 16px;")
         layout.addWidget(search_icon)
 
-        # Search input
+        # Enhanced search input
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search clipboard history...")
         self.search_input.setStyleSheet(
-            "border: none; background: transparent; color: #ffffff;"
+            """
+            QLineEdit {
+                border: none;
+                background: transparent;
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: 500;
+                padding: 8px 0px;
+            }
+            QLineEdit::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+            }
+        """
         )
         self.search_input.textChanged.connect(self.on_search_changed)
         layout.addWidget(self.search_input)
 
-        # Clear button
+        # Enhanced clear button
         self.clear_btn = QPushButton("✕")
-        self.clear_btn.setFixedSize(20, 20)
+        self.clear_btn.setFixedSize(24, 24)
         self.clear_btn.setStyleSheet(
             """
             QPushButton {
                 border: none;
-                background: transparent;
-                color: #888;
-                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.1);
+                color: rgba(255, 255, 255, 0.6);
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
             }
             QPushButton:hover {
-                background: #555;
-                color: #fff;
+                background: rgba(255, 255, 255, 0.2);
+                color: #ffffff;
             }
         """
         )
@@ -163,7 +178,7 @@ class ClipboardItem(QFrame):
             preview_label = QLabel(preview_text)
             # Enable word wrap for 2 lines
             preview_label.setWordWrap(True)
-            preview_label.setFont(QFont("Segoe UI", 10))
+            preview_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
             preview_label.setStyleSheet(
                 """
                 color: #ffffff;
@@ -241,7 +256,7 @@ class ClipboardItem(QFrame):
         info_layout.setSpacing(8)
 
         info_label = QLabel(info_text)
-        info_label.setFont(QFont("Segoe UI", 8))
+        info_label.setFont(QFont("Segoe UI", 8, QFont.Weight.Normal))
         info_label.setStyleSheet("color: #aaa;")
         info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         info_layout.addWidget(info_label)
@@ -298,13 +313,18 @@ class ClipboardItem(QFrame):
         layout.addWidget(self.actions_widget)
 
     def setup_animations(self):
-        """Setup hover animations"""
+        """Setup enhanced hover animations with smooth effects"""
         self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(10)
-        self.shadow_effect.setColor(QColor(0, 120, 212, 100))
-        self.shadow_effect.setOffset(0, 2)
+        self.shadow_effect.setBlurRadius(20)
+        self.shadow_effect.setColor(QColor(79, 172, 254, 80))
+        self.shadow_effect.setOffset(0, 4)
         self.shadow_effect.setEnabled(False)
         self.setGraphicsEffect(self.shadow_effect)
+
+        # Add scale animation for smooth hover effect
+        self.scale_animation = QPropertyAnimation(self, b"geometry")
+        self.scale_animation.setDuration(200)
+        self.scale_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def get_content_icon(self):
         """Get icon based on content type"""
@@ -336,12 +356,19 @@ class ClipboardItem(QFrame):
         super().mousePressEvent(event)
 
     def enterEvent(self, event):
-        """Handle mouse enter (hover) - show buttons clearly"""
+        """Enhanced mouse enter with smooth animations"""
         self.is_hovered = True
         self.setStyleSheet(Styles.get_modern_clipboard_item_style(hovered=True))
         self.shadow_effect.setEnabled(True)
 
-        # Show action buttons clearly
+        # Smooth scale animation
+        current_geometry = self.geometry()
+        scaled_geometry = current_geometry.adjusted(-2, -2, 2, 2)
+        self.scale_animation.setStartValue(current_geometry)
+        self.scale_animation.setEndValue(scaled_geometry)
+        self.scale_animation.start()
+
+        # Show action buttons with fade effect
         self.pin_btn.setStyleSheet(
             self.pin_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
         )
@@ -352,10 +379,17 @@ class ClipboardItem(QFrame):
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        """Handle mouse leave - fade buttons"""
+        """Enhanced mouse leave with smooth animations"""
         self.is_hovered = False
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.shadow_effect.setEnabled(False)
+
+        # Smooth scale animation back
+        current_geometry = self.geometry()
+        original_geometry = current_geometry.adjusted(2, 2, -2, -2)
+        self.scale_animation.setStartValue(current_geometry)
+        self.scale_animation.setEndValue(original_geometry)
+        self.scale_animation.start()
 
         # Fade action buttons
         current_pin_style = self.pin_btn.styleSheet()
@@ -434,78 +468,79 @@ class PopupWindow(QWidget):
         self.setGraphicsEffect(shadow)
 
     def setup_ui(self):
-        """Setup modern UI with drag handle"""
+        """Setup modern UI with enhanced design"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Main container with rounded corners
+        # Main container with enhanced glassmorphism
         self.container = QFrame()
         self.container.setStyleSheet(Styles.get_modern_popup_style())
         container_layout = QVBoxLayout(self.container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
 
-        # Header with drag support
+        # Enhanced header with gradient
         self.header = QFrame()
-        self.header.setFixedHeight(60)
+        self.header.setFixedHeight(70)  # Increased height
         self.header.setStyleSheet(
             """
             QFrame {
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #0078d4, stop:1 #005a9e);
-                border-top-left-radius: 12px;
-                border-top-right-radius: 12px;
+                    stop:0 #4facfe, stop:1 #00f2fe);
+                border-top-left-radius: 20px;
+                border-top-right-radius: 20px;
             }
         """
         )
-        # Make header draggable
         self.header.setCursor(Qt.CursorShape.SizeAllCursor)
 
         header_layout = QHBoxLayout(self.header)
-        header_layout.setContentsMargins(20, 15, 20, 15)
+        header_layout.setContentsMargins(24, 18, 24, 18)
 
-        # Title with icon and drag indicator
+        # Enhanced title with better spacing
         title_layout = QHBoxLayout()
 
-        # Drag indicator
+        # Drag indicator with better styling
         drag_icon = QLabel("⋮⋮")
-        drag_icon.setFont(QFont("Segoe UI", 12))
+        drag_icon.setFont(QFont("Inter", 14, QFont.Weight.Bold))
         drag_icon.setStyleSheet(
-            "color: rgba(255,255,255,0.7); background: transparent;"
+            "color: rgba(255,255,255,0.8); background: transparent;"
         )
         drag_icon.setToolTip("Drag to move window")
         title_layout.addWidget(drag_icon)
 
         title_icon = QLabel("📋")
-        title_icon.setFont(QFont("Segoe UI", 16))
+        title_icon.setFont(QFont("Inter", 18))
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
-        title_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title_label.setFont(QFont("Inter", 16, QFont.Weight.Bold))
         title_label.setStyleSheet("color: white; background: transparent;")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
 
         header_layout.addLayout(title_layout)
 
-        # Header actions
+        # Enhanced header actions
         actions_layout = QHBoxLayout()
 
-        # Clear all button
+        # Modern clear button
         self.clear_btn = QPushButton("Clear All")
         self.clear_btn.setStyleSheet(
             """
             QPushButton {
                 background: rgba(255, 255, 255, 0.2);
                 border: 1px solid rgba(255, 255, 255, 0.3);
-                border-radius: 6px;
-                padding: 6px 12px;
+                border-radius: 8px;
+                padding: 8px 16px;
                 color: white;
-                font-weight: 500;
+                font-weight: 600;
+                font-size: 12px;
             }
             QPushButton:hover {
                 background: rgba(255, 255, 255, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.5);
             }
             QPushButton:pressed {
                 background: rgba(255, 255, 255, 0.1);
@@ -518,18 +553,18 @@ class PopupWindow(QWidget):
         header_layout.addLayout(actions_layout)
         container_layout.addWidget(self.header)
 
-        # Search bar
+        # Enhanced search bar
         self.search_bar = SearchBar()
         self.search_bar.search_requested.connect(self.on_search)
         container_layout.addWidget(self.search_bar)
 
-        # Content area
+        # Enhanced content area
         content_frame = QFrame()
-        content_frame.setStyleSheet("background: #2b2b2b;")
+        content_frame.setStyleSheet("background: rgba(255, 255, 255, 0.02);")
         content_layout = QVBoxLayout(content_frame)
         content_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Scroll area
+        # Enhanced scroll area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(
@@ -542,8 +577,8 @@ class PopupWindow(QWidget):
 
         self.scroll_widget = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
-        self.scroll_layout.setContentsMargins(8, 8, 8, 8)
-        self.scroll_layout.setSpacing(4)
+        self.scroll_layout.setContentsMargins(12, 12, 12, 12)
+        self.scroll_layout.setSpacing(8)
         self.scroll_layout.addStretch()
 
         self.scroll_area.setWidget(self.scroll_widget)
@@ -551,32 +586,36 @@ class PopupWindow(QWidget):
 
         container_layout.addWidget(content_frame)
 
-        # Footer
+        # Enhanced footer
         footer = QFrame()
-        footer.setFixedHeight(35)
+        footer.setFixedHeight(45)  # Increased height
         footer.setStyleSheet(
             """
             QFrame {
-                background: #1e1e1e;
-                border-bottom-left-radius: 12px;
-                border-bottom-right-radius: 12px;
-                border-top: 1px solid #404040;
+                background: rgba(255, 255, 255, 0.03);
+                border-bottom-left-radius: 20px;
+                border-bottom-right-radius: 20px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
         """
         )
 
         footer_layout = QHBoxLayout(footer)
-        footer_layout.setContentsMargins(20, 8, 20, 8)
+        footer_layout.setContentsMargins(24, 12, 24, 12)
 
         footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
-        footer_label.setFont(QFont("Segoe UI", 9))
-        footer_label.setStyleSheet("color: #aaa; background: transparent;")
+        footer_label.setFont(QFont("Inter", 10, QFont.Weight.Normal))
+        footer_label.setStyleSheet(
+            "color: rgba(255, 255, 255, 0.7); background: transparent;"
+        )
         footer_layout.addWidget(footer_label)
 
-        # Stats
+        # Enhanced stats
         self.stats_label = QLabel()
-        self.stats_label.setFont(QFont("Segoe UI", 9))
-        self.stats_label.setStyleSheet("color: #888; background: transparent;")
+        self.stats_label.setFont(QFont("Inter", 10, QFont.Weight.Medium))
+        self.stats_label.setStyleSheet(
+            "color: rgba(255, 255, 255, 0.6); background: transparent;"
+        )
         footer_layout.addWidget(self.stats_label)
 
         container_layout.addWidget(footer)
