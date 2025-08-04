@@ -61,8 +61,8 @@ def setup_qt_environment():
                 logger.info(f"Set QT_PLUGIN_PATH to {path}")
                 break
 
-    # Enhanced Qt settings for modern UI
-    os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland"
+    # Enhanced Qt settings with fallback for headless systems
+    os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland:fallback=offscreen"
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
     os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
 
@@ -214,8 +214,8 @@ class EnhancedClipboardManager:
         self.clipboard_watcher.content_changed.connect(self.on_content_changed)
 
         # Popup window focus management
-        if hasattr(self.popup_window, "hidden"):
-            self.popup_window.hidden.connect(self.on_popup_hidden)
+        # if hasattr(self.popup_window, "hidden"):
+        #     self.popup_window.hidden.connect(self.on_popup_hidden)
 
     def setup_performance_monitoring(self):
         """Setup performance monitoring and cleanup"""
@@ -254,6 +254,7 @@ class EnhancedClipboardManager:
             stats_after = self.database.get_stats()
 
             logger.info(
+                # flake8: noqa: E501
                 f"Maintenance complete. Items: {stats_before.get('total_items', 0)} -> {stats_after.get('total_items', 0)}"
             )
 
@@ -433,7 +434,16 @@ def main():
 
         try:
             lock_fd = open(lock_file, "w")
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Use getattr for better compatibility
+            lock_ex = getattr(fcntl, "LOCK_EX", 1)
+            lock_nb = getattr(fcntl, "LOCK_NB", 2)
+            lockf_func = getattr(fcntl, "lockf", None)
+
+            if lockf_func:
+                lockf_func(lock_fd, lock_ex | lock_nb)
+            else:
+                # Fallback for systems without fcntl
+                logger.warning("fcntl not available, skipping single instance check")
         except (IOError, OSError):
             logger.error("Another instance of Clipboard Manager is already running")
             return 1
@@ -455,7 +465,7 @@ def main():
                 lock_fd.close()
             if "lock_file" in locals() and lock_file.exists():
                 lock_file.unlink()
-        except:
+        except Exception:
             pass
 
 

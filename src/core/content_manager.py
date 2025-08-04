@@ -161,7 +161,7 @@ class ContentManager:
     def _pixmap_to_bytes(self, pixmap: QPixmap, format: str, quality: int) -> bytes:
         """Convert QPixmap to bytes with optimization"""
         byte_array = QBuffer()
-        byte_array.open(QIODevice.WriteOnly)
+        byte_array.open(QIODevice.OpenModeFlag.WriteOnly)
 
         # Optimize based on format
         if format.upper() == "JPEG" and pixmap.hasAlphaChannel():
@@ -181,7 +181,10 @@ class ContentManager:
         from PySide6.QtCore import Qt
 
         return pixmap.scaled(
-            max_size, max_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            max_size,
+            max_size,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
 
     def _detect_text_type(self, content: str) -> str:

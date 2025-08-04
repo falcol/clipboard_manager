@@ -50,7 +50,7 @@ class SearchBar(QFrame):
         # Search icon
         search_icon = QLabel("🔍")
         search_icon.setFixedSize(20, 20)
-        search_icon.setAlignment(Qt.AlignCenter)
+        search_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(search_icon)
 
         # Search input
@@ -123,7 +123,7 @@ class ClipboardItem(QFrame):
         # Increased height to accommodate 2 lines of text
         self.setFixedHeight(90)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
-        self.setCursor(Qt.PointingHandCursor)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 8, 12, 8)
@@ -136,7 +136,7 @@ class ClipboardItem(QFrame):
         content_icon = self.get_content_icon()
         icon_label = QLabel(content_icon)
         icon_label.setFixedSize(24, 24)
-        icon_label.setAlignment(Qt.AlignCenter)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setStyleSheet("color: #0078d4; font-size: 16px;")
         icon_layout.addWidget(icon_label)
 
@@ -144,7 +144,7 @@ class ClipboardItem(QFrame):
         if self.item_data.get("is_pinned"):
             pin_indicator = QLabel("📌")
             pin_indicator.setFixedSize(16, 16)
-            pin_indicator.setAlignment(Qt.AlignCenter)
+            pin_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
             pin_indicator.setStyleSheet("font-size: 10px;")
             icon_layout.addWidget(pin_indicator)
         else:
@@ -172,7 +172,9 @@ class ClipboardItem(QFrame):
             """
             )
             # Set size policy and constraints for exactly 2 lines
-            preview_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            preview_label.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
 
             # Calculate height for exactly 2 lines
             font_metrics = preview_label.fontMetrics()
@@ -204,19 +206,22 @@ class ClipboardItem(QFrame):
                         # Larger image preview to fit the increased height
                         preview_label.setPixmap(
                             pixmap.scaled(
-                                50, 50, Qt.KeepAspectRatio, Qt.SmoothTransformation
+                                50,
+                                50,
+                                Qt.AspectRatioMode.KeepAspectRatio,
+                                Qt.TransformationMode.SmoothTransformation,
                             )
                         )
                     else:
                         preview_label.setText("🖼️ Image")
-                        preview_label.setAlignment(Qt.AlignCenter)
+                        preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 except Exception as e:
                     logger.error(f"Error loading image preview: {e}")
                     preview_label.setText("🖼️ Image")
-                    preview_label.setAlignment(Qt.AlignCenter)
+                    preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             else:
                 preview_label.setText("🖼️ Image")
-                preview_label.setAlignment(Qt.AlignCenter)
+                preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # Set fixed height for image preview
             preview_label.setFixedHeight(50)
@@ -238,7 +243,7 @@ class ClipboardItem(QFrame):
         info_label = QLabel(info_text)
         info_label.setFont(QFont("Segoe UI", 8))
         info_label.setStyleSheet("color: #aaa;")
-        info_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         info_layout.addWidget(info_label)
 
         # Timestamp (always visible)
@@ -326,7 +331,7 @@ class ClipboardItem(QFrame):
 
     def mousePressEvent(self, event):
         """Handle mouse click to select item"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.item_selected.emit(self.item_data)
         super().mousePressEvent(event)
 
@@ -413,12 +418,12 @@ class PopupWindow(QWidget):
     def setup_window(self):
         """Setup modern window properties with drag support"""
         self.setWindowFlags(
-            Qt.WindowStaysOnTopHint
-            | Qt.FramelessWindowHint
-            | Qt.Tool
-            | Qt.NoDropShadowWindowHint
+            Qt.WindowType.WindowStaysOnTopHint
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.Tool
+            | Qt.WindowType.NoDropShadowWindowHint
         )
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedSize(520, 650)  # Increased height to accommodate larger items
 
         # Add drop shadow effect
@@ -455,7 +460,7 @@ class PopupWindow(QWidget):
         """
         )
         # Make header draggable
-        self.header.setCursor(Qt.SizeAllCursor)
+        self.header.setCursor(Qt.CursorShape.SizeAllCursor)
 
         header_layout = QHBoxLayout(self.header)
         header_layout.setContentsMargins(20, 15, 20, 15)
@@ -477,7 +482,7 @@ class PopupWindow(QWidget):
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
-        title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        title_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
         title_label.setStyleSheet("color: white; background: transparent;")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
@@ -527,8 +532,12 @@ class PopupWindow(QWidget):
         # Scroll area
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.scroll_area.setStyleSheet(Styles.get_modern_scrollbar_style())
 
         self.scroll_widget = QWidget()
@@ -576,7 +585,7 @@ class PopupWindow(QWidget):
     # Mouse event handlers for dragging
     def mousePressEvent(self, event):
         """Handle mouse press for drag start"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             # Check if click is on header
             header_rect = self.header.geometry()
             if header_rect.contains(event.position().toPoint()):
@@ -588,9 +597,10 @@ class PopupWindow(QWidget):
 
     def mouseMoveEvent(self, event):
         """Handle mouse move for dragging"""
+        # flake8: noqa: E501
         if (
             self.dragging
-            and event.buttons() == Qt.LeftButton
+            and event.buttons() == Qt.MouseButton.LeftButton
             and self.drag_start_position
         ):
             new_pos = event.globalPosition().toPoint() - self.drag_start_position
@@ -607,7 +617,7 @@ class PopupWindow(QWidget):
 
     def mouseReleaseEvent(self, event):
         """Handle mouse release to end drag"""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.dragging = False
             self.drag_start_position = None
         super().mouseReleaseEvent(event)
@@ -646,7 +656,7 @@ class PopupWindow(QWidget):
             # Show empty state
             if self.current_search.strip():
                 empty_label = QLabel(f"🔍 No results found for '{self.current_search}'")
-                empty_label.setAlignment(Qt.AlignCenter)
+                empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 empty_label.setStyleSheet(
                     """
                     color: #666;
@@ -657,7 +667,7 @@ class PopupWindow(QWidget):
                 )
             else:
                 empty_label = QLabel("📋 No clipboard history yet")
-                empty_label.setAlignment(Qt.AlignCenter)
+                empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 empty_label.setStyleSheet(
                     """
                     color: #666;
@@ -759,7 +769,7 @@ class PopupWindow(QWidget):
         self.fade_animation.setDuration(200)
         self.fade_animation.setStartValue(0)
         self.fade_animation.setEndValue(1)
-        self.fade_animation.setEasingCurve(QEasingCurve.OutCubic)
+        self.fade_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.fade_animation.start()
 
         # NO AUTO-HIDE TIMER - popup stays open until manually closed or focus lost
@@ -851,9 +861,12 @@ class PopupWindow(QWidget):
 
     def keyPressEvent(self, event):
         """Handle key press events"""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.hide()
-        elif event.key() == Qt.Key_F and event.modifiers() == Qt.ControlModifier:
+        elif (
+            event.key() == Qt.Key.Key_F
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier
+        ):
             self.search_bar.focus_search()
         else:
             super().keyPressEvent(event)

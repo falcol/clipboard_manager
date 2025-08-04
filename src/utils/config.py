@@ -9,7 +9,7 @@ Enhanced configuration management with Phase 1 features
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from appdirs import user_config_dir
 
@@ -62,7 +62,7 @@ class Config:
         "exclude_patterns": [],  # List of regex patterns to exclude
     }
 
-    def __init__(self, config_path: Path = None):
+    def __init__(self, config_path: Optional[Path] = None):
         if config_path is None:
             config_dir = Path(user_config_dir("ClipboardManager", "YourName"))
             config_dir.mkdir(parents=True, exist_ok=True)

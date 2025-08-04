@@ -12,7 +12,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 - **💾 Persistent Storage**: Uses SQLite for efficient storage (less RAM usage)
 - **🚀 System Tray**: Runs in background with system tray integration
 - **⚙️ Configurable**: Customize max items, text length, and auto-start
-- **🌍 Cross-Platform**: Works on Windows, Ubuntu, and other Linux distributions
+- **🌍 Cross-Platform**: Works on Ubuntu, and other Linux distributions
 
 ## 🚀 Quick Start
 
@@ -36,7 +36,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 1. **Start the app** - it will run in the system tray
 2. **Copy anything** - text or images will be automatically saved
-3. **Press `Super+C`** (Windows+C on Windows, Super+C on Linux) to show history
+3. **Press `Super+C`** (Super+C on Linux) to show history
 4. **Click any item** to paste it to clipboard
 5. **Pin items** with 📌 to keep them permanently
 6. **Delete items** with 🗑 or clear all history
@@ -91,15 +91,9 @@ sudo dpkg -i clipboard-manager_1.0.0_all.deb
 sudo apt install -y libxcb-cursor0 libxcb1 libxcb-icccm4 libxcb-image0 \
    libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
    libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1
+
+sudo apt install libgl1-mesa-glx libglib2.0-0
 ```
-
-
-### Windows
-```bash
-# Build executable
-python scripts/build.py
-
-# This creates a standalone .exe in dist/ folder
 ```
 
 ## 🏗️ Architecture
@@ -139,7 +133,7 @@ clipboard_manager/
 - All data is stored **locally** in SQLite database
 - No network connections or data transmission
 - Clipboard data never leaves your device
-- Database location: `~/.local/share/ClipboardManager/` (Linux) or `%APPDATA%/ClipboardManager/` (Windows)
+- Database location: `~/.local/share/ClipboardManager/` (Linux)
 
 ## 🤝 Contributing
 

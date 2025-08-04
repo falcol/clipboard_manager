@@ -133,9 +133,9 @@ class SettingsWindow(QDialog):
             self,
             "Reset Settings",
             "Are you sure you want to reset all settings to defaults?",
-            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.config.reset_to_defaults()
             self.load_settings()

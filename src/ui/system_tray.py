@@ -46,7 +46,7 @@ class SystemTray(QObject):
         pixmap.fill(QColor(0, 0, 0, 0))  # Transparent background
 
         painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
         # Modern clipboard design
         if active:
@@ -63,6 +63,7 @@ class SystemTray(QObject):
         painter.setPen(clipboard_color)
 
         # Rounded rectangle for modern look
+        # flake8: noqa: E501
         clipboard_rect = painter.drawRoundedRect(6, 4, 20, 26, 2, 2)
 
         # Draw clip at top
@@ -90,7 +91,7 @@ class SystemTray(QObject):
 
         # Show clipboard action with icon
         show_action = menu.addAction("📋  Show Clipboard History")
-        show_action.setFont(QFont("Segoe UI", 10, QFont.Medium))
+        show_action.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
         show_action.triggered.connect(self.show_clipboard)
 
         # Quick stats action (informational)
@@ -136,9 +137,9 @@ class SystemTray(QObject):
 
     def on_tray_activated(self, reason):
         """Handle tray icon activation with enhanced feedback"""
-        if reason == QSystemTrayIcon.DoubleClick:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.show_clipboard()
-        elif reason == QSystemTrayIcon.Trigger:  # Single click
+        elif reason == QSystemTrayIcon.ActivationReason.Trigger:  # Single click
             # Show brief active state
             self.show_active_feedback()
 
@@ -188,14 +189,14 @@ class SystemTray(QObject):
                 self.tray_icon.showMessage(
                     "Clipboard Manager",
                     message,
-                    QSystemTrayIcon.Information,
+                    QSystemTrayIcon.MessageIcon.Information,
                     3000,  # 3 seconds
                 )
             else:
                 self.tray_icon.showMessage(
                     "Clipboard Manager",
                     "📊 Stats not available",
-                    QSystemTrayIcon.Information,
+                    QSystemTrayIcon.MessageIcon.Information,
                     2000,
                 )
 
@@ -204,27 +205,26 @@ class SystemTray(QObject):
             self.tray_icon.showMessage(
                 "Clipboard Manager",
                 "📊 Unable to load stats",
-                QSystemTrayIcon.Warning,
+                QSystemTrayIcon.MessageIcon.Warning,
                 2000,
             )
 
     def show_about(self):
         """Show about information"""
         about_message = """🔷 Clipboard Manager v2.0
+            A modern clipboard history manager with:
+            • Windows 11-style interface
+            • Smart content detection
+            • Search and filtering
+            • Pin important items
+            • Cross-platform support
 
-A modern clipboard history manager with:
-• Windows 11-style interface
-• Smart content detection
-• Search and filtering
-• Pin important items
-• Cross-platform support
-
-Hotkey: Super+V"""
+            Hotkey: Super+V"""
 
         self.tray_icon.showMessage(
             "About Clipboard Manager",
             about_message,
-            QSystemTrayIcon.Information,
+            QSystemTrayIcon.MessageIcon.Information,
             5000,  # 5 seconds
         )
 
@@ -236,7 +236,7 @@ Hotkey: Super+V"""
     def show_notification(self, title, message, duration=3000):
         """Show system notification"""
         self.tray_icon.showMessage(
-            title, message, QSystemTrayIcon.Information, duration
+            title, message, QSystemTrayIcon.MessageIcon.Information, duration
         )
 
     def show_new_item_notification(self, item_type, preview=""):
@@ -257,5 +257,5 @@ Hotkey: Super+V"""
         )
 
         self.tray_icon.showMessage(
-            title, message, QSystemTrayIcon.Information, 2000  # 2 seconds
+            title, message, QSystemTrayIcon.MessageIcon.Information, 2000  # 2 seconds
         )

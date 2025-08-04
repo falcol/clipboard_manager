@@ -23,11 +23,18 @@ class HotkeyManager(QObject):
         self.listener: Optional[keyboard.Listener] = None
         self.running = False
 
-        # Define hotkey combination (Super/Windows + V)
+        # Define hotkey combination (Super/Windows + C)
         self.hotkey_combination = {keyboard.Key.cmd, keyboard.KeyCode.from_char("c")}
-        if hasattr(keyboard.Key, "super_l"):  # Linux
+
+        # Cross-platform Super key detection
+        try:
+            # Try to use super_l for Linux
+            super_key = getattr(keyboard.Key, "super_l", keyboard.Key.cmd)
+            self.hotkey_combination = {super_key, keyboard.KeyCode.from_char("c")}
+        except AttributeError:
+            # Fallback to cmd for macOS/Windows
             self.hotkey_combination = {
-                keyboard.Key.super_l,
+                keyboard.Key.cmd,
                 keyboard.KeyCode.from_char("c"),
             }
 

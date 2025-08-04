@@ -97,6 +97,7 @@ class EnhancedClipboardDatabase:
             )
 
             # Create indexes for better performance
+            # flake8: noqa: E501
             indexes = [
                 "CREATE INDEX IF NOT EXISTS idx_timestamp ON clipboard_items(timestamp DESC)",
                 "CREATE INDEX IF NOT EXISTS idx_pinned ON clipboard_items(is_pinned DESC)",
@@ -123,8 +124,12 @@ class EnhancedClipboardDatabase:
         combined = f"{content_type}:{content}"
         return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
-    def add_text_item(self, content: str, metadata: dict = None) -> int:
+    def add_text_item(self, content: str, metadata: Optional[dict] = None) -> int:
         """Add text clipboard item with enhanced processing"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return -1
+
         try:
             # Generate content hash for deduplication
             content_hash = self.generate_content_hash(content, "text")
@@ -181,7 +186,7 @@ class EnhancedClipboardDatabase:
             self._cleanup_old_items()
 
             logger.debug(f"Added text item {item_id} ({char_count} chars)")
-            return item_id
+            return item_id if item_id else -1
 
         except Exception as e:
             logger.error(f"Failed to add text item: {e}")
@@ -195,9 +200,13 @@ class EnhancedClipboardDatabase:
         width: int,
         height: int,
         image_format: str = "PNG",
-        metadata: dict = None,
+        metadata: Optional[dict] = None,
     ) -> int:
         """Add image clipboard item with file-based storage"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return -1
+
         try:
             # Generate content hash
             content_hash = self.generate_content_hash(
@@ -271,7 +280,7 @@ class EnhancedClipboardDatabase:
             logger.debug(
                 f"Added image item {item_id} ({width}x{height}, {len(image_data)} bytes)"
             )
-            return item_id
+            return item_id if item_id else -1
 
         except Exception as e:
             logger.error(f"Failed to add image item: {e}")
@@ -279,9 +288,16 @@ class EnhancedClipboardDatabase:
             return -1
 
     def get_items(
-        self, limit: int = 25, include_pinned: bool = True, search_query: str = None
+        self,
+        limit: int = 25,
+        include_pinned: bool = True,
+        search_query: Optional[str] = None,
     ) -> List[Dict]:
         """Get clipboard items with enhanced filtering and search"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return []
+
         try:
             cursor = self.connection.cursor()
 
@@ -357,6 +373,10 @@ class EnhancedClipboardDatabase:
 
     def pin_item(self, item_id: int, pinned: bool = True) -> bool:
         """Pin or unpin a clipboard item"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return False
+
         try:
             cursor = self.connection.cursor()
             cursor.execute(
@@ -377,6 +397,10 @@ class EnhancedClipboardDatabase:
 
     def delete_item(self, item_id: int) -> bool:
         """Delete a clipboard item and associated files"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return False
+
         try:
             cursor = self.connection.cursor()
 
@@ -410,6 +434,10 @@ class EnhancedClipboardDatabase:
 
     def clear_history(self, keep_pinned: bool = True) -> bool:
         """Clear clipboard history with file cleanup"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return False
+
         try:
             cursor = self.connection.cursor()
 
@@ -450,6 +478,10 @@ class EnhancedClipboardDatabase:
     # Private helper methods
     def _get_existing_item_id(self, content_hash: str) -> Optional[int]:
         """Check if item with content hash already exists"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return None
+
         cursor = self.connection.cursor()
         cursor.execute(
             """
@@ -464,6 +496,10 @@ class EnhancedClipboardDatabase:
 
     def _update_item_access(self, item_id: int):
         """Update access count and timestamp for existing item"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return
+
         cursor = self.connection.cursor()
         cursor.execute(
             """
@@ -500,6 +536,10 @@ class EnhancedClipboardDatabase:
 
     def _cleanup_old_items(self, max_items: int = 100):
         """Clean up old unpinned items"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return
+
         try:
             cursor = self.connection.cursor()
 
@@ -540,6 +580,10 @@ class EnhancedClipboardDatabase:
 
     def get_stats(self) -> Dict:
         """Get enhanced database statistics"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return {}
+
         try:
             cursor = self.connection.cursor()
 
