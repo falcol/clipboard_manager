@@ -433,6 +433,7 @@ class PopupWindow(QWidget):
         self.clipboard_items = []
         self.all_items = []  # Store all items for search
         self.current_search = ""
+        self.system_tray = None  # Add system_tray attribute
 
         # Drag support variables
         self.dragging = False
@@ -621,6 +622,10 @@ class PopupWindow(QWidget):
         container_layout.addWidget(footer)
         main_layout.addWidget(self.container)
 
+    def set_system_tray(self, system_tray):
+        """Set system tray reference"""
+        self.system_tray = system_tray
+
     # Mouse event handlers for dragging
     def mousePressEvent(self, event):
         """Handle mouse press for drag start"""
@@ -662,7 +667,7 @@ class PopupWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def load_items(self):
-        """Load clipboard items from database with proper search handling"""
+        """Load clipboard items from database with proper search handling and tray menu update"""
         # Clear existing items
         for item in self.clipboard_items:
             item.deleteLater()
@@ -719,6 +724,22 @@ class PopupWindow(QWidget):
 
         # Update stats
         self.update_stats()
+
+        # Update system tray menu with recent items
+        self.update_tray_menu()
+
+    def update_tray_menu(self):
+        """Update system tray menu with recent clipboard items"""
+        try:
+            # Get recent items for tray menu (max 8 items)
+            recent_items = self.database.get_items(limit=8)
+
+            # Update tray menu if available
+            if self.system_tray:
+                self.system_tray.update_clipboard_menu(recent_items)
+
+        except Exception as e:
+            logger.error(f"Error updating tray menu: {e}")
 
     def filter_items(self, items, search_query):
         """Filter items based on search query with improved matching"""

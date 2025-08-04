@@ -121,7 +121,10 @@ class EnhancedClipboardManager:
         self.settings_window = SettingsWindow(self.config)
         self.system_tray = SystemTray(self.popup_window, self.settings_window)
 
-        # Initialize hotkey manager with Super+V
+        # IMPORTANT: Connect system_tray to popup_window
+        self.popup_window.set_system_tray(self.system_tray)
+
+        # Initialize hotkey manager with Super+C (fixed hotkey)
         self.hotkey_manager = HotkeyManager(self.show_popup)
 
         # Setup enhanced connections
@@ -209,13 +212,13 @@ class EnhancedClipboardManager:
 
         # System tray
         self.system_tray.quit_requested.connect(self.quit_application)
+        self.system_tray.item_selected.connect(self.on_tray_item_selected)
 
         # Enhanced clipboard watcher with notifications
         self.clipboard_watcher.content_changed.connect(self.on_content_changed)
 
         # Popup window focus management
-        # if hasattr(self.popup_window, "hidden"):
-        #     self.popup_window.hidden.connect(self.on_popup_hidden)
+        # PopupWindow handles its own focus management
 
     def setup_performance_monitoring(self):
         """Setup performance monitoring and cleanup"""
@@ -261,6 +264,12 @@ class EnhancedClipboardManager:
         except Exception as e:
             logger.error(f"Error during maintenance: {e}")
 
+    def on_tray_item_selected(self, item_data: dict):
+        """Handle item selection from system tray menu"""
+        logger.info(f"Item selected from tray menu: {item_data.get('id')}")
+        # The system tray already handles copying to clipboard
+        # This is just for logging and any additional actions
+
     def on_content_changed(self, content_type: str, item_data: dict):
         """Handle new clipboard content with enhanced features and notifications"""
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
@@ -280,6 +289,21 @@ class EnhancedClipboardManager:
         # Update popup if visible
         if self.popup_window.isVisible():
             QTimer.singleShot(100, self.popup_window.load_items)
+
+        # Update tray menu with new items - FIXED
+        self.update_tray_menu()
+
+    def update_tray_menu(self):
+        """Update system tray menu with recent items"""
+        try:
+            # Get recent items for tray menu (max 8 items)
+            recent_items = self.database.get_items(limit=8)
+
+            # Update tray menu
+            self.system_tray.update_clipboard_menu(recent_items)
+
+        except Exception as e:
+            logger.error(f"Error updating tray menu from main: {e}")
 
     def on_popup_hidden(self):
         """Handle popup window hidden event"""

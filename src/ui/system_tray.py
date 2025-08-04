@@ -1,28 +1,86 @@
 # clipboard_manager/src/ui/system_tray.py
 """
-Enhanced system tray integration with modern menu design
+Enhanced system tray integration with clipboard items submenu
 """
 import logging
+from typing import Dict, List
 
 from PySide6.QtCore import QObject, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import QMenu, QSystemTrayIcon
+from PySide6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QMenu,
+    QSystemTrayIcon,
+    QWidget,
+    QWidgetAction,
+)
 
 from ui.styles import Styles
 
 logger = logging.getLogger(__name__)
 
 
+class ClipboardItemAction(QWidgetAction):
+    """Custom action widget for clipboard items in tray menu"""
+
+    def __init__(self, item_data: Dict, parent: QObject = QObject()):
+        super().__init__(parent)
+        self.item_data = item_data
+        self.setup_widget()
+
+    def setup_widget(self):
+        """Setup the widget for this action"""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(8)
+
+        # Content type icon
+        icon_label = QLabel(self.get_content_icon())
+        icon_label.setFixedSize(16, 16)
+        icon_label.setStyleSheet("font-size: 12px;")
+        layout.addWidget(icon_label)
+
+        # Preview text (truncated)
+        preview = self.item_data.get("preview", "")
+        if len(preview) > 40:
+            preview = preview[:37] + "..."
+
+        preview_label = QLabel(preview)
+        preview_label.setStyleSheet("color: #ffffff; font-size: 11px;")
+        preview_label.setMaximumWidth(200)
+        layout.addWidget(preview_label)
+
+        # Pin indicator
+        if self.item_data.get("is_pinned"):
+            pin_label = QLabel("📌")
+            pin_label.setFixedSize(12, 12)
+            pin_label.setStyleSheet("font-size: 8px;")
+            layout.addWidget(pin_label)
+
+        layout.addStretch()
+        self.setDefaultWidget(widget)
+
+    def get_content_icon(self):
+        """Get icon based on content type"""
+        content_type = self.item_data.get("content_type", "text")
+        icon_map = {"image": "🖼️", "url": "🔗", "code": "💻", "json": "📄", "text": "📝"}
+        return icon_map.get(content_type, "📝")
+
+
 class SystemTray(QObject):
-    """Enhanced system tray icon and menu with modern design"""
+    """Enhanced system tray icon and menu with clipboard items submenu"""
 
     quit_requested = pyqtSignal()
+    item_selected = pyqtSignal(dict)  # New signal for item selection
 
     def __init__(self, popup_window, settings_window):
         super().__init__()
         self.popup_window = popup_window
         self.settings_window = settings_window
+        self.clipboard_items = []  # Store recent items for menu
 
         # Create enhanced tray icon
         self.tray_icon = QSystemTrayIcon()
@@ -85,40 +143,137 @@ class SystemTray(QObject):
         return QIcon(pixmap)
 
     def create_modern_menu(self):
-        """Create modern context menu with enhanced styling"""
+        """Create modern context menu with clipboard items submenu"""
         menu = QMenu()
         menu.setStyleSheet(Styles.get_system_tray_menu_style())
 
-        # Show clipboard action with icon
-        show_action = menu.addAction("📋  Show Clipboard History")
-        show_action.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
-        show_action.triggered.connect(self.show_clipboard)
+        # Clipboard items submenu (replaces the simple button)
+        self.clipboard_submenu = QMenu("📋 Clipboard History")
+        self.clipboard_submenu.setStyleSheet(Styles.get_system_tray_menu_style())
+        self.clipboard_submenu.setFont(QFont("Sans Serif", 10, QFont.Weight.Medium))
+
+        # Add "Show All" action at top
+        show_all_action = self.clipboard_submenu.addAction("📋 Show All Items")
+        show_all_action.setFont(QFont("Sans Serif", 10, QFont.Weight.Medium))
+        show_all_action.triggered.connect(self.show_clipboard)
+
+        # Add separator
+        self.clipboard_submenu.addSeparator()
+
+        # Add "No items" placeholder
+        self.no_items_action = self.clipboard_submenu.addAction(
+            "No clipboard items yet"
+        )
+        self.no_items_action.setEnabled(False)
+        self.no_items_action.setFont(QFont("Sans Serif", 9))
+
+        menu.addMenu(self.clipboard_submenu)
 
         # Quick stats action (informational)
-        stats_action = menu.addAction("📊  Quick Stats")
-        stats_action.setFont(QFont("Segoe UI", 9))
+        stats_action = menu.addAction("📊 Quick Stats")
+        stats_action.setFont(QFont("Sans Serif", 9))
         stats_action.triggered.connect(self.show_quick_stats)
 
         menu.addSeparator()
 
         # Settings action
-        settings_action = menu.addAction("⚙️  Settings")
-        settings_action.setFont(QFont("Segoe UI", 9))
+        settings_action = menu.addAction("⚙️ Settings")
+        settings_action.setFont(QFont("Sans Serif", 9))
         settings_action.triggered.connect(self.show_settings)
 
         # About action
-        about_action = menu.addAction("ℹ️  About")
-        about_action.setFont(QFont("Segoe UI", 9))
+        about_action = menu.addAction("ℹ️ About")
+        about_action.setFont(QFont("Sans Serif", 9))
         about_action.triggered.connect(self.show_about)
 
         menu.addSeparator()
 
         # Quit action
-        quit_action = menu.addAction("❌  Quit Clipboard Manager")
-        quit_action.setFont(QFont("Segoe UI", 9))
+        quit_action = menu.addAction("❌ Quit Clipboard Manager")
+        quit_action.setFont(QFont("Sans Serif", 9))
         quit_action.triggered.connect(self.quit_requested.emit)
 
         self.tray_icon.setContextMenu(menu)
+
+    def update_clipboard_menu(self, items: List[Dict]):
+        """Update the clipboard submenu with recent items"""
+        self.clipboard_items = items
+
+        # Clear existing items (except "Show All" and separator)
+        while (
+            self.clipboard_submenu.actions()
+            and len(self.clipboard_submenu.actions()) > 3
+        ):
+            action = self.clipboard_submenu.actions()[-1]
+            self.clipboard_submenu.removeAction(action)
+
+        if not items:
+            # Show "No items" placeholder
+            self.no_items_action.setVisible(True)
+            return
+
+        # Hide "No items" placeholder
+        self.no_items_action.setVisible(False)
+
+        # Add recent items (max 8 items for menu)
+        for item in items[:8]:
+            # Create custom action widget
+            item_action = ClipboardItemAction(item)
+            item_action.triggered.connect(
+                lambda checked, data=item: self.on_item_selected(data)
+            )
+
+            # Add to submenu
+            self.clipboard_submenu.addAction(item_action)
+
+        # Add "Show More" if there are more items
+        if len(items) > 8:
+            show_more_action = self.clipboard_submenu.addAction("... Show More")
+            show_more_action.setFont(QFont("Sans Serif", 9))
+            show_more_action.triggered.connect(self.show_clipboard)
+
+    def on_item_selected(self, item_data: Dict):
+        """Handle clipboard item selection from tray menu"""
+        try:
+            # Copy item to clipboard
+            from PySide6.QtWidgets import QApplication
+
+            clipboard = QApplication.clipboard()
+
+            if item_data["content_type"] == "text":
+                clipboard.setText(item_data["content"])
+            elif item_data["content_type"] == "image":
+                if item_data.get("file_path"):
+                    # Load from file
+                    pixmap = QPixmap(item_data["file_path"])
+                    if not pixmap.isNull():
+                        clipboard.setPixmap(pixmap)
+
+            # Show brief notification
+            preview = item_data.get("preview", "")
+            if len(preview) > 30:
+                preview = preview[:27] + "..."
+
+            self.tray_icon.showMessage(
+                "📋 Item Copied",
+                f"Copied to clipboard: {preview}",
+                QSystemTrayIcon.MessageIcon.Information,
+                1500,  # 1.5 seconds
+            )
+
+            # Emit signal for other components
+            self.item_selected.emit(item_data)
+
+            logger.info(f"Item {item_data.get('id')} copied from tray menu")
+
+        except Exception as e:
+            logger.error(f"Error copying item from tray menu: {e}")
+            self.tray_icon.showMessage(
+                "❌ Error",
+                "Failed to copy item to clipboard",
+                QSystemTrayIcon.MessageIcon.Warning,
+                2000,
+            )
 
     def show(self):
         """Show tray icon with enhanced features"""
@@ -212,14 +367,14 @@ class SystemTray(QObject):
     def show_about(self):
         """Show about information"""
         about_message = """🔷 Clipboard Manager v2.0
-            A modern clipboard history manager with:
-            • Windows 11-style interface
-            • Smart content detection
-            • Search and filtering
-            • Pin important items
-            • Cross-platform support
+A modern clipboard history manager with:
+• Windows 11-style interface
+• Smart content detection
+• Search and filtering
+• Pin important items
+• Cross-platform support
 
-            Hotkey: Super+V"""
+Hotkey: Super+C"""
 
         self.tray_icon.showMessage(
             "About Clipboard Manager",

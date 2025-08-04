@@ -26,7 +26,7 @@ class Config:
         "autostart": False,
         "theme": "dark",
         # Enhanced Phase 1 settings
-        "hotkey": "super+v",  # Changed from super+c to match Windows 11
+        "hotkey": "super+c",  # Changed from super+c to match Windows 11
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
         "max_search_results": 25,
@@ -99,7 +99,7 @@ class Config:
             config_with_metadata = {
                 "_metadata": {
                     "version": "2.0",
-                    "created": "2024-01-01",  # Current timestamp would be better
+                    "created": "2025-08-04",  # Current timestamp would be better
                     "phase": "1",
                 },
                 **self.config,
