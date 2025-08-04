@@ -66,6 +66,7 @@ class MigrationManager:
             new_db.close()
 
             logger.info(
+                # flake8: noqa: E501
                 f"Migration completed: {migrated_count} items migrated, {failed_count} failed"
             )
 

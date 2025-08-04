@@ -109,6 +109,10 @@ class SearchEngine:
     def search_by_content_type(self, content_type: str, limit: int = 25) -> List[Dict]:
         """Search by specific content type"""
         try:
+            if self.database.connection is None:
+                logger.error("Database connection not initialized")
+                return []
+
             cursor = self.database.connection.cursor()
             cursor.execute(
                 """
@@ -136,6 +140,10 @@ class SearchEngine:
     ) -> List[Dict]:
         """Search items within date range"""
         try:
+            if self.database.connection is None:
+                logger.error("Database connection not initialized")
+                return []
+
             cursor = self.database.connection.cursor()
             cursor.execute(
                 """
@@ -164,6 +172,10 @@ class SearchEngine:
             return []
 
         try:
+            if self.database.connection is None:
+                logger.error("Database connection not initialized")
+                return []
+
             # Get unique search content that matches partial query
             cursor = self.database.connection.cursor()
             cursor.execute(

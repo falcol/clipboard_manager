@@ -18,7 +18,7 @@ class ImageUtils:
         """Convert QPixmap to bytes"""
         try:
             byte_array = QBuffer()
-            byte_array.open(QIODevice.WriteOnly)
+            byte_array.open(QIODevice.OpenModeFlag.WriteOnly)
             pixmap.save(byte_array, format)
             return byte_array.data().data()
         except Exception as e:
@@ -41,7 +41,10 @@ class ImageUtils:
         """Create thumbnail from pixmap"""
         try:
             return pixmap.scaled(
-                size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation
+                size[0],
+                size[1],
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
             )
         except Exception as e:
             logger.error(f"Error creating thumbnail: {e}")

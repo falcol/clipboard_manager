@@ -164,6 +164,7 @@ class EnhancedClipboardWatcher(QObject):
 
                 self.content_changed.emit("image", item_data)
                 logger.debug(
+                    # flake8: noqa: E501
                     f"Added enhanced image item {item_id} ({pixmap.width()}x{pixmap.height()})"
                 )
 
