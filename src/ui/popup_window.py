@@ -205,10 +205,17 @@ class ClipboardItem(QFrame):
 
         # Action buttons - ensure they're always visible
         self.actions_widget = QWidget()
-        self.actions_widget.setFixedWidth(60)  # Keep 60px for buttons
-        self.actions_layout = QHBoxLayout(self.actions_widget)
+        self.actions_widget.setFixedWidth(
+            32
+        )  # Reduced width since buttons are now vertical
+        self.actions_layout = QVBoxLayout(
+            self.actions_widget
+        )  # Changed from QHBoxLayout to QVBoxLayout
         self.actions_layout.setContentsMargins(0, 0, 0, 0)
         self.actions_layout.setSpacing(4)
+        self.actions_layout.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )  # Center align the buttons
 
         # Pin button
         self.pin_btn = QPushButton()
