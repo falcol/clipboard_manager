@@ -95,22 +95,54 @@ class AutostartManager:
 
         desktop_file = autostart_dir / f"{self.app_name}.desktop"
 
+        # Determine executable path
         exe_path = sys.executable
         if not hasattr(sys, "frozen"):  # Running as script
             main_path = Path(__file__).parent.parent / "main.py"
             exe_path = f"{sys.executable} {main_path}"
 
-        content = f"""[Desktop Entry]
-                Type=Application
-                Name={self.app_name}
-                Exec={exe_path}
-                Hidden=false
-                NoDisplay=false
-                X-GNOME-Autostart-enabled=true
-                """
+        # Determine icon path (if exists)
+        icon_path = ""
+        icon_dir = Path(__file__).parent.parent.parent / "resources" / "icons"
 
+        # Try specific icon first, then fallback to any available
+        specific_icon = icon_dir / "app.png"
+        if specific_icon.exists():
+            icon_path = str(specific_icon)
+        else:
+            # Fallback: find any available icon
+            icon_files = list(icon_dir.glob("*.png")) + list(icon_dir.glob("*.svg"))
+            if icon_files:
+                icon_path = str(icon_files[0])
+
+        # Add this for debugging
+        if icon_path:
+            logger.info(f"Using icon: {icon_path}")
+        else:
+            logger.warning(f"No icon found in: {icon_dir}")
+
+        # Create standard desktop entry
+        content = f"""[Desktop Entry]
+Version=1.0
+Type=Application
+Name={self.app_name}
+Comment=Clipboard Manager Application
+Exec={exe_path}
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+X-GNOME-Autostart-enabled=true
+"""
+
+        if icon_path:
+            content += f"Icon={icon_path}\n"
+
+        # Write file and set permissions
         with open(desktop_file, "w") as f:
             f.write(content)
+
+        # Set executable permission for desktop file
+        desktop_file.chmod(0o755)
 
     def _disable_linux(self):
         """Disable auto-start on Linux"""
@@ -131,3 +163,24 @@ class AutostartManager:
         # macOS implementation would require removing launch agent
         # This is a placeholder for future implementation
         logger.warning("macOS auto-start not implemented yet")
+
+    def _validate_linux_autostart(self):
+        """Validate Linux autostart configuration"""
+        autostart_dir = Path.home() / ".config" / "autostart"
+        desktop_file = autostart_dir / f"{self.app_name}.desktop"
+
+        if not desktop_file.exists():
+            return False
+
+        # Check executable permission
+        if not desktop_file.stat().st_mode & 0o111:
+            return False
+
+        # Check file content
+        try:
+            with open(desktop_file, "r") as f:
+                content = f.read()
+                return "[Desktop Entry]" in content and "Exec=" in content
+        except Exception as e:
+            logger.error(f"Error validating Linux autostart: {e}")
+            return False

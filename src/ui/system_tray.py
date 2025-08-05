@@ -9,6 +9,7 @@ from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
+from ui.about_popup import show_about_popup
 from ui.styles import Styles
 
 logger = logging.getLogger(__name__)
@@ -211,33 +212,30 @@ class SystemTray(QObject):
 
     def show_about(self):
         """Show about information with platform-specific hotkey"""
-        import platform
+        try:
 
-        current_platform = platform.system().lower()
-        if current_platform == "windows":
-            hotkey_display = "Windows+C"
-        elif current_platform == "linux":
-            hotkey_display = "Super+V"
-        else:
-            hotkey_display = "Cmd+C"
+            # Try to get proper parent window
+            parent_window = None
+            if hasattr(self, "popup_window") and self.popup_window:
+                parent_window = self.popup_window
+            elif hasattr(self, "settings_window") and self.settings_window:
+                parent_window = self.settings_window
+            else:
+                # Fallback to tray icon parent
+                parent_window = self.tray_icon.parent()
 
-        about_message = f"""🔷 Clipboard Manager v2.0
-            A modern clipboard history manager with:
-            • Windows 11-style interface
-            (Hotkey not working in Windows)
-            • Smart content detection
-            • Search and filtering
-            • Pin important items
-            • Cross-platform support
+            # Show about popup
+            show_about_popup(parent=parent_window)
 
-            Hotkey: {hotkey_display}"""
-
-        self.tray_icon.showMessage(
-            "About Clipboard Manager",
-            about_message,
-            QSystemTrayIcon.MessageIcon.Information,
-            5000,  # 5 seconds
-        )
+        except Exception as e:
+            logger.error(f"Error showing about popup: {e}")
+            # Fallback: show as tray message
+            self.tray_icon.showMessage(
+                "Clipboard Manager",
+                "🔷 Clipboard Manager v1.0\nA modern clipboard history manager",
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
 
     def update_icon(self):
         """Update icon based on current state (for future animations)"""

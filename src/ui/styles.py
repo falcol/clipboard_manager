@@ -411,3 +411,14 @@ class Styles:
             margin: 4px 10px;
         }
         """
+
+    @staticmethod
+    def get_about_popup_style():
+        """Get about popup styling"""
+        return """
+        QDialog {
+            background-color: #2d2d2d;
+            border: 1px solid #404040;
+            border-radius: 8px;
+        }
+    """

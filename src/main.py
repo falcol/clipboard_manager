@@ -3,7 +3,6 @@
 """
 Enhanced main entry point for Clipboard Manager with modern UI and auto-hide focus
 """
-import logging
 import os
 import platform
 import signal
@@ -12,9 +11,11 @@ import tempfile
 import time
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox, QSystemTrayIcon
+
+from utils.logging_config import get_logger, setup_logging
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -35,15 +36,9 @@ from ui.system_tray import SystemTray
 from utils.config import Config
 
 # Configure enhanced logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(Path.home() / ".clipboard_manager.log"),
-    ],
-)
-logger = logging.getLogger(__name__)
+# Setup enhanced logging first
+setup_logging(level="INFO", log_to_file=True, log_to_console=True)
+logger = get_logger(__name__)
 
 
 def setup_qt_environment():
@@ -55,7 +50,8 @@ def setup_qt_environment():
         # Windows-specific Qt settings
         os.environ["QT_QPA_PLATFORM"] = "windows"
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-        os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
+        # Remove this line - will be set via QApplication method
+        # os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
 
         # Windows-specific plugin path
         possible_windows_paths = [
@@ -80,7 +76,8 @@ def setup_qt_environment():
         # Linux/macOS settings
         os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland:fallback=offscreen"
         os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-        os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
+        # Remove this line - will be set via QApplication method
+        # os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
 
         # Linux plugin paths
         possible_paths = [
@@ -245,12 +242,17 @@ class EnhancedClipboardManager:
         setup_qt_environment()
 
         try:
+            # Set High DPI scaling policy BEFORE creating QApplication
+            QApplication.setHighDpiScaleFactorRoundingPolicy(
+                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+            )
+
             self.app = QApplication(sys.argv)
             self.app.setQuitOnLastWindowClosed(False)
 
             # Set application properties
             self.app.setApplicationName("Clipboard Manager")
-            self.app.setApplicationVersion("2.0")
+            self.app.setApplicationVersion("1.0")
             self.app.setOrganizationName("Falcol")
 
             # Set default font for modern UI
