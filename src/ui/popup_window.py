@@ -119,7 +119,7 @@ class ClipboardItem(QFrame):
 
     def setup_ui(self):
         """Setup Windows 10 dark mode UI for clipboard item"""
-        # Increased height to accommodate 2 lines properly
+        # Increased height to accommodate 3 lines of text
         self.setFixedHeight(80)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -153,16 +153,10 @@ class ClipboardItem(QFrame):
                 QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
             )
 
-            # Two line height for proper text display
+            # Three line height for better text display
             font_metrics = preview_label.fontMetrics()
             line_height = font_metrics.height()
-            preview_label.setFixedHeight(line_height * 2 + 8)
-
-            # Content info
-            char_count = self.item_data.get("char_count", len(preview_text))
-            info_text = f"{char_count} characters"
-            if self.item_data.get("word_count"):
-                info_text += f" • {self.item_data['word_count']} words"
+            preview_label.setFixedHeight(line_height * 3 + 8)
 
         else:  # image
             preview_label = QLabel()
@@ -179,8 +173,8 @@ class ClipboardItem(QFrame):
                     if not pixmap.isNull():
                         preview_label.setPixmap(
                             pixmap.scaled(
-                                32,
-                                32,
+                                128,
+                                128,
                                 Qt.AspectRatioMode.KeepAspectRatio,
                                 Qt.TransformationMode.SmoothTransformation,
                             )
@@ -198,43 +192,7 @@ class ClipboardItem(QFrame):
 
             preview_label.setFixedHeight(32)
 
-            # Image info
-            width = self.item_data.get("width", 0)
-            height = self.item_data.get("height", 0)
-            info_text = f"{width}×{height} pixels"
-            if self.item_data.get("file_size"):
-                size_kb = self.item_data["file_size"] // 1024
-                info_text += f" • {size_kb}KB"
-
         content_layout.addWidget(preview_label)
-
-        # Info and timestamp
-        info_layout = QHBoxLayout()
-        info_layout.setSpacing(8)
-
-        info_label = QLabel(info_text)
-        info_label.setFont(QFont("Segoe UI", 8))
-        info_label.setStyleSheet("color: #888888;")
-        info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        info_layout.addWidget(info_label)
-
-        if timestamp := self.item_data.get("timestamp", ""):
-            from datetime import datetime
-
-            try:
-                # Parse timestamp (SQLite now stores as local time)
-                dt = datetime.fromisoformat(timestamp)
-                time_str = dt.strftime("%d/%m/%Y %H:%M")
-                timestamp_label = QLabel(time_str)
-                timestamp_label.setFont(QFont("Segoe UI", 8))
-                timestamp_label.setStyleSheet("color: #666666;")
-                timestamp_label.setFixedWidth(100)
-                info_layout.addWidget(timestamp_label)
-            except Exception as e:
-                logger.debug(f"Error parsing timestamp {timestamp}: {e}")
-                pass
-
-        content_layout.addLayout(info_layout)
 
         # Add content with stretch factor
         layout.addLayout(content_layout, 1)

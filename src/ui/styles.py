@@ -40,6 +40,7 @@ class Styles:
                 border: 1px solid #0078d4;
                 border-radius: 4px;
                 margin: 1px;
+                padding: 3px;
             }
             QLabel {
                 color: #ffffff;
@@ -54,6 +55,7 @@ class Styles:
                 border: 1px solid #3d3d3d;
                 border-radius: 4px;
                 margin: 1px;
+                padding: 3px;
             }
             QFrame:hover {
                 background: #3d3d3d;

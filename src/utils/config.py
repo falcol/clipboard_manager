@@ -25,6 +25,7 @@ class Config:
         "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
         "theme": "dark",
+        "show_notifications": False,
         # Enhanced Phase 1 settings
         "hotkey": "super+c",  # Changed from super+c to match Windows 11
         "search_enabled": True,

@@ -210,16 +210,27 @@ class SystemTray(QObject):
             )
 
     def show_about(self):
-        """Show about information"""
-        about_message = """🔷 Clipboard Manager v2.0
+        """Show about information with platform-specific hotkey"""
+        import platform
+
+        current_platform = platform.system().lower()
+        if current_platform == "windows":
+            hotkey_display = "Windows+C"
+        elif current_platform == "linux":
+            hotkey_display = "Super+V"
+        else:
+            hotkey_display = "Cmd+C"
+
+        about_message = f"""🔷 Clipboard Manager v2.0
             A modern clipboard history manager with:
             • Windows 11-style interface
+            (Hotkey not working in Windows)
             • Smart content detection
             • Search and filtering
             • Pin important items
             • Cross-platform support
 
-            Hotkey: Super+V"""
+            Hotkey: {hotkey_display}"""
 
         self.tray_icon.showMessage(
             "About Clipboard Manager",
