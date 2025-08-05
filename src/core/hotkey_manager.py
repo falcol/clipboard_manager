@@ -68,13 +68,13 @@ class HotkeyManager(QObject):
             # Linux: Use Super key + V (keep original)
             try:
                 super_key = getattr(keyboard.Key, "super_l", keyboard.Key.cmd)
-                self.hotkey_combination = {super_key, keyboard.KeyCode.from_char("v")}
+                self.hotkey_combination = {super_key, keyboard.KeyCode.from_char("c")}
                 logger.info("Linux: Using Super+V hotkey")
             except Exception as e:
                 logger.error(f"Linux hotkey setup error: {e}")
                 self.hotkey_combination = {
                     keyboard.Key.cmd,
-                    keyboard.KeyCode.from_char("v"),
+                    keyboard.KeyCode.from_char("c"),
                 }
 
         else:
