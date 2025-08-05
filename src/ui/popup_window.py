@@ -119,14 +119,14 @@ class ClipboardItem(QFrame):
 
     def setup_ui(self):
         """Setup Windows 10 dark mode UI for clipboard item"""
-        # Increased height to accommodate 2 lines properly
+        # Increased height to accommodate 3 lines of text
         self.setFixedHeight(80)
         self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setSpacing(6)  # Reduced spacing
 
         # Content type icon
         content_icon = self.get_content_icon()
@@ -136,7 +136,7 @@ class ClipboardItem(QFrame):
         icon_label.setStyleSheet("color: #0078d4; font-size: 14px;")
         layout.addWidget(icon_label)
 
-        # Main content area
+        # Main content area with fixed width
         content_layout = QVBoxLayout()
         content_layout.setSpacing(2)
 
@@ -153,16 +153,14 @@ class ClipboardItem(QFrame):
                 QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
             )
 
-            # Two line height for proper text display
+            # Three line height for better text display
             font_metrics = preview_label.fontMetrics()
             line_height = font_metrics.height()
-            preview_label.setFixedHeight(line_height * 2 + 8)
+            preview_label.setFixedHeight(line_height * 3 + 8)
 
-            # Content info
-            char_count = self.item_data.get("char_count", len(preview_text))
-            info_text = f"{char_count} characters"
-            if self.item_data.get("word_count"):
-                info_text += f" • {self.item_data['word_count']} words"
+            # Set maximum width for text to prevent layout expansion
+            preview_label.setMaximumWidth(280)  # Limit text width
+            preview_label.setMinimumWidth(100)  # Minimum width
 
         else:  # image
             preview_label = QLabel()
@@ -177,10 +175,11 @@ class ClipboardItem(QFrame):
 
                     pixmap = ImageUtils.bytes_to_pixmap(thumbnail_data)
                     if not pixmap.isNull():
+                        # Reduced image size to fit better
                         preview_label.setPixmap(
                             pixmap.scaled(
-                                32,
-                                32,
+                                48,  # Reduced from 128 to 48
+                                48,  # Reduced from 128 to 48
                                 Qt.AspectRatioMode.KeepAspectRatio,
                                 Qt.TransformationMode.SmoothTransformation,
                             )
@@ -196,55 +195,27 @@ class ClipboardItem(QFrame):
                 preview_label.setText("🖼️")
                 preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            preview_label.setFixedHeight(32)
-
-            # Image info
-            width = self.item_data.get("width", 0)
-            height = self.item_data.get("height", 0)
-            info_text = f"{width}×{height} pixels"
-            if self.item_data.get("file_size"):
-                size_kb = self.item_data["file_size"] // 1024
-                info_text += f" • {size_kb}KB"
+            preview_label.setFixedHeight(48)  # Reduced from 32 to 48
+            preview_label.setFixedWidth(48)  # Added fixed width
 
         content_layout.addWidget(preview_label)
 
-        # Info and timestamp
-        info_layout = QHBoxLayout()
-        info_layout.setSpacing(8)
-
-        info_label = QLabel(info_text)
-        info_label.setFont(QFont("Segoe UI", 8))
-        info_label.setStyleSheet("color: #888888;")
-        info_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        info_layout.addWidget(info_label)
-
-        if timestamp := self.item_data.get("timestamp", ""):
-            from datetime import datetime
-
-            try:
-                # Parse timestamp (SQLite now stores as local time)
-                dt = datetime.fromisoformat(timestamp)
-                time_str = dt.strftime("%d/%m/%Y %H:%M")
-                timestamp_label = QLabel(time_str)
-                timestamp_label.setFont(QFont("Segoe UI", 8))
-                timestamp_label.setStyleSheet("color: #666666;")
-                timestamp_label.setFixedWidth(100)
-                info_layout.addWidget(timestamp_label)
-            except Exception as e:
-                logger.debug(f"Error parsing timestamp {timestamp}: {e}")
-                pass
-
-        content_layout.addLayout(info_layout)
-
-        # Add content with stretch factor
+        # Add content with stretch factor but limited width
         layout.addLayout(content_layout, 1)
 
-        # Action buttons
+        # Action buttons - ensure they're always visible
         self.actions_widget = QWidget()
-        self.actions_widget.setFixedWidth(60)
-        self.actions_layout = QHBoxLayout(self.actions_widget)
+        self.actions_widget.setFixedWidth(
+            32
+        )  # Reduced width since buttons are now vertical
+        self.actions_layout = QVBoxLayout(
+            self.actions_widget
+        )  # Changed from QHBoxLayout to QVBoxLayout
         self.actions_layout.setContentsMargins(0, 0, 0, 0)
         self.actions_layout.setSpacing(4)
+        self.actions_layout.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )  # Center align the buttons
 
         # Pin button
         self.pin_btn = QPushButton()
@@ -363,13 +334,15 @@ class ClipboardItem(QFrame):
 class PopupWindow(QWidget):
     """Windows 10 dark mode popup window"""
 
-    def __init__(self, database: ClipboardDatabase, config: Config):
+    def __init__(self, database: ClipboardDatabase, config: Config, system_tray=None):
         super().__init__()
         self.database = database
         self.config = config
+        self.system_tray = system_tray
         self.clipboard_items = []
         self.all_items = []
         self.current_search = ""
+        self.last_content_type = "text"  # Track last content type
 
         # Drag support variables
         self.dragging = False
@@ -393,7 +366,7 @@ class PopupWindow(QWidget):
             | Qt.WindowType.NoDropShadowWindowHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setFixedSize(480, 650)  # Increased height for 2-line items
+        self.setFixedSize(380, 650)  # Fixed width to prevent expansion
 
         # Subtle drop shadow effect
         shadow = QGraphicsDropShadowEffect()
@@ -765,27 +738,215 @@ class PopupWindow(QWidget):
             self.focus_timer.start(100)
 
     def on_item_selected(self, item_data: Dict):
-        """Handle item selection - paste to clipboard"""
+        """Handle item selection - paste directly like Windows clipboard manager"""
+        try:
+            # Store content type for notification
+            self.last_content_type = item_data.get("content_type", "text")
+
+            # Hide popup first
+            self.hide()
+
+            # Small delay to ensure popup is hidden
+            QTimer.singleShot(100, lambda: self._paste_like_windows(item_data))
+
+        except Exception as e:
+            logger.error(f"Error handling item selection: {e}")
+            self.hide()
+
+    def _simulate_ctrl_v(self):
+        """Simulate Ctrl+V keyboard shortcut with platform detection"""
+        try:
+            import platform
+
+            current_platform = platform.system().lower()
+
+            if current_platform == "windows":
+                self._simulate_ctrl_v_windows()
+            elif current_platform == "linux":
+                self._simulate_ctrl_v_linux()
+            elif current_platform == "darwin":  # macOS
+                self._simulate_ctrl_v_macos()
+            else:
+                # Fallback for unknown platforms
+                self._simulate_ctrl_v_fallback()
+
+        except Exception as e:
+            logger.error(f"Error simulating Ctrl+V: {e}")
+            raise
+
+    def _simulate_ctrl_v_windows(self):
+        """Windows Ctrl+V simulation using keyboard library"""
+        try:
+            import keyboard
+
+            keyboard.press_and_release("ctrl+v")
+            logger.info("Simulated Ctrl+V on Windows successfully")
+        except ImportError:
+            logger.warning("keyboard library not available on Windows, using fallback")
+            self._simulate_ctrl_v_fallback()
+        except Exception as e:
+            logger.error(f"Error simulating Ctrl+V on Windows: {e}")
+            self._simulate_ctrl_v_fallback()
+
+    def _simulate_ctrl_v_linux(self):
+        """Linux Ctrl+V simulation using xdotool or pynput"""
+        try:
+            # Try xdotool first (most reliable on Linux)
+            import subprocess
+
+            result = subprocess.run(
+                ["xdotool", "key", "ctrl+v"], capture_output=True, timeout=5
+            )
+            if result.returncode == 0:
+                logger.info("Simulated Ctrl+V on Linux using xdotool successfully")
+                return
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+        try:
+            # Fallback to pynput
+            from pynput import keyboard
+
+            controller = keyboard.Controller()
+            controller.press(keyboard.Key.ctrl)
+            controller.press("v")
+            controller.release("v")
+            controller.release(keyboard.Key.ctrl)
+            logger.info("Simulated Ctrl+V on Linux using pynput successfully")
+        except ImportError:
+            logger.warning(
+                "Neither xdotool nor pynput available on Linux, using fallback"
+            )
+            self._simulate_ctrl_v_fallback()
+        except Exception as e:
+            logger.error(f"Error simulating Ctrl+V on Linux: {e}")
+            self._simulate_ctrl_v_fallback()
+
+    def _simulate_ctrl_v_macos(self):
+        """macOS Cmd+V simulation using pynput"""
+        try:
+            from pynput import keyboard
+
+            controller = keyboard.Controller()
+            controller.press(keyboard.Key.cmd)
+            controller.press("v")
+            controller.release("v")
+            controller.release(keyboard.Key.cmd)
+            logger.info("Simulated Cmd+V on macOS successfully")
+        except ImportError:
+            logger.warning("pynput not available on macOS, using fallback")
+            self._simulate_ctrl_v_fallback()
+        except Exception as e:
+            logger.error(f"Error simulating Cmd+V on macOS: {e}")
+            self._simulate_ctrl_v_fallback()
+
+    def _simulate_ctrl_v_fallback(self):
+        """Fallback method - just copy to clipboard without paste"""
+        logger.info("Using fallback method - content copied to clipboard")
+        # Don't simulate paste, just leave content in clipboard
+        # User can manually paste with Ctrl+V
+        if hasattr(self, "system_tray") and self.system_tray:
+            self.system_tray.show_notification(
+                "Content Copied",
+                "Content copied to clipboard. Use Ctrl+V to paste manually.",
+                3000,
+            )
+
+    def _paste_like_windows(self, item_data: Dict):
+        """Paste content like Windows clipboard manager behavior"""
         try:
             clipboard = QApplication.clipboard()
 
-            if item_data["content_type"] == "text":
-                clipboard.setText(item_data["content"])
-            elif item_data["content_type"] == "image":
-                if item_data.get("file_path"):
-                    pixmap = QPixmap(item_data["file_path"])
-                    if not pixmap.isNull():
-                        clipboard.setPixmap(pixmap)
-                else:
-                    image_data = base64.b64decode(item_data["content"])
-                    pixmap = ImageUtils.bytes_to_pixmap(image_data)
-                    clipboard.setPixmap(pixmap)
+            # Save current clipboard content
+            original_text = clipboard.text()
+            original_pixmap = clipboard.pixmap()
 
-            self.hide()
-            logger.info(f"Pasted item {item_data['id']} to clipboard")
+            try:
+                if item_data["content_type"] == "text":
+                    # Set text to clipboard temporarily
+                    clipboard.setText(item_data["content"])
+                    logger.info(
+                        f"Temporarily copied text to clipboard: "
+                        f"{len(item_data['content'])} chars"
+                    )
+
+                elif item_data["content_type"] == "image":
+                    # Set image to clipboard temporarily
+                    if item_data.get("file_path"):
+                        pixmap = QPixmap(item_data["file_path"])
+                        if not pixmap.isNull():
+                            clipboard.setPixmap(pixmap)
+                            logger.info("Temporarily copied image to clipboard")
+                        else:
+                            logger.error(
+                                f"Failed to load image from {item_data['file_path']}"
+                            )
+                            return
+                    else:
+                        try:
+                            import base64
+
+                            image_data = base64.b64decode(item_data["content"])
+                            pixmap = ImageUtils.bytes_to_pixmap(image_data)
+                            clipboard.setPixmap(pixmap)
+                            logger.info("Temporarily copied image to clipboard")
+                        except Exception as e:
+                            logger.error(f"Failed to process image data: {e}")
+                            return
+                else:
+                    logger.warning(f"Unknown content type: {item_data['content_type']}")
+                    return
+
+                # Simulate Ctrl+V to paste
+                self._simulate_ctrl_v()
+
+            finally:
+                # Restore original clipboard content
+                self._restore_clipboard(original_text, original_pixmap)
 
         except Exception as e:
-            logger.error(f"Error pasting item: {e}")
+            logger.error(f"Error pasting like Windows: {e}")
+            # Fallback notification
+            if hasattr(self, "system_tray") and self.system_tray:
+                self.system_tray.show_notification(
+                    "Paste Failed",
+                    "Failed to paste content. Please try again.",
+                    3000,
+                )
+
+    def _restore_clipboard(self, original_text: str, original_pixmap):
+        """Restore original clipboard content"""
+        try:
+            # Small delay to ensure paste is complete
+            QTimer.singleShot(
+                200, lambda: self._do_restore_clipboard(original_text, original_pixmap)
+            )
+
+        except Exception as e:
+            logger.error(f"Error scheduling clipboard restore: {e}")
+
+    def _do_restore_clipboard(self, original_text: str, original_pixmap):
+        """Actually restore clipboard content"""
+        try:
+            clipboard = QApplication.clipboard()
+
+            if original_pixmap and not original_pixmap.isNull():
+                clipboard.setPixmap(original_pixmap)
+                logger.info("Restored original image to clipboard")
+            elif original_text:
+                clipboard.setText(original_text)
+                logger.info("Restored original text to clipboard")
+            else:
+                clipboard.clear()
+                logger.info("Cleared clipboard")
+
+        except Exception as e:
+            logger.error(f"Error restoring clipboard: {e}")
+
+    def _get_last_content_type(self):
+        """Get content type of last selected item"""
+        # This is a simple implementation - you might want to store this in a variable
+        return "text"  # Default fallback
 
     def on_pin_toggled(self, item_id: int, pinned: bool):
         """Handle pin toggle"""

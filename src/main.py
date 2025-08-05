@@ -3,15 +3,19 @@
 """
 Enhanced main entry point for Clipboard Manager with modern UI and auto-hide focus
 """
-import logging
 import os
+import platform
 import signal
 import sys
+import tempfile
+import time
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QApplication, QMessageBox, QSystemTrayIcon
+
+from utils.logging_config import get_logger, setup_logging
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -32,22 +36,50 @@ from ui.system_tray import SystemTray
 from utils.config import Config
 
 # Configure enhanced logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler(Path.home() / ".clipboard_manager.log"),
-    ],
-)
-logger = logging.getLogger(__name__)
+# Setup enhanced logging first
+setup_logging(level="INFO", log_to_file=True, log_to_console=True)
+logger = get_logger(__name__)
 
 
 def setup_qt_environment():
-    """Setup Qt environment with modern enhancements"""
-    # Set Qt platform plugin path if needed
-    qt_plugin_path = os.environ.get("QT_PLUGIN_PATH")
-    if not qt_plugin_path:
+    """Setup Qt environment with cross-platform enhancements"""
+    # Detect platform and set appropriate Qt settings
+    current_platform = platform.system().lower()
+
+    if current_platform == "windows":
+        # Windows-specific Qt settings
+        os.environ["QT_QPA_PLATFORM"] = "windows"
+        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+        # Remove this line - will be set via QApplication method
+        # os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
+
+        # Windows-specific plugin path
+        possible_windows_paths = [
+            str(
+                Path.home()
+                / "AppData/Local/Programs/Python/Lib/site-packages/PySide6/plugins"
+            ),
+            str(
+                Path.home()
+                / "AppData/Local/Programs/Python/Lib/site-packages/PySide6/Qt6/plugins"
+            ),
+            "C:/Program Files/Python*/Lib/site-packages/PySide6/plugins",
+        ]
+
+        for path in possible_windows_paths:
+            if Path(path).exists():
+                os.environ["QT_PLUGIN_PATH"] = path
+                logger.info(f"Set Windows QT_PLUGIN_PATH to {path}")
+                break
+
+    else:
+        # Linux/macOS settings
+        os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland:fallback=offscreen"
+        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+        # Remove this line - will be set via QApplication method
+        # os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
+
+        # Linux plugin paths
         possible_paths = [
             "/usr/lib/x86_64-linux-gnu/qt6/plugins",
             "/usr/lib/qt6/plugins",
@@ -58,16 +90,148 @@ def setup_qt_environment():
         for path in possible_paths:
             if Path(path).exists():
                 os.environ["QT_PLUGIN_PATH"] = path
-                logger.info(f"Set QT_PLUGIN_PATH to {path}")
+                logger.info(f"Set Linux QT_PLUGIN_PATH to {path}")
                 break
-
-    # Enhanced Qt settings with fallback for headless systems
-    os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland:fallback=offscreen"
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-    os.environ["QT_SCALE_FACTOR_ROUNDING_POLICY"] = "RoundPreferFloor"
 
     # Enable smooth rendering
     os.environ["QT_QUICK_CONTROLS_STYLE"] = "Material"
+
+
+class CrossPlatformSingleInstance:
+    """Cross-platform single instance checker"""
+
+    def __init__(self, lock_name: str = "clipboard_manager.lock"):
+        self.lock_name = lock_name
+        self.platform = platform.system().lower()
+        self.lock_file = None
+        self.lock_fd = None
+        self.is_locked = False
+
+        # Determine lock file location based on platform
+        if self.platform == "windows":
+            self.lock_path = Path(tempfile.gettempdir()) / f"{lock_name}"
+        else:
+            # Linux/macOS
+            self.lock_path = Path.home() / f".{lock_name}"
+
+    def acquire_lock(self) -> bool:
+        """Acquire lock for single instance check"""
+        try:
+            if self.platform == "windows":
+                return self._acquire_lock_windows()
+            else:
+                return self._acquire_lock_unix()
+        except Exception as e:
+            logger.error(f"Failed to acquire lock: {e}")
+            return False
+
+    def _acquire_lock_windows(self) -> bool:
+        """Windows-specific lock acquisition using file locking"""
+        try:
+            # Create lock file
+            self.lock_file = open(self.lock_path, "w")
+
+            # Try to acquire exclusive lock
+            import msvcrt
+
+            msvcrt.locking(self.lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+
+            # Write PID to lock file
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
+
+            self.is_locked = True
+            logger.info(f"Windows lock acquired: {self.lock_path}")
+            return True
+
+        except (IOError, OSError) as e:
+            # Another instance is running
+            logger.warning(f"Windows lock failed: {e}")
+            if self.lock_file:
+                self.lock_file.close()
+            return False
+        except ImportError:
+            # Fallback for Windows without msvcrt
+            return self._acquire_lock_fallback()
+
+    def _acquire_lock_unix(self) -> bool:
+        """Unix/Linux lock acquisition using fcntl"""
+        try:
+            import fcntl
+
+            self.lock_file = open(self.lock_path, "w")
+
+            # Try to acquire exclusive lock using getattr for better compatibility
+            lock_ex = getattr(fcntl, "LOCK_EX", 1)
+            lock_nb = getattr(fcntl, "LOCK_NB", 2)
+            flock_func = getattr(fcntl, "flock", None)
+
+            if flock_func:
+                flock_func(self.lock_file.fileno(), lock_ex | lock_nb)
+            else:
+                # Fallback if flock is not available
+                return self._acquire_lock_fallback()
+
+            # Write PID to lock file
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
+
+            self.is_locked = True
+            logger.info(f"Unix lock acquired: {self.lock_path}")
+            return True
+
+        except ImportError:
+            # Fallback for systems without fcntl
+            logger.warning("fcntl not available, using fallback method")
+            return self._acquire_lock_fallback()
+        except (IOError, OSError) as e:
+            # Another instance is running
+            logger.warning(f"Unix lock failed: {e}")
+            if self.lock_file:
+                self.lock_file.close()
+            return False
+
+    def _acquire_lock_fallback(self) -> bool:
+        """Fallback lock method using file existence check"""
+        try:
+            # Check if lock file exists and is recent (within 30 seconds)
+            if self.lock_path.exists():
+                # Check if lock file is stale (older than 30 seconds)
+                lock_age = time.time() - self.lock_path.stat().st_mtime
+                if lock_age < 30:
+                    # Lock file is recent, another instance is running
+                    logger.warning(f"Lock file exists and recent: {self.lock_path}")
+                    return False
+                else:
+                    # Stale lock file, remove it
+                    logger.info(f"Removing stale lock file: {self.lock_path}")
+                    self.lock_path.unlink()
+
+            # Create new lock file
+            self.lock_file = open(self.lock_path, "w")
+            self.lock_file.write(str(os.getpid()))
+            self.lock_file.flush()
+
+            self.is_locked = True
+            logger.info(f"Fallback lock acquired: {self.lock_path}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Fallback lock failed: {e}")
+            return False
+
+    def release_lock(self):
+        """Release the lock"""
+        try:
+            if self.lock_file:
+                self.lock_file.close()
+
+            if self.is_locked and self.lock_path.exists():
+                self.lock_path.unlink()
+                logger.info(f"Lock released: {self.lock_path}")
+
+        except Exception as e:
+            logger.error(f"Error releasing lock: {e}")
 
 
 class EnhancedClipboardManager:
@@ -78,12 +242,17 @@ class EnhancedClipboardManager:
         setup_qt_environment()
 
         try:
+            # Set High DPI scaling policy BEFORE creating QApplication
+            QApplication.setHighDpiScaleFactorRoundingPolicy(
+                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+            )
+
             self.app = QApplication(sys.argv)
             self.app.setQuitOnLastWindowClosed(False)
 
             # Set application properties
             self.app.setApplicationName("Clipboard Manager")
-            self.app.setApplicationVersion("2.0")
+            self.app.setApplicationVersion("1.0")
             self.app.setOrganizationName("Falcol")
 
             # Set default font for modern UI
@@ -120,6 +289,9 @@ class EnhancedClipboardManager:
         self.popup_window = PopupWindow(self.database, self.config)
         self.settings_window = SettingsWindow(self.config)
         self.system_tray = SystemTray(self.popup_window, self.settings_window)
+
+        # Set system_tray reference in popup_window
+        self.popup_window.system_tray = self.system_tray
 
         # Initialize hotkey manager with Super+V
         self.hotkey_manager = HotkeyManager(self.show_popup)
@@ -266,7 +438,7 @@ class EnhancedClipboardManager:
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
 
         # Show notification for new content (if enabled)
-        if self.config.get("show_notifications", True):
+        if self.config.get("show_notifications", False):
             preview = ""
             if content_type == "text":
                 preview = item_data.get("preview", "")
@@ -330,12 +502,22 @@ class EnhancedClipboardManager:
 
             # Show enhanced system tray
             if self.system_tray.show():
-                # Show startup notification
+                # Show startup notification with platform-specific hotkey
+                hotkey_info = self.hotkey_manager.get_hotkey_info()
+                platform_name = hotkey_info["platform"]
+
+                if platform_name == "windows":
+                    hotkey_display = "Windows+C"
+                elif platform_name == "linux":
+                    hotkey_display = "Super+V"
+                else:
+                    hotkey_display = "Cmd+C"
+
                 QTimer.singleShot(
                     1000,
                     lambda: self.system_tray.show_notification(
                         "Clipboard Manager Started",
-                        "Press Super+V to open clipboard history",
+                        f"Press {hotkey_display} to open clipboard history",
                         3000,
                     ),
                 )
@@ -425,26 +607,14 @@ class EnhancedClipboardManager:
 
 
 def main():
-    """Enhanced main function with better error handling"""
+    """Enhanced main function with cross-platform single instance check"""
+    single_instance = None
+
     try:
-        # Check if another instance is already running
-        import fcntl
+        # Cross-platform single instance check
+        single_instance = CrossPlatformSingleInstance()
 
-        lock_file = Path.home() / ".clipboard_manager.lock"
-
-        try:
-            lock_fd = open(lock_file, "w")
-            # Use getattr for better compatibility
-            lock_ex = getattr(fcntl, "LOCK_EX", 1)
-            lock_nb = getattr(fcntl, "LOCK_NB", 2)
-            lockf_func = getattr(fcntl, "lockf", None)
-
-            if lockf_func:
-                lockf_func(lock_fd, lock_ex | lock_nb)
-            else:
-                # Fallback for systems without fcntl
-                logger.warning("fcntl not available, skipping single instance check")
-        except (IOError, OSError):
+        if not single_instance.acquire_lock():
             logger.error("Another instance of Clipboard Manager is already running")
             return 1
 
@@ -460,13 +630,8 @@ def main():
         return 1
     finally:
         # Cleanup lock file
-        try:
-            if "lock_fd" in locals():
-                lock_fd.close()
-            if "lock_file" in locals() and lock_file.exists():
-                lock_file.unlink()
-        except Exception:
-            pass
+        if single_instance:
+            single_instance.release_lock()
 
 
 if __name__ == "__main__":
