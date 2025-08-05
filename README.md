@@ -63,7 +63,9 @@ qt.qpa.plugin: Could not load the Qt platform plugin "xcb"
    sudo apt update
    sudo apt install -y libxcb-cursor0 libxcb1 libxcb-icccm4 libxcb-image0 \
      libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
-     libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1
+     libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1 \
+     xdotool \
+     libgl1-mesa-glx libglib2.0-0
    ```
 
 2. If the issue persists, the application will automatically try fallback platforms.

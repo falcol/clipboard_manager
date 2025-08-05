@@ -288,6 +288,9 @@ class EnhancedClipboardManager:
         self.settings_window = SettingsWindow(self.config)
         self.system_tray = SystemTray(self.popup_window, self.settings_window)
 
+        # Set system_tray reference in popup_window
+        self.popup_window.system_tray = self.system_tray
+
         # Initialize hotkey manager with Super+V
         self.hotkey_manager = HotkeyManager(self.show_popup)
 

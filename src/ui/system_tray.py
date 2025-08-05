@@ -270,3 +270,24 @@ class SystemTray(QObject):
         self.tray_icon.showMessage(
             title, message, QSystemTrayIcon.MessageIcon.Information, 2000  # 2 seconds
         )
+
+    def show_paste_notification(self, content_type: str):
+        """Show notification when content is pasted like Windows"""
+        try:
+            icon_map = {
+                "text": "📝",
+                "image": "🖼️",
+                "url": "🔗",
+                "code": "💻",
+                "json": "📄",
+            }
+            icon = icon_map.get(content_type, "📋")
+
+            self.tray_icon.showMessage(
+                f"{icon} Content Pasted",
+                f"{content_type.title()} content pasted like Windows clipboard",
+                QSystemTrayIcon.MessageIcon.Information,
+                2000,  # 2 seconds
+            )
+        except Exception as e:
+            logger.error(f"Error showing paste notification: {e}")
