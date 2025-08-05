@@ -6,11 +6,11 @@
 """
 Database migration manager for upgrading from old schema
 """
-import datetime
 import json
 import logging
 import shutil
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 
