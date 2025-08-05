@@ -1,18 +1,18 @@
 # clipboard_manager/README.md
 # 📋 Clipboard Manager
 
-A modern, cross-platform clipboard history manager built with Python and PySide6.
+A clipboard history manager built with Python and PySide6.
 
 ## ✨ Features
 
 - **📝 Clipboard History**: Automatically saves text and image clipboard content
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
 - **🔥 Global Hotkey**: Press `Super+C` (Windows+C) to show clipboard history
-- **🎨 Modern Dark UI**: Clean, modern interface with smooth animations
+- **🎨 Dark UI**: Clean, modern interface with smooth animations
 - **💾 Persistent Storage**: Uses SQLite for efficient storage (less RAM usage)
 - **🚀 System Tray**: Runs in background with system tray integration
 - **⚙️ Configurable**: Customize max items, text length, and auto-start
-- **🌍 Cross-Platform**: Works on Ubuntu, and other Linux distributions
+- **🌍 Cross-Platform**: Works on Ubuntu, and other Linux distributions (???)
 
 ## 🚀 Quick Start
 
@@ -95,7 +95,6 @@ sudo apt install -y libxcb-cursor0 libxcb1 libxcb-icccm4 libxcb-image0 \
    libxcb-sync1 libxcb-xfixes0 libxcb-xinerama0 libxcb-xkb1
 
 sudo apt install libgl1-mesa-glx libglib2.0-0
-```
 ```
 
 ## 🏗️ Architecture
