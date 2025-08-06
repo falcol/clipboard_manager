@@ -65,7 +65,7 @@ class Config:
 
     def __init__(self, config_path: Optional[Path] = None):
         if config_path is None:
-            config_dir = Path(user_config_dir("ClipboardManager", "YourName"))
+            config_dir = Path(user_config_dir("ClipboardManager", "B1Corp"))
             config_dir.mkdir(parents=True, exist_ok=True)
             config_path = config_dir / "config_v2.json"
 

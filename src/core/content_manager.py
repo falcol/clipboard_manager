@@ -103,37 +103,44 @@ class ContentManager:
         """Load thumbnail with caching"""
         return self.load_image(thumbnail_path)  # Same logic for now
 
-    def optimize_text_content(self, content: str) -> dict:
-        """Optimize and analyze text content"""
+    def optimize_text_content(self, content: str, content_type: str = "text") -> dict:
+        """Optimize text content với format detection"""
         try:
-            # Basic text analysis
+            # Basic analysis
             lines = content.split("\n")
             words = content.split()
 
-            # Detect content type
-            content_type = self._detect_text_type(content)
+            # Detect actual format if not specified
+            if content_type == "text" and content.strip().startswith("<"):
+                content_type = "html"
 
-            # Create optimized preview
-            preview = self._create_smart_preview(content, content_type)
-
-            # Generate search keywords
-            keywords = self._extract_keywords(content)
+            # Create format-specific preview
+            if content_type == "html":
+                preview = self._create_html_preview(content)
+                plain_text = self._html_to_plain_text(content)
+            elif content_type == "rtf":
+                preview = self._create_rtf_preview(content)
+                plain_text = self._rtf_to_plain_text(content)
+            else:
+                preview = self._create_smart_preview(content, content_type)
+                plain_text = content
 
             return {
                 "preview": preview,
+                "plain_text": plain_text[:500],
                 "line_count": len(lines),
                 "word_count": len(words),
                 "char_count": len(content),
                 "content_type": content_type,
-                "keywords": keywords,
-                "has_urls": "http" in content.lower(),
-                "has_emails": "@" in content and "." in content,
+                "format": content_type,
             }
 
         except Exception as e:
-            logger.error(f"Error optimizing text content: {e}")
-            # flake8: noqa: E501
-            return {"preview": f"{content[:100]}..." if len(content) > 100 else content}
+            logger.error(f"Error optimizing content: {e}")
+            return {
+                "preview": content[:100] + "..." if len(content) > 100 else content,
+                "format": "plain",
+            }
 
     def cleanup_orphaned_files(self, active_file_paths: set):
         """Remove files not referenced in database"""
@@ -305,3 +312,36 @@ class ContentManager:
         # Recalculate cache size
         self.current_cache_size = self.current_cache_size // 2
         logger.info(f"Cache cleaned up, removed {items_to_remove} items")
+
+    def _create_html_preview(self, html: str) -> str:
+        """Create safe HTML preview"""
+        if len(html) > 300:
+            html = html[:300] + "..."
+
+        import re
+
+        html = re.sub(
+            r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL | re.IGNORECASE
+        )
+        html = re.sub(
+            r"<style[^>]*>.*?</style>", "", html, flags=re.DOTALL | re.IGNORECASE
+        )
+        return html
+
+    def _html_to_plain_text(self, html: str) -> str:
+        """Extract plain text from HTML"""
+        import re
+
+        text = re.sub(r"<[^>]+>", "", html)
+        return re.sub(r"\s+", " ", text).strip()
+
+    def _create_rtf_preview(self, rtf: str) -> str:
+        """Create RTF preview"""
+        return self._rtf_to_plain_text(rtf)[:200]
+
+    def _rtf_to_plain_text(self, rtf: str) -> str:
+        """Convert RTF to plain text"""
+        import re
+
+        text = re.sub(r"\\[a-z0-9]+\b|[{}]", "", rtf)
+        return re.sub(r"\s+", " ", text).strip()

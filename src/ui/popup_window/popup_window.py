@@ -4,10 +4,10 @@ Windows 10 Dark Mode Clipboard Manager Popup Window
 """
 import logging
 import sys
-from typing import Dict
+from typing import Dict, Optional
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
-from PySide6.QtGui import QColor, QCursor, QFont, QPixmap
+from PySide6.QtCore import QEasingCurve, QMimeData, QPropertyAnimation, Qt, QTimer
+from PySide6.QtGui import QClipboard, QColor, QCursor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -441,12 +441,201 @@ class PopupWindow(QWidget):
         logger.info(f"Item selected: {item_data['id']}")
 
         # Copy to system clipboard FIRST
-        self._copy_to_system_clipboard(item_data)
+        copy_success = self._copy_to_system_clipboard(item_data)
 
-        # Then attempt to paste
-        self._simulate_ctrl_v()
+        if copy_success:
+            # Small delay to ensure clipboard is set
+            QTimer.singleShot(50, self._simulate_ctrl_v)
+        else:
+            logger.error("Failed to copy to clipboard, skipping paste simulation")
 
         self.hide()
+
+    def _copy_to_system_clipboard(self, item_data: Dict) -> bool:
+        """Copy content like Windows Clipboard - preserve ALL formats including images"""
+        try:
+            content_type = item_data.get("content_type", "text")
+
+            # Handle IMAGE content (Windows-like behavior)
+            if content_type == "image":
+                return self._copy_image_to_clipboard(item_data)
+
+            # Handle TEXT content (existing logic)
+            mime_data = QMimeData()
+            content = item_data.get("content", "")
+            html_content = item_data.get("html_content")
+            format_type = item_data.get("format", "plain")
+            original_mime_types = item_data.get("original_mime_types", [])
+
+            # Validate content first
+            if not content or not content.strip():
+                logger.error("No content to copy")
+                return False
+
+            logger.info(
+                f"Copying Windows-style: format={format_type}, has_html={bool(html_content)}, mime_types={original_mime_types}"
+            )
+
+            # Windows behavior: ALWAYS set plain text as fallback
+            mime_data.setText(content)
+            logger.info("Set plain text to clipboard")
+
+            # Set HTML if available (Windows preserves both)
+            if html_content and html_content.strip():
+                mime_data.setHtml(html_content)
+                logger.info("Set HTML content to clipboard (Windows-like multi-format)")
+            elif format_type == "html" and content.strip().startswith("<"):
+                # Fallback: if no separate HTML but content looks like HTML
+                mime_data.setHtml(content)
+                logger.info("Set HTML content from main content")
+
+            # Handle RTF if available
+            if format_type == "rtf":
+                mime_data.setData("text/rtf", content.encode("utf-8"))
+                logger.info("Set RTF content to clipboard")
+
+            # Set to system clipboard (main clipboard, not selection)
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(
+                mime_data, QClipboard.Mode.Clipboard
+            )  # Explicitly use main clipboard
+
+            # Verify multi-format clipboard was set
+            QTimer.singleShot(
+                10,
+                lambda: self._verify_multi_format_clipboard(content[:50], html_content),
+            )
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to copy multi-format to clipboard: {e}")
+            return False
+
+    def _copy_image_to_clipboard(self, item_data: Dict) -> bool:
+        """Copy image content to clipboard like Windows Clipboard Manager"""
+        try:
+            logger.info(f"Copying image item: {item_data['id']}")
+
+            # Method 1: Try to load from file_path first
+            if item_data.get("file_path"):
+                pixmap = QPixmap(item_data["file_path"])
+                if not pixmap.isNull():
+                    clipboard = QApplication.clipboard()
+                    clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                    logger.info(f"✓ Image copied from file: {item_data['file_path']}")
+
+                    # Show notification
+                    if hasattr(self, "system_tray") and self.system_tray:
+                        self.system_tray.show_notification(
+                            "Image Copied",
+                            f"Image copied to clipboard ({pixmap.width()}×{pixmap.height()})",
+                            2000,
+                        )
+                    return True
+                else:
+                    logger.warning(
+                        f"Failed to load image from {item_data['file_path']}"
+                    )
+
+            # Method 2: Try to load from thumbnail_path
+            if item_data.get("thumbnail_path"):
+                pixmap = QPixmap(item_data["thumbnail_path"])
+                if not pixmap.isNull():
+                    clipboard = QApplication.clipboard()
+                    clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                    logger.info(
+                        f"✓ Image copied from thumbnail: {item_data['thumbnail_path']}"
+                    )
+                    return True
+
+            # Method 3: Try to decode from base64 content (fallback)
+            if item_data.get("content"):
+                try:
+                    import base64
+
+                    from utils.image_utils import ImageUtils
+
+                    # Handle base64 data URLs
+                    content = item_data["content"]
+                    if content.startswith("data:image"):
+                        # Extract base64 part
+                        base64_data = (
+                            content.split(",")[1] if "," in content else content
+                        )
+                        image_data = base64.b64decode(base64_data)
+                    else:
+                        # Assume raw base64
+                        image_data = base64.b64decode(content)
+
+                    pixmap = ImageUtils.bytes_to_pixmap(image_data)
+                    if not pixmap.isNull():
+                        clipboard = QApplication.clipboard()
+                        clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                        logger.info("✓ Image copied from base64 content")
+                        return True
+
+                except Exception as e:
+                    logger.error(f"Failed to decode base64 image: {e}")
+
+            # Method 4: Final fallback - create placeholder image
+            logger.warning("Creating placeholder image for clipboard")
+            placeholder_pixmap = QPixmap(100, 100)
+            placeholder_pixmap.fill(QColor(128, 128, 128))  # Gray placeholder
+
+            clipboard = QApplication.clipboard()
+            clipboard.setPixmap(placeholder_pixmap, QClipboard.Mode.Clipboard)
+            logger.info("✓ Placeholder image copied to clipboard")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to copy image to clipboard: {e}")
+            return False
+
+    def _verify_multi_format_clipboard(
+        self, expected_text: str, expected_html: Optional[str] = None
+    ):
+        """Verify multi-format clipboard was set correctly"""
+        try:
+            clipboard = QApplication.clipboard()
+            mime_data = clipboard.mimeData(QClipboard.Mode.Clipboard)
+
+            has_text = mime_data.hasText() and expected_text in mime_data.text()
+            has_html = (
+                expected_html
+                and mime_data.hasHtml()
+                and expected_html[:50] in mime_data.html()
+            )
+            has_image = mime_data.hasImage()
+
+            if has_text:
+                logger.info("✓ Plain text verified in clipboard")
+            else:
+                logger.warning("✗ Plain text verification failed")
+
+            if expected_html:
+                if has_html:
+                    logger.info("✓ HTML content verified in clipboard")
+                else:
+                    logger.warning("✗ HTML content verification failed")
+
+            if has_image:
+                logger.info("✓ Image content verified in clipboard")
+
+            # Log available formats for debugging
+            available = []
+            if mime_data.hasText():
+                available.append("text/plain")
+            if mime_data.hasHtml():
+                available.append("text/html")
+            if mime_data.hasImage():
+                available.append("image")
+
+            logger.info(f"Clipboard formats available: {available}")
+
+        except Exception as e:
+            logger.error(f"Multi-format clipboard verification error: {e}")
 
     def _simulate_ctrl_v(self):
         """Simulate Ctrl+V using the actual clipboard content"""
@@ -454,9 +643,19 @@ class PopupWindow(QWidget):
             # Get current platform
             platform = sys.platform.lower()
 
-            # Check if clipboard has content
+            # Check if clipboard has content - FIX THE LOGIC HERE
             clipboard = QApplication.clipboard()
-            if clipboard.text().strip() or not clipboard.pixmap().isNull():
+            mime_data = clipboard.mimeData()
+
+            has_content = (
+                (mime_data.hasText() and mime_data.text().strip())
+                or (mime_data.hasHtml() and mime_data.html().strip())
+                or (mime_data.hasImage() and not clipboard.pixmap().isNull())
+            )
+
+            if has_content:
+                logger.info("Clipboard has content, simulating paste...")
+
                 if platform.startswith("win"):
                     self._simulate_ctrl_v_windows()
                 elif platform.startswith("linux"):
@@ -467,42 +666,12 @@ class PopupWindow(QWidget):
                     self._simulate_ctrl_v_fallback()
             else:
                 logger.warning("No content in clipboard to paste")
+                logger.debug(
+                    f"Clipboard check: hasText={mime_data.hasText()}, hasHtml={mime_data.hasHtml()}, hasImage={mime_data.hasImage()}"
+                )
 
         except Exception as e:
             logger.error(f"Error simulating paste: {e}")
-
-    def _copy_to_system_clipboard(self, item_data: Dict):
-        """Copy item content to system clipboard"""
-        clipboard = QApplication.clipboard()
-
-        try:
-            if item_data["content_type"] == "text":
-                clipboard.setText(item_data["content"])
-                logger.debug(
-                    f"Copied text to clipboard: {item_data['content'][:50]}..."
-                )
-
-            elif item_data["content_type"] == "image":
-                if item_data.get("file_path"):
-                    pixmap = QPixmap(item_data["file_path"])
-                    if not pixmap.isNull():
-                        clipboard.setPixmap(pixmap)
-                        logger.debug("Copied image to clipboard")
-                    else:
-                        logger.error("Failed to load image for clipboard")
-                else:
-                    logger.warning("Image item missing file_path")
-
-            # Show notification
-            if hasattr(self, "system_tray") and self.system_tray:
-                self.system_tray.show_notification(
-                    "Copied to Clipboard",
-                    "Content is ready for pasting with Ctrl+V",
-                    2000,
-                )
-
-        except Exception as e:
-            logger.error(f"Failed to copy to clipboard: {e}")
 
     def _simulate_ctrl_v_windows(self):
         """Windows Ctrl+V simulation using keyboard library"""

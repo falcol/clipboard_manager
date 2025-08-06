@@ -26,7 +26,6 @@ from core.content_manager import ContentManager
 # Import enhanced components
 from core.database import EnhancedClipboardDatabase
 from core.hotkey_manager import HotkeyManager
-from core.migration_manager import MigrationManager
 from core.search_engine import SearchEngine
 
 # Import enhanced UI components
@@ -267,16 +266,12 @@ class EnhancedClipboardManager:
         # Initialize enhanced configuration
         self.config = Config()
 
-        # Initialize data directory and check for migration
+        # Initialize data directory (chỉ 1 database)
         self.data_dir = Path(self.config.config_path.parent)
-        self.old_db_path = self.data_dir / "clipboard.db"
-        self.new_db_path = self.data_dir / "clipboard_v2.db"
+        self.db_path = self.data_dir / "clipboard.db"  # Chỉ 1 file
 
-        # Handle database migration if needed
-        self._handle_migration()
-
-        # Initialize enhanced core components
-        self.database = EnhancedClipboardDatabase(self.new_db_path)
+        # Initialize enhanced core components (migration tự động trong database)
+        self.database = EnhancedClipboardDatabase(self.db_path)
         self.content_manager = ContentManager(self.data_dir)
         self.search_engine = SearchEngine(self.database)
 
@@ -334,45 +329,6 @@ class EnhancedClipboardManager:
             "Please ensure Qt6 libraries are properly installed.",
         )
         sys.exit(1)
-
-    def _handle_migration(self):
-        """Handle database migration with enhanced error handling"""
-        if self.old_db_path.exists() and not self.new_db_path.exists():
-            logger.info("Detected old database format, starting migration...")
-
-            migration_manager = MigrationManager(
-                self.old_db_path, self.new_db_path, self.data_dir
-            )
-
-            try:
-                if migration_manager.migrate():
-                    logger.info("Database migration completed successfully")
-                    # Show success notification when UI is ready
-                    QTimer.singleShot(2000, self._show_migration_success)
-                else:
-                    logger.error("Database migration failed, using new database")
-                    QTimer.singleShot(2000, self._show_migration_failure)
-            except Exception as e:
-                logger.error(f"Migration error: {e}")
-                QTimer.singleShot(2000, self._show_migration_failure)
-
-    def _show_migration_success(self):
-        """Show migration success notification"""
-        if hasattr(self, "system_tray"):
-            self.system_tray.show_notification(
-                "Migration Complete",
-                "Your clipboard history has been successfully upgraded to v2.0!",
-                4000,
-            )
-
-    def _show_migration_failure(self):
-        """Show migration failure notification"""
-        if hasattr(self, "system_tray"):
-            self.system_tray.show_notification(
-                "Migration Notice",
-                "Started with new database. Old data preserved as backup.",
-                4000,
-            )
 
     def setup_connections(self):
         """Setup enhanced signal connections between components"""

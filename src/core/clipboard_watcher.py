@@ -6,7 +6,9 @@
 """
 Enhanced clipboard watcher with improved content management
 """
+import hashlib
 import logging
+from typing import Optional
 
 from PySide6.QtCore import QObject, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
@@ -54,48 +56,99 @@ class EnhancedClipboardWatcher(QObject):
         logger.info("Enhanced clipboard watcher stopped")
 
     def check_clipboard(self):
-        """Enhanced clipboard change detection"""
+        """Enhanced clipboard change detection - preserve ALL formats like Windows"""
         if not self.running:
             return
 
         try:
             mime_data = self.clipboard.mimeData()
 
-            if mime_data.hasText():
-                self.handle_text_content(mime_data.text())
-            elif mime_data.hasImage():
+            # Collect ALL available formats (Windows-like behavior)
+            available_formats = {
+                "text": mime_data.text() if mime_data.hasText() else None,
+                "html": mime_data.html() if mime_data.hasHtml() else None,
+                "rtf": None,
+                "image": mime_data.hasImage(),
+            }
+
+            # Handle RTF
+            if mime_data.hasFormat("text/rtf"):
+                rtf_data = mime_data.data("text/rtf")
+                available_formats["rtf"] = bytes(rtf_data.data()).decode(
+                    "utf-8", errors="ignore"
+                )
+
+            # Determine primary content and format (like Windows logic)
+            primary_content = None
+            primary_format = "plain"
+            original_mime_types = []
+
+            # Build mime types list
+            if available_formats["text"]:
+                original_mime_types.append("text/plain")
+            if available_formats["html"]:
+                original_mime_types.append("text/html")
+            if available_formats["rtf"]:
+                original_mime_types.append("text/rtf")
+            if available_formats["image"]:
+                original_mime_types.append("image")
+
+            # Choose primary content (Windows prioritizes meaningful text)
+            if available_formats["text"] and available_formats["text"].strip():
+                primary_content = available_formats["text"]
+                primary_format = "plain"
+                # But we'll store HTML too if available
+            elif available_formats["html"] and available_formats["html"].strip():
+                primary_content = available_formats["html"]
+                primary_format = "html"
+            elif available_formats["rtf"]:
+                primary_content = available_formats["rtf"]
+                primary_format = "rtf"
+            elif available_formats["image"]:
                 self.handle_image_content(self.clipboard.pixmap())
+                return
+            else:
+                return
+
+            # Handle multi-format content (Windows-like)
+            self.handle_multi_format_content(
+                primary_content, primary_format, available_formats, original_mime_types
+            )
 
         except Exception as e:
             logger.error(f"Error checking clipboard: {e}")
 
-    def handle_text_content(self, text: str):
-        """Enhanced text content handling"""
-        if not text or not text.strip():
+    def handle_text_content(
+        self, content: str, content_type: str, mime_types: Optional[list] = None
+    ):
+        """Handle text content with preserved MIME information"""
+        if not content or not content.strip():
             return
 
         # Generate content hash for deduplication
-        import hashlib
-
-        content_hash = hashlib.sha256(text.encode()).hexdigest()[:16]
+        combined = f"{content_type}:{content}"
+        content_hash = hashlib.sha256(combined.encode()).hexdigest()[:16]
 
         if content_hash == self.last_content_hash:
             return
 
         # Skip very large content
         max_length = self.config.get("max_text_length", 1000000)
-        if len(text) > max_length:
-            logger.warning(f"Text content too large ({len(text)} chars), skipping")
+        if len(content) > max_length:
+            logger.warning(f"Text content too large ({len(content)} chars), skipping")
             return
 
-        # Use content manager for optimization
-        text_analysis = self.content_manager.optimize_text_content(text)
+        # Enhanced metadata with MIME type info
+        metadata = {
+            "format": content_type,
+            "source": "clipboard_watch",
+            "content_type": content_type,
+            "original_mime_types": mime_types or [f"text/{content_type}"],
+            "preferred_format": content_type,
+        }
 
-        # Add to database
-        item_id = self.database.add_text_item(
-            content=text,
-            metadata={"analysis": text_analysis, "source": "clipboard_watch"},
-        )
+        # Use existing method
+        item_id = self.database.add_text_item(content=content, metadata=metadata)
 
         if item_id > 0:
             self.last_content_hash = content_hash
@@ -104,13 +157,14 @@ class EnhancedClipboardWatcher(QObject):
             item_data = {
                 "id": item_id,
                 "content_type": "text",
-                "content": text,
-                "preview": text_analysis["preview"],
-                "metadata": text_analysis,
+                "content": content,
+                "format": content_type,
+                "original_mime_types": mime_types,
+                "preview": content[:150] + "..." if len(content) > 150 else content,
             }
 
             self.content_changed.emit("text", item_data)
-            logger.debug(f"Added enhanced text item {item_id} ({len(text)} chars)")
+            logger.debug(f"Added text item {item_id} with format {content_type}")
 
     def handle_image_content(self, pixmap: QPixmap):
         """Enhanced image content handling"""
@@ -170,6 +224,78 @@ class EnhancedClipboardWatcher(QObject):
 
         except Exception as e:
             logger.error(f"Error handling image content: {e}")
+
+    def handle_multi_format_content(
+        self,
+        primary_content: str,
+        primary_format: str,
+        all_formats: dict,
+        mime_types: list,
+    ):
+        """Handle content with multiple formats like Windows Clipboard"""
+        if not primary_content or not primary_content.strip():
+            return
+
+        # Generate content hash for deduplication
+        combined = f"{primary_format}:{primary_content}"
+        content_hash = hashlib.sha256(combined.encode()).hexdigest()[:16]
+
+        if content_hash == self.last_content_hash:
+            return
+
+        # Skip very large content
+        max_length = self.config.get("max_text_length", 1000000)
+        if len(primary_content) > max_length:
+            logger.warning(
+                f"Content too large ({len(primary_content)} chars), skipping"
+            )
+            return
+
+        # Enhanced metadata with ALL formats preserved
+        metadata = {
+            "format": primary_format,
+            "source": "clipboard_watch",
+            "content_type": primary_format,
+            "original_mime_types": mime_types,
+            "preferred_format": primary_format,
+            "has_html": bool(all_formats.get("html")),
+            "has_rtf": bool(all_formats.get("rtf")),
+            "multi_format": len([f for f in all_formats.values() if f]) > 1,
+        }
+
+        # Store with HTML content if available (Windows behavior)
+        html_content = all_formats.get("html") if all_formats.get("html") else None
+
+        # Use enhanced database method
+        item_id = self.database.add_multi_format_text_item(
+            content=primary_content,
+            html_content=html_content,
+            format_type=primary_format,
+            metadata=metadata,
+        )
+
+        if item_id > 0:
+            self.last_content_hash = content_hash
+
+            # Emit signal with enhanced data
+            item_data = {
+                "id": item_id,
+                "content_type": "text",
+                "content": primary_content,
+                "html_content": html_content,
+                "format": primary_format,
+                "original_mime_types": mime_types,
+                "preview": (
+                    primary_content[:150] + "..."
+                    if len(primary_content) > 150
+                    else primary_content
+                ),
+            }
+
+            self.content_changed.emit("text", item_data)
+            logger.debug(
+                f"Added multi-format item {item_id} with format {primary_format}"
+            )
 
     def update_config(self):
         """Update configuration settings"""

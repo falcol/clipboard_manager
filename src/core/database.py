@@ -24,9 +24,9 @@ class EnhancedClipboardDatabase:
 
     def __init__(self, db_path: Optional[Path] = None):
         if db_path is None:
-            data_dir = Path(user_data_dir("ClipboardManager", "YourName"))
+            data_dir = Path(user_data_dir("ClipboardManager", "B1Corp"))
             data_dir.mkdir(parents=True, exist_ok=True)
-            db_path = data_dir / "clipboard_v2.db"
+            db_path = data_dir / "clipboard.db"  # Chỉ 1 file duy nhất
 
         self.db_path = db_path
         self.data_dir = db_path.parent
@@ -38,85 +38,33 @@ class EnhancedClipboardDatabase:
         self.thumbnails_dir.mkdir(exist_ok=True)
 
         self.connection = None
+
+        # Run migrations before initializing
+        from core.migrations import DatabaseMigrations
+
+        migrator = DatabaseMigrations(self.db_path)
+        if migrator.needs_migration():
+            logger.info("Running database migrations...")
+            migrator.migrate()
+
         self.init_database()
 
     def init_database(self):
-        """Initialize enhanced database schema"""
+        """Initialize database connection (schema already migrated)"""
         try:
             self.connection = sqlite3.connect(
                 str(self.db_path), check_same_thread=False
             )
             self.connection.row_factory = sqlite3.Row
 
-            cursor = self.connection.cursor()
-
-            # Main clipboard items table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS clipboard_items (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    content_type TEXT NOT NULL,
-                    content_hash TEXT UNIQUE,
-                    timestamp DATETIME DEFAULT (datetime('now', 'localtime')),
-                    is_pinned BOOLEAN DEFAULT FALSE,
-                    access_count INTEGER DEFAULT 0,
-                    metadata TEXT,
-                    search_content TEXT -- For full-text search
-                )
-            """
-            )
-
-            # Text content table
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS text_content (
-                    id INTEGER PRIMARY KEY,
-                    content TEXT NOT NULL,
-                    preview TEXT,
-                    char_count INTEGER,
-                    word_count INTEGER,
-                    FOREIGN KEY (id) REFERENCES clipboard_items (id) ON DELETE CASCADE
-                )
-            """
-            )
-
-            # Image content table (file-based storage)
-            cursor.execute(
-                """
-                CREATE TABLE IF NOT EXISTS image_content (
-                    id INTEGER PRIMARY KEY,
-                    file_path TEXT NOT NULL,
-                    thumbnail_path TEXT,
-                    width INTEGER,
-                    height INTEGER,
-                    file_size INTEGER,
-                    format TEXT,
-                    FOREIGN KEY (id) REFERENCES clipboard_items (id) ON DELETE CASCADE
-                )
-            """
-            )
-
-            # Create indexes for better performance
-            # flake8: noqa: E501
-            indexes = [
-                "CREATE INDEX IF NOT EXISTS idx_timestamp ON clipboard_items(timestamp DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_pinned ON clipboard_items(is_pinned DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_access_count ON clipboard_items(access_count DESC)",
-                "CREATE INDEX IF NOT EXISTS idx_content_hash ON clipboard_items(content_hash)",
-                "CREATE INDEX IF NOT EXISTS idx_search_content ON clipboard_items(search_content)",
-            ]
-
-            for index_sql in indexes:
-                cursor.execute(index_sql)
-
             # Enable foreign key constraints
+            cursor = self.connection.cursor()
             cursor.execute("PRAGMA foreign_keys = ON")
 
-            self.connection.commit()
-            logger.info(f"Enhanced database initialized at {self.db_path}")
+            logger.info(f"Database connected: {self.db_path}")
 
         except Exception as e:
-            logger.error(f"Failed to initialize enhanced database: {e}")
+            logger.error(f"Failed to connect to database: {e}")
             raise
 
     def generate_content_hash(self, content: str, content_type: str) -> str:
@@ -125,33 +73,132 @@ class EnhancedClipboardDatabase:
         return hashlib.sha256(combined.encode()).hexdigest()[:16]
 
     def add_text_item(self, content: str, metadata: Optional[dict] = None) -> int:
-        """Add text clipboard item with enhanced processing"""
+        """Add text item with proper MIME type handling"""
         if self.connection is None:
             logger.error("Database connection not initialized")
             return -1
 
         try:
-            # Generate content hash for deduplication
+            # Extract format information
+            format_type = "plain"  # Default to plain
+            html_content = None
+            original_mime_types = []
+
+            if metadata:
+                format_type = metadata.get("format", "plain")
+                original_mime_types = metadata.get("original_mime_types", [])
+
+                # Only store HTML content if format is actually HTML
+                if format_type == "html":
+                    html_content = content
+
+            # Generate content hash
             content_hash = self.generate_content_hash(content, "text")
 
             # Check for existing item
             existing_id = self._get_existing_item_id(content_hash)
             if existing_id:
-                # Update access count and timestamp
                 self._update_item_access(existing_id)
                 return existing_id
 
             cursor = self.connection.cursor()
 
-            # Create preview (first 100 chars, smart word break)
-            preview = self._create_text_preview(content)
+            # Create preview based on actual content
+            if format_type == "html" and html_content:
+                # Extract plain text from HTML for preview
+                import re
 
-            # Generate search content (cleaned text for searching)
+                plain_text = re.sub(r"<[^>]+>", "", content)
+                preview = (
+                    plain_text[:150] + "..." if len(plain_text) > 150 else plain_text
+                )
+            else:
+                preview = self._create_text_preview(content)
+
+            # Enhanced metadata with MIME info
+            enhanced_metadata = metadata or {}
+            enhanced_metadata.update(
+                {
+                    "original_mime_types": original_mime_types,
+                    "detected_format": format_type,
+                }
+            )
+
+            # Generate search content
             search_content = self._generate_search_content(content)
 
-            # Calculate text statistics
-            char_count = len(content)
-            word_count = len(content.split())
+            # Insert main item
+            cursor.execute(
+                """
+                INSERT INTO clipboard_items
+                (content_type, content_hash, metadata, search_content)
+                VALUES (?, ?, ?, ?)
+            """,
+                (
+                    "text",
+                    content_hash,
+                    json.dumps(enhanced_metadata),
+                    search_content,
+                ),
+            )
+
+            item_id = cursor.lastrowid
+
+            # Insert text content with format info
+            cursor.execute(
+                """
+                INSERT INTO text_content
+                (id, content, html_content, format, preview, char_count, word_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    item_id,
+                    content,
+                    html_content,  # Only store if actually HTML
+                    format_type,
+                    preview,
+                    len(content),
+                    len(content.split()),
+                ),
+            )
+
+            self.connection.commit()
+            self._cleanup_old_items()
+
+            logger.debug(f"Added text item {item_id} with format {format_type}")
+            return item_id if item_id else -1
+
+        except Exception as e:
+            logger.error(f"Failed to add text item: {e}")
+            self.connection.rollback()
+            return -1
+
+    def add_multi_format_text_item(
+        self,
+        content: str,
+        html_content: Optional[str] = None,
+        format_type: str = "plain",
+        metadata: Optional[dict] = None,
+    ) -> int:
+        """Add text item with multiple formats (Windows-like behavior)"""
+        if self.connection is None:
+            logger.error("Database connection not initialized")
+            return -1
+
+        try:
+            # Generate content hash
+            content_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+
+            # Check for existing item
+            existing_id = self._get_existing_item_id(content_hash)
+            if existing_id:
+                self._update_item_access(existing_id)
+                return existing_id
+
+            cursor = self.connection.cursor()
+
+            # Prepare search content
+            search_content = content[:500]  # First 500 chars for search
 
             # Insert main item
             cursor.execute(
@@ -170,26 +217,32 @@ class EnhancedClipboardDatabase:
 
             item_id = cursor.lastrowid
 
-            # Insert text content
+            # Insert text content with HTML
             cursor.execute(
                 """
                 INSERT INTO text_content
-                (id, content, preview, char_count, word_count)
-                VALUES (?, ?, ?, ?, ?)
+                (id, content, html_content, format, preview, char_count, word_count)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-                (item_id, content, preview, char_count, word_count),
+                (
+                    item_id,
+                    content,
+                    html_content,  # Store HTML even if primary is plain text
+                    format_type,
+                    content[:200] + "..." if len(content) > 200 else content,
+                    len(content),
+                    len(content.split()),
+                ),
             )
 
             self.connection.commit()
-
-            # Cleanup old items if needed
-            self._cleanup_old_items()
-
-            logger.debug(f"Added text item {item_id} ({char_count} chars)")
+            logger.info(
+                f"Added multi-format text item {item_id} (format: {format_type}, has_html: {bool(html_content)})"
+            )
             return item_id if item_id else -1
 
         except Exception as e:
-            logger.error(f"Failed to add text item: {e}")
+            logger.error(f"Error adding multi-format text item: {e}")
             self.connection.rollback()
             return -1
 
