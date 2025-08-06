@@ -99,11 +99,6 @@ class SystemTray(QObject):
         show_action.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
         show_action.triggered.connect(self.show_clipboard)
 
-        # Quick stats action (informational)
-        stats_action = menu.addAction("📊  Quick Stats")
-        stats_action.setFont(QFont("Segoe UI", 9))
-        stats_action.triggered.connect(self.show_quick_stats)
-
         menu.addSeparator()
 
         # Settings action
@@ -199,43 +194,6 @@ class SystemTray(QObject):
         self.settings_window.show()
         self.settings_window.raise_()
         self.settings_window.activateWindow()
-
-    def show_quick_stats(self):
-        """Show quick statistics in a tray message"""
-        try:
-            # Get database stats
-            if hasattr(self.popup_window, "database"):
-                stats = self.popup_window.database.get_stats()
-                total = stats.get("total_items", 0)
-                pinned = stats.get("pinned_items", 0)
-
-                message = f"📊 Clipboard Stats\n\n"
-                message += f"Total items: {total}\n"
-                message += f"Pinned items: {pinned}\n"
-                message += f"Regular items: {total - pinned}"
-
-                self.tray_icon.showMessage(
-                    "Clipboard Manager",
-                    message,
-                    QSystemTrayIcon.MessageIcon.Information,
-                    3000,  # 3 seconds
-                )
-            else:
-                self.tray_icon.showMessage(
-                    "Clipboard Manager",
-                    "📊 Stats not available",
-                    QSystemTrayIcon.MessageIcon.Information,
-                    2000,
-                )
-
-        except Exception as e:
-            logger.error(f"Error showing quick stats: {e}")
-            self.tray_icon.showMessage(
-                "Clipboard Manager",
-                "📊 Unable to load stats",
-                QSystemTrayIcon.MessageIcon.Warning,
-                2000,
-            )
 
     def show_about(self):
         """Show about information with platform-specific hotkey"""
