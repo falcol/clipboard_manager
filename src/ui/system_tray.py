@@ -4,10 +4,10 @@ Enhanced system tray integration with modern menu design
 """
 import logging
 
-from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QObject, QPoint, QTimer
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import QMenu, QSystemTrayIcon
+from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap, Qt
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from ui.about_popup import show_about_popup
 from ui.styles import Styles
@@ -25,15 +25,19 @@ class SystemTray(QObject):
         self.popup_window = popup_window
         self.settings_window = settings_window
 
-        # Create enhanced tray icon
+        # Create icon and menu before showing
         self.tray_icon = QSystemTrayIcon()
         self.tray_icon.setIcon(self.create_modern_icon())
         self.tray_icon.setToolTip("Clipboard Manager - Click to open")
 
-        # Create modern context menu
-        self.create_modern_menu()
+        # Create menu and preload deeply
+        self.menu = self.create_modern_menu()
+        self.tray_icon.setContextMenu(self.menu)
 
-        # Connect signals
+        # Preload extremely
+        self.force_qt_preload()
+
+        # Connect signal
         self.tray_icon.activated.connect(self.on_tray_activated)
 
         # Animation timer for icon updates
@@ -95,11 +99,6 @@ class SystemTray(QObject):
         show_action.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
         show_action.triggered.connect(self.show_clipboard)
 
-        # Quick stats action (informational)
-        stats_action = menu.addAction("📊  Quick Stats")
-        stats_action.setFont(QFont("Segoe UI", 9))
-        stats_action.triggered.connect(self.show_quick_stats)
-
         menu.addSeparator()
 
         # Settings action
@@ -119,7 +118,27 @@ class SystemTray(QObject):
         quit_action.setFont(QFont("Segoe UI", 9))
         quit_action.triggered.connect(self.quit_requested.emit)
 
-        self.tray_icon.setContextMenu(menu)
+        # Preload each action
+        for action in menu.actions():
+            action.icon()  # Force load icon
+            action.font()  # Force load font
+
+        return menu
+
+    def force_qt_preload(self):
+        """Force Qt to initialize all GUI resources"""
+        # 1. Show and hide menu immediately
+        self.menu.popup(QPoint(-1000, -1000))  # Show outside screen
+        QTimer.singleShot(0, self.menu.hide)
+
+        # 2. Render dummy pixmap to force initialization
+        pixmap = QPixmap(1, 1)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.end()
+
+        # 3. Access QApplication style to force initialization
+        QApplication.style().polish(self.menu)
 
     def show(self):
         """Show tray icon with enhanced features"""
@@ -137,12 +156,15 @@ class SystemTray(QObject):
         self.animation_timer.stop()
 
     def on_tray_activated(self, reason):
-        """Handle tray icon activation with enhanced feedback"""
+        """Handle tray icon activation with minimal processing"""
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.show_clipboard()
         elif reason == QSystemTrayIcon.ActivationReason.Trigger:  # Single click
-            # Show brief active state
-            self.show_active_feedback()
+            # Avoid unnecessary visual feedback to prevent delay
+            pass
+        elif reason == QSystemTrayIcon.ActivationReason.Context:
+            # Menu will be shown automatically by Qt, no additional processing needed
+            pass
 
     def show_active_feedback(self):
         """Show brief visual feedback when icon is clicked"""
@@ -172,43 +194,6 @@ class SystemTray(QObject):
         self.settings_window.show()
         self.settings_window.raise_()
         self.settings_window.activateWindow()
-
-    def show_quick_stats(self):
-        """Show quick statistics in a tray message"""
-        try:
-            # Get database stats
-            if hasattr(self.popup_window, "database"):
-                stats = self.popup_window.database.get_stats()
-                total = stats.get("total_items", 0)
-                pinned = stats.get("pinned_items", 0)
-
-                message = f"📊 Clipboard Stats\n\n"
-                message += f"Total items: {total}\n"
-                message += f"Pinned items: {pinned}\n"
-                message += f"Regular items: {total - pinned}"
-
-                self.tray_icon.showMessage(
-                    "Clipboard Manager",
-                    message,
-                    QSystemTrayIcon.MessageIcon.Information,
-                    3000,  # 3 seconds
-                )
-            else:
-                self.tray_icon.showMessage(
-                    "Clipboard Manager",
-                    "📊 Stats not available",
-                    QSystemTrayIcon.MessageIcon.Information,
-                    2000,
-                )
-
-        except Exception as e:
-            logger.error(f"Error showing quick stats: {e}")
-            self.tray_icon.showMessage(
-                "Clipboard Manager",
-                "📊 Unable to load stats",
-                QSystemTrayIcon.MessageIcon.Warning,
-                2000,
-            )
 
     def show_about(self):
         """Show about information with platform-specific hotkey"""
@@ -243,13 +228,63 @@ class SystemTray(QObject):
         pass
 
     def show_notification(self, title, message, duration=3000):
-        """Show system notification"""
-        self.tray_icon.showMessage(
-            title, message, QSystemTrayIcon.MessageIcon.Information, duration
-        )
+        """Show system notification with cross-platform support"""
+        try:
+            import platform
+
+            current_platform = platform.system().lower()
+
+            if current_platform == "linux":
+                # Linux: try notify-send first, then fallback to Qt
+                if self._show_linux_notification(title, message):
+                    return
+                else:
+                    # Fallback to Qt system tray message
+                    self.tray_icon.showMessage(
+                        title,
+                        message,
+                        QSystemTrayIcon.MessageIcon.Information,
+                        duration,
+                    )
+            else:
+                # Windows/macOS: use Qt system tray message
+                self.tray_icon.showMessage(
+                    title, message, QSystemTrayIcon.MessageIcon.Information, duration
+                )
+
+        except Exception as e:
+            logger.error(f"Error showing notification: {e}")
+            # Final fallback: just log the message
+            logger.info(f"Notification: {title} - {message}")
+
+    def _show_linux_notification(self, title, message):
+        """Show notification on Linux using notify-send"""
+        try:
+            import subprocess
+
+            # Try notify-send command
+            result = subprocess.run(
+                ["notify-send", title, message, "--icon=clipboard"],
+                capture_output=True,
+                timeout=5,
+            )
+
+            if result.returncode == 0:
+                logger.info(f"Linux notification sent: {title}")
+                return True
+            else:
+                logger.warning(f"notify-send failed: {result.stderr}")
+                return False
+
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            logger.warning("notify-send not available on Linux")
+            return False
+        except Exception as e:
+            logger.error(f"Error with Linux notification: {e}")
+            return False
 
     def show_new_item_notification(self, item_type, preview=""):
-        """Show notification for new clipboard item"""
+        """Show notification for new clipboard item with cross-platform support"""
         icon_map = {"text": "📝", "image": "🖼️", "url": "🔗", "code": "💻", "json": "📄"}
 
         icon = icon_map.get(item_type, "📋")
@@ -265,12 +300,10 @@ class SystemTray(QObject):
             else f"{item_type.title()} content added to clipboard history"
         )
 
-        self.tray_icon.showMessage(
-            title, message, QSystemTrayIcon.MessageIcon.Information, 2000  # 2 seconds
-        )
+        self.show_notification(title, message, 2000)  # Use cross-platform method
 
     def show_paste_notification(self, content_type: str):
-        """Show notification when content is pasted like Windows"""
+        """Show notification when content is pasted with cross-platform support"""
         try:
             icon_map = {
                 "text": "📝",
@@ -281,11 +314,26 @@ class SystemTray(QObject):
             }
             icon = icon_map.get(content_type, "📋")
 
-            self.tray_icon.showMessage(
+            self.show_notification(
                 f"{icon} Content Pasted",
                 f"{content_type.title()} content pasted like Windows clipboard",
-                QSystemTrayIcon.MessageIcon.Information,
-                2000,  # 2 seconds
+                2000,
             )
         except Exception as e:
             logger.error(f"Error showing paste notification: {e}")
+
+    def preload_resources(self):
+        """Preload resources to avoid delay on first interaction"""
+        # Preload icons
+        self.create_modern_icon(active=True)
+        self.create_modern_icon(active=False)
+
+        # Access menu to force initialization
+        menu = self.tray_icon.contextMenu()
+        if menu:
+            # Trigger a dummy layout or rendering if possible
+            menu.actions()  # Access actions to force initialization
+            for action in menu.actions():
+                action.font()  # Access font to preload it
+
+        logger.info("System tray resources preloaded")

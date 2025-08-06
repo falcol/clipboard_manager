@@ -8,6 +8,7 @@ Database migration manager for upgrading from old schema
 """
 import json
 import logging
+import re
 import shutil
 import sqlite3
 from datetime import datetime
@@ -135,44 +136,20 @@ class MigrationManager:
             logger.error(f"Error migrating item: {e}")
             return False
 
-    def _migrate_text_item(self, old_item: Dict, new_db, content_manager) -> bool:
-        """Migrate text item"""
-        try:
-            content = old_item.get("content", "")
-            if not content:
-                return False
+    def _migrate_text_item(self, old_item: Dict, new_db, content_manager):
+        # Thêm xử lý định dạng cho các bản ghi cũ
+        content = old_item["content"]
+        content_type = "plain"
 
-            # Parse old metadata
-            old_metadata = {}
-            if old_item.get("metadata"):
-                try:
-                    old_metadata = json.loads(old_item["metadata"])
-                except Exception:
-                    pass
+        # Phát hiện HTML trong content cũ
+        if re.search(r"<[a-z][\s\S]*>", content):
+            content_type = "html"
 
-            # Create new metadata with migration info
-            new_metadata = {
-                "migrated_from": "v1",
-                "original_id": old_item.get("id"),
-                "migration_date": f"{datetime.now().strftime('%Y-%m-%d')}",
-                **old_metadata,
-            }
-
-            # Add text item
-            item_id = new_db.add_text_item(content=content, metadata=new_metadata)
-
-            if item_id > 0:
-                # Set pinned status and timestamp
-                if old_item.get("is_pinned"):
-                    new_db.pin_item(item_id, True)
-
-                return True
-
-            return False
-
-        except Exception as e:
-            logger.error(f"Error migrating text item: {e}")
-            return False
+        return new_db.add_rich_text_item(
+            content=content,
+            content_type=content_type,
+            metadata=old_item.get("metadata", {}),
+        )
 
     def _migrate_image_item(self, old_item: Dict, new_db, content_manager) -> bool:
         """Migrate image item"""

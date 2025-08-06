@@ -31,7 +31,7 @@ class SettingsWindow(QDialog):
 
     def __init__(self, config: Config):
         super().__init__()
-        self.config = config
+        self.config = config  # Keep the same variable name
         self.setup_ui()
         self.load_settings()
 
@@ -130,7 +130,8 @@ class SettingsWindow(QDialog):
         layout.addLayout(button_layout)
 
     def load_settings(self):
-        """Load current settings"""
+        """Load settings from original config"""
+        # Use original_config instead of working_config
         self.max_items_spin.setValue(self.config.get("max_items", 25))
         self.max_text_spin.setValue(self.config.get("max_text_length", 1000000))
         self.autostart_check.setChecked(self.config.get("autostart", False))
@@ -144,8 +145,9 @@ class SettingsWindow(QDialog):
         )
 
     def save_settings(self):
-        """Save settings"""
+        """Save settings only when Save button is clicked"""
         try:
+            # Update original config from working config
             self.config.set("max_items", self.max_items_spin.value())
             self.config.set("max_text_length", self.max_text_spin.value())
             self.config.set("autostart", self.autostart_check.isChecked())
@@ -187,5 +189,15 @@ class SettingsWindow(QDialog):
         )
 
         if reply == QMessageBox.StandardButton.Yes:
-            self.config.reset_to_defaults()
+            self.config.reset_to_defaults()  # Use self.config
             self.load_settings()
+
+    def reject(self):
+        """Handle when cancel/close window"""
+        self.load_settings()  # Reset to original config
+        super().reject()
+
+    def showEvent(self, event):
+        """Ensure settings are loaded every time the window is opened"""
+        self.load_settings()
+        super().showEvent(event)

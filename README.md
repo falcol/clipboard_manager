@@ -27,7 +27,11 @@ A clipboard history manager built with Python and PySide6.
    ```bash
    pip install -r requirements.txt
    ```
-3. **Run the application**:
+3. **Migrate**
+   ```bash
+   python scripts/migrate_db.py
+   ```
+4. **Run the application**:
    ```bash
    python src/main.py
    ```

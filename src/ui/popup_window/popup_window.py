@@ -2,333 +2,32 @@
 """
 Windows 10 Dark Mode Clipboard Manager Popup Window
 """
-import base64
 import logging
-from typing import Dict
+import sys
+from typing import Dict, Optional
 
-from PySide6.QtCore import QEasingCurve, QPropertyAnimation, Qt, QTimer
-from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QColor, QCursor, QFont, QPixmap
+from PySide6.QtCore import QEasingCurve, QMimeData, QPropertyAnimation, Qt, QTimer
+from PySide6.QtGui import QClipboard, QColor, QCursor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
 from core.database import EnhancedClipboardDatabase as ClipboardDatabase
+from ui.popup_window.clipboard_item import ClipboardItem
+from ui.popup_window.search_bar import SearchBar
 from ui.styles import Styles
 from utils.config import Config
 from utils.image_utils import ImageUtils
 
 logger = logging.getLogger(__name__)
-
-
-class SearchBar(QFrame):
-    """Windows 10 dark mode search bar widget"""
-
-    search_requested = pyqtSignal(str)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setup_ui()
-
-    def setup_ui(self):
-        self.setFixedHeight(36)
-        self.setStyleSheet(Styles.get_search_bar_style())
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 6, 12, 6)
-
-        # Search icon
-        search_icon = QLabel("🔍")
-        search_icon.setFixedSize(16, 16)
-        search_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(search_icon)
-
-        # Search input
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search clipboard history...")
-        self.search_input.setStyleSheet(
-            "border: none; background: transparent; color: #ffffff; font-size: 11px;"
-        )
-        self.search_input.textChanged.connect(self.on_search_changed)
-        layout.addWidget(self.search_input)
-
-        # Clear button
-        self.clear_btn = QPushButton("✕")
-        self.clear_btn.setFixedSize(16, 16)
-        self.clear_btn.setStyleSheet(
-            """
-            QPushButton {
-                border: none;
-                background: transparent;
-                color: #888888;
-                border-radius: 8px;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background: #3d3d3d;
-                color: #ffffff;
-            }
-        """
-        )
-        self.clear_btn.clicked.connect(self.clear_search)
-        self.clear_btn.hide()
-        layout.addWidget(self.clear_btn)
-
-    def on_search_changed(self, text):
-        """Handle search text changes"""
-        if text.strip():
-            self.clear_btn.show()
-        else:
-            self.clear_btn.hide()
-        self.search_requested.emit(text)
-
-    def clear_search(self):
-        """Clear search with proper signal emission"""
-        self.search_input.clear()
-        self.clear_btn.hide()
-        self.search_requested.emit("")
-
-    def focus_search(self):
-        """Focus search input"""
-        self.search_input.setFocus()
-
-
-class ClipboardItem(QFrame):
-    """Windows 10 dark mode clipboard item widget"""
-
-    item_selected = pyqtSignal(dict)
-    pin_toggled = pyqtSignal(int, bool)
-    delete_requested = pyqtSignal(int)
-
-    def __init__(self, item_data: Dict, parent=None):
-        super().__init__(parent)
-        self.item_data = item_data
-        self.is_hovered = False
-        self.setup_ui()
-        self.setup_animations()
-
-    def setup_ui(self):
-        """Setup Windows 10 dark mode UI for clipboard item"""
-        # Increased height to accommodate 3 lines of text
-        self.setFixedHeight(80)
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style())
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)  # Reduced spacing
-
-        # Content type icon
-        content_icon = self.get_content_icon()
-        icon_label = QLabel(content_icon)
-        icon_label.setFixedSize(20, 20)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setStyleSheet("color: #0078d4; font-size: 14px;")
-        layout.addWidget(icon_label)
-
-        # Main content area with fixed width
-        content_layout = QVBoxLayout()
-        content_layout.setSpacing(2)
-
-        # Preview content
-        if self.item_data["content_type"] == "text":
-            preview_text = self.item_data.get("preview", "")
-            preview_label = QLabel(preview_text)
-            preview_label.setWordWrap(True)
-            preview_label.setFont(QFont("Segoe UI", 10))
-            preview_label.setStyleSheet(
-                "color: #ffffff; font-weight: 500; line-height: 1.2;"
-            )
-            preview_label.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-            )
-
-            # Three line height for better text display
-            font_metrics = preview_label.fontMetrics()
-            line_height = font_metrics.height()
-            preview_label.setFixedHeight(line_height * 3 + 8)
-
-            # Set maximum width for text to prevent layout expansion
-            preview_label.setMaximumWidth(280)  # Limit text width
-            preview_label.setMinimumWidth(100)  # Minimum width
-
-        else:  # image
-            preview_label = QLabel()
-            if self.item_data.get("preview"):
-                try:
-                    if self.item_data["preview"].startswith("data:"):
-                        preview_data = self.item_data["preview"].split(",")[1]
-                        thumbnail_data = base64.b64decode(preview_data)
-                    else:
-                        with open(self.item_data["preview"], "rb") as f:
-                            thumbnail_data = f.read()
-
-                    pixmap = ImageUtils.bytes_to_pixmap(thumbnail_data)
-                    if not pixmap.isNull():
-                        # Reduced image size to fit better
-                        preview_label.setPixmap(
-                            pixmap.scaled(
-                                48,  # Reduced from 128 to 48
-                                48,  # Reduced from 128 to 48
-                                Qt.AspectRatioMode.KeepAspectRatio,
-                                Qt.TransformationMode.SmoothTransformation,
-                            )
-                        )
-                    else:
-                        preview_label.setText("🖼️")
-                        preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                except Exception as e:
-                    logger.error(f"Error loading image preview: {e}")
-                    preview_label.setText("🖼️")
-                    preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            else:
-                preview_label.setText("🖼️")
-                preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            preview_label.setFixedHeight(48)  # Reduced from 32 to 48
-            preview_label.setFixedWidth(48)  # Added fixed width
-
-        content_layout.addWidget(preview_label)
-
-        # Add content with stretch factor but limited width
-        layout.addLayout(content_layout, 1)
-
-        # Action buttons - ensure they're always visible
-        self.actions_widget = QWidget()
-        self.actions_widget.setFixedWidth(
-            32
-        )  # Reduced width since buttons are now vertical
-        self.actions_layout = QVBoxLayout(
-            self.actions_widget
-        )  # Changed from QHBoxLayout to QVBoxLayout
-        self.actions_layout.setContentsMargins(0, 0, 0, 0)
-        self.actions_layout.setSpacing(4)
-        self.actions_layout.setAlignment(
-            Qt.AlignmentFlag.AlignCenter
-        )  # Center align the buttons
-
-        # Pin button
-        self.pin_btn = QPushButton()
-        self.pin_btn.setFixedSize(24, 24)
-        self.pin_btn.setToolTip("Pin/Unpin item")
-        self.update_pin_button()
-        self.pin_btn.clicked.connect(self.toggle_pin)
-        self.actions_layout.addWidget(self.pin_btn)
-
-        # Delete button
-        self.delete_btn = QPushButton("🗑")
-        self.delete_btn.setFixedSize(24, 24)
-        self.delete_btn.setToolTip("Delete item")
-        self.delete_btn.setStyleSheet(Styles.get_action_button_style("delete"))
-        self.delete_btn.clicked.connect(self.delete_item)
-        self.actions_layout.addWidget(self.delete_btn)
-
-        # Initially set low opacity
-        self.pin_btn.setStyleSheet(self.pin_btn.styleSheet() + "opacity: 0.3;")
-        self.delete_btn.setStyleSheet(self.delete_btn.styleSheet() + "opacity: 0.3;")
-
-        layout.addWidget(self.actions_widget)
-
-    def setup_animations(self):
-        """Setup hover animations"""
-        self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(8)
-        self.shadow_effect.setColor(QColor(0, 120, 212, 80))
-        self.shadow_effect.setOffset(0, 1)
-        self.shadow_effect.setEnabled(False)
-        self.setGraphicsEffect(self.shadow_effect)
-
-    def get_content_icon(self):
-        """Get icon based on content type"""
-        content_type = self.item_data.get("content_type", "text")
-        if content_type == "image":
-            return "🖼️"
-        elif content_type == "url":
-            return "🔗"
-        elif content_type == "code":
-            return "💻"
-        elif content_type == "json":
-            return "📄"
-        else:
-            return "📝"
-
-    def update_pin_button(self):
-        """Update pin button appearance"""
-        if self.item_data.get("is_pinned"):
-            self.pin_btn.setText("📌")
-            self.pin_btn.setStyleSheet(Styles.get_action_button_style("pin_active"))
-        else:
-            self.pin_btn.setText("📍")
-            self.pin_btn.setStyleSheet(Styles.get_action_button_style("pin"))
-
-    def mousePressEvent(self, event):
-        """Handle mouse click to select item"""
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.item_selected.emit(self.item_data)
-        super().mousePressEvent(event)
-
-    def enterEvent(self, event):
-        """Handle mouse enter (hover) - show buttons clearly"""
-        self.is_hovered = True
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style(hovered=True))
-        self.shadow_effect.setEnabled(True)
-
-        # Show action buttons clearly
-        self.pin_btn.setStyleSheet(
-            self.pin_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
-        )
-        self.delete_btn.setStyleSheet(
-            self.delete_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
-        )
-
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        """Handle mouse leave - fade buttons"""
-        self.is_hovered = False
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style())
-        self.shadow_effect.setEnabled(False)
-
-        # Fade action buttonsc
-        current_pin_style = self.pin_btn.styleSheet()
-        current_delete_style = self.delete_btn.styleSheet()
-
-        if "opacity: 1.0;" in current_pin_style:
-            self.pin_btn.setStyleSheet(
-                current_pin_style.replace("opacity: 1.0;", "opacity: 0.3;")
-            )
-        else:
-            self.pin_btn.setStyleSheet(current_pin_style + "opacity: 0.3;")
-
-        if "opacity: 1.0;" in current_delete_style:
-            self.delete_btn.setStyleSheet(
-                current_delete_style.replace("opacity: 1.0;", "opacity: 0.3;")
-            )
-        else:
-            self.delete_btn.setStyleSheet(current_delete_style + "opacity: 0.3;")
-
-        super().leaveEvent(event)
-
-    def toggle_pin(self):
-        """Toggle pin status"""
-        new_pin_status = not self.item_data.get("is_pinned", False)
-        self.item_data["is_pinned"] = new_pin_status
-        self.update_pin_button()
-        self.pin_toggled.emit(self.item_data["id"], new_pin_status)
-
-    def delete_item(self):
-        """Delete this item"""
-        self.delete_requested.emit(self.item_data["id"])
 
 
 class PopupWindow(QWidget):
@@ -738,41 +437,241 @@ class PopupWindow(QWidget):
             self.focus_timer.start(100)
 
     def on_item_selected(self, item_data: Dict):
-        """Handle item selection - paste directly like Windows clipboard manager"""
+        """Handle clipboard item selection"""
+        logger.info(f"Item selected: {item_data['id']}")
+
+        # Copy to system clipboard FIRST
+        copy_success = self._copy_to_system_clipboard(item_data)
+
+        if copy_success:
+            # Small delay to ensure clipboard is set
+            QTimer.singleShot(50, self._simulate_ctrl_v)
+        else:
+            logger.error("Failed to copy to clipboard, skipping paste simulation")
+
+        self.hide()
+
+    def _copy_to_system_clipboard(self, item_data: Dict) -> bool:
+        """Copy content like Windows Clipboard - preserve ALL formats including images"""
         try:
-            # Store content type for notification
-            self.last_content_type = item_data.get("content_type", "text")
+            content_type = item_data.get("content_type", "text")
 
-            # Hide popup first
-            self.hide()
+            # Handle IMAGE content (Windows-like behavior)
+            if content_type == "image":
+                return self._copy_image_to_clipboard(item_data)
 
-            # Small delay to ensure popup is hidden
-            QTimer.singleShot(100, lambda: self._paste_like_windows(item_data))
+            # Handle TEXT content (existing logic)
+            mime_data = QMimeData()
+            content = item_data.get("content", "")
+            html_content = item_data.get("html_content")
+            format_type = item_data.get("format", "plain")
+            original_mime_types = item_data.get("original_mime_types", [])
+
+            # Validate content first
+            if not content or not content.strip():
+                logger.error("No content to copy")
+                return False
+
+            logger.info(
+                f"Copying Windows-style: format={format_type}, has_html={bool(html_content)}, mime_types={original_mime_types}"
+            )
+
+            # Windows behavior: ALWAYS set plain text as fallback
+            mime_data.setText(content)
+            logger.info("Set plain text to clipboard")
+
+            # Set HTML if available (Windows preserves both)
+            if html_content and html_content.strip():
+                mime_data.setHtml(html_content)
+                logger.info("Set HTML content to clipboard (Windows-like multi-format)")
+            elif format_type == "html" and content.strip().startswith("<"):
+                # Fallback: if no separate HTML but content looks like HTML
+                mime_data.setHtml(content)
+                logger.info("Set HTML content from main content")
+
+            # Handle RTF if available
+            if format_type == "rtf":
+                mime_data.setData("text/rtf", content.encode("utf-8"))
+                logger.info("Set RTF content to clipboard")
+
+            # Set to system clipboard (main clipboard, not selection)
+            clipboard = QApplication.clipboard()
+            clipboard.setMimeData(
+                mime_data, QClipboard.Mode.Clipboard
+            )  # Explicitly use main clipboard
+
+            # Verify multi-format clipboard was set
+            QTimer.singleShot(
+                10,
+                lambda: self._verify_multi_format_clipboard(content[:50], html_content),
+            )
+
+            return True
 
         except Exception as e:
-            logger.error(f"Error handling item selection: {e}")
-            self.hide()
+            logger.error(f"Failed to copy multi-format to clipboard: {e}")
+            return False
+
+    def _copy_image_to_clipboard(self, item_data: Dict) -> bool:
+        """Copy image content to clipboard like Windows Clipboard Manager"""
+        try:
+            logger.info(f"Copying image item: {item_data['id']}")
+
+            # Method 1: Try to load from file_path first
+            if item_data.get("file_path"):
+                pixmap = QPixmap(item_data["file_path"])
+                if not pixmap.isNull():
+                    clipboard = QApplication.clipboard()
+                    clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                    logger.info(f"✓ Image copied from file: {item_data['file_path']}")
+
+                    # Show notification
+                    if hasattr(self, "system_tray") and self.system_tray:
+                        self.system_tray.show_notification(
+                            "Image Copied",
+                            f"Image copied to clipboard ({pixmap.width()}×{pixmap.height()})",
+                            2000,
+                        )
+                    return True
+                else:
+                    logger.warning(
+                        f"Failed to load image from {item_data['file_path']}"
+                    )
+
+            # Method 2: Try to load from thumbnail_path
+            if item_data.get("thumbnail_path"):
+                pixmap = QPixmap(item_data["thumbnail_path"])
+                if not pixmap.isNull():
+                    clipboard = QApplication.clipboard()
+                    clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                    logger.info(
+                        f"✓ Image copied from thumbnail: {item_data['thumbnail_path']}"
+                    )
+                    return True
+
+            # Method 3: Try to decode from base64 content (fallback)
+            if item_data.get("content"):
+                try:
+                    import base64
+
+                    from utils.image_utils import ImageUtils
+
+                    # Handle base64 data URLs
+                    content = item_data["content"]
+                    if content.startswith("data:image"):
+                        # Extract base64 part
+                        base64_data = (
+                            content.split(",")[1] if "," in content else content
+                        )
+                        image_data = base64.b64decode(base64_data)
+                    else:
+                        # Assume raw base64
+                        image_data = base64.b64decode(content)
+
+                    pixmap = ImageUtils.bytes_to_pixmap(image_data)
+                    if not pixmap.isNull():
+                        clipboard = QApplication.clipboard()
+                        clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
+                        logger.info("✓ Image copied from base64 content")
+                        return True
+
+                except Exception as e:
+                    logger.error(f"Failed to decode base64 image: {e}")
+
+            # Method 4: Final fallback - create placeholder image
+            logger.warning("Creating placeholder image for clipboard")
+            placeholder_pixmap = QPixmap(100, 100)
+            placeholder_pixmap.fill(QColor(128, 128, 128))  # Gray placeholder
+
+            clipboard = QApplication.clipboard()
+            clipboard.setPixmap(placeholder_pixmap, QClipboard.Mode.Clipboard)
+            logger.info("✓ Placeholder image copied to clipboard")
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to copy image to clipboard: {e}")
+            return False
+
+    def _verify_multi_format_clipboard(
+        self, expected_text: str, expected_html: Optional[str] = None
+    ):
+        """Verify multi-format clipboard was set correctly"""
+        try:
+            clipboard = QApplication.clipboard()
+            mime_data = clipboard.mimeData(QClipboard.Mode.Clipboard)
+
+            has_text = mime_data.hasText() and expected_text in mime_data.text()
+            has_html = (
+                expected_html
+                and mime_data.hasHtml()
+                and expected_html[:50] in mime_data.html()
+            )
+            has_image = mime_data.hasImage()
+
+            if has_text:
+                logger.info("✓ Plain text verified in clipboard")
+            else:
+                logger.warning("✗ Plain text verification failed")
+
+            if expected_html:
+                if has_html:
+                    logger.info("✓ HTML content verified in clipboard")
+                else:
+                    logger.warning("✗ HTML content verification failed")
+
+            if has_image:
+                logger.info("✓ Image content verified in clipboard")
+
+            # Log available formats for debugging
+            available = []
+            if mime_data.hasText():
+                available.append("text/plain")
+            if mime_data.hasHtml():
+                available.append("text/html")
+            if mime_data.hasImage():
+                available.append("image")
+
+            logger.info(f"Clipboard formats available: {available}")
+
+        except Exception as e:
+            logger.error(f"Multi-format clipboard verification error: {e}")
 
     def _simulate_ctrl_v(self):
-        """Simulate Ctrl+V keyboard shortcut with platform detection"""
+        """Simulate Ctrl+V using the actual clipboard content"""
         try:
-            import platform
+            # Get current platform
+            platform = sys.platform.lower()
 
-            current_platform = platform.system().lower()
+            # Check if clipboard has content - FIX THE LOGIC HERE
+            clipboard = QApplication.clipboard()
+            mime_data = clipboard.mimeData()
 
-            if current_platform == "windows":
-                self._simulate_ctrl_v_windows()
-            elif current_platform == "linux":
-                self._simulate_ctrl_v_linux()
-            elif current_platform == "darwin":  # macOS
-                self._simulate_ctrl_v_macos()
+            has_content = (
+                (mime_data.hasText() and mime_data.text().strip())
+                or (mime_data.hasHtml() and mime_data.html().strip())
+                or (mime_data.hasImage() and not clipboard.pixmap().isNull())
+            )
+
+            if has_content:
+                logger.info("Clipboard has content, simulating paste...")
+
+                if platform.startswith("win"):
+                    self._simulate_ctrl_v_windows()
+                elif platform.startswith("linux"):
+                    self._simulate_ctrl_v_linux()
+                elif platform.startswith("darwin"):
+                    self._simulate_ctrl_v_macos()
+                else:
+                    self._simulate_ctrl_v_fallback()
             else:
-                # Fallback for unknown platforms
-                self._simulate_ctrl_v_fallback()
+                logger.warning("No content in clipboard to paste")
+                logger.debug(
+                    f"Clipboard check: hasText={mime_data.hasText()}, hasHtml={mime_data.hasHtml()}, hasImage={mime_data.hasImage()}"
+                )
 
         except Exception as e:
-            logger.error(f"Error simulating Ctrl+V: {e}")
-            raise
+            logger.error(f"Error simulating paste: {e}")
 
     def _simulate_ctrl_v_windows(self):
         """Windows Ctrl+V simulation using keyboard library"""
