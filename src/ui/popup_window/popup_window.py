@@ -23,9 +23,9 @@ from PySide6.QtWidgets import (
 from core.database import EnhancedClipboardDatabase as ClipboardDatabase
 from ui.popup_window.clipboard_item import ClipboardItem
 from ui.popup_window.search_bar import SearchBar
-from ui.styles import Styles
 from utils.config import Config
 from utils.image_utils import ImageUtils
+from utils.qss_loader import QSSLoader
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,13 @@ class PopupWindow(QWidget):
         self.database = database
         self.config = config
         self.system_tray = system_tray
+
+        # Set object name for QSS targeting
+        self.setObjectName("popupWindow")
+
+        # Initialize QSS loader
+        self.qss_loader = QSSLoader()
+
         self.clipboard_items = []
         self.all_items = []
         self.current_search = ""
@@ -55,6 +62,9 @@ class PopupWindow(QWidget):
         self.focus_timer = QTimer()
         self.focus_timer.setSingleShot(True)
         self.focus_timer.timeout.connect(self.check_focus)
+
+        # Apply QSS after all setup is complete
+        self.qss_loader.apply_stylesheet(self, "main.qss")
 
     def setup_window(self):
         """Setup Windows 10 dark mode window properties"""
@@ -75,32 +85,22 @@ class PopupWindow(QWidget):
         self.setGraphicsEffect(shadow)
 
     def setup_ui(self):
-        """Setup Windows 10 dark mode UI"""
+        """Setup Windows 10 dark mode UI using QSS"""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
         # Main container
         self.container = QFrame()
-        self.container.setStyleSheet(Styles.get_modern_popup_style())
+        self.container.setObjectName("mainContainer")  # Use QSS for styling
         container_layout = QVBoxLayout(self.container)
         container_layout.setContentsMargins(0, 0, 0, 0)
         container_layout.setSpacing(0)
 
         # Header
         self.header = QFrame()
+        self.header.setObjectName("header")  # Use QSS for styling
         self.header.setFixedHeight(48)
-        self.header.setStyleSheet(
-            """
-            QFrame {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #2d2d2d, stop:1 #1f1f1f);
-                border-top-left-radius: 6px;
-                border-top-right-radius: 6px;
-                border-bottom: 1px solid #3d3d3d;
-            }
-        """
-        )
         self.header.setCursor(Qt.CursorShape.SizeAllCursor)
 
         header_layout = QHBoxLayout(self.header)
@@ -111,18 +111,19 @@ class PopupWindow(QWidget):
 
         # Drag indicator
         drag_icon = QLabel("⋮⋮")
+        drag_icon.setObjectName("dragIcon")  # Use QSS for styling
         drag_icon.setFont(QFont("Segoe UI", 10))
-        drag_icon.setStyleSheet("color: #cccccc; background: transparent;")
         drag_icon.setToolTip("Drag to move window")
         title_layout.addWidget(drag_icon)
 
         title_icon = QLabel("📋")
+        title_icon.setObjectName("titleIcon")  # Use QSS for styling
         title_icon.setFont(QFont("Segoe UI", 14))
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
+        title_label.setObjectName("titleLabel")  # Use QSS for styling
         title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
-        title_label.setStyleSheet("color: #ffffff; background: transparent;")
         title_layout.addWidget(title_label)
         title_layout.addStretch()
 
@@ -133,26 +134,7 @@ class PopupWindow(QWidget):
 
         # Clear all button
         self.clear_btn = QPushButton("Clear All")
-        self.clear_btn.setStyleSheet(
-            """
-            QPushButton {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                border-radius: 4px;
-                padding: 4px 8px;
-                color: #cccccc;
-                font-weight: 500;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background: rgba(255, 255, 255, 0.2);
-                color: #ffffff;
-            }
-            QPushButton:pressed {
-                background: rgba(255, 255, 255, 0.05);
-            }
-        """
-        )
+        self.clear_btn.setObjectName("clearAllButton")  # Use QSS for styling
         self.clear_btn.clicked.connect(self.clear_history)
         actions_layout.addWidget(self.clear_btn)
 
@@ -164,9 +146,9 @@ class PopupWindow(QWidget):
         self.search_bar.search_requested.connect(self.on_search)
         container_layout.addWidget(self.search_bar)
 
-        # Content area
+        # Content area with proper QSS structure
         content_frame = QFrame()
-        content_frame.setStyleSheet("background: #1f1f1f;")
+        content_frame.setObjectName("contentFrame")
         content_layout = QVBoxLayout(content_frame)
         content_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -179,7 +161,7 @@ class PopupWindow(QWidget):
         self.scroll_area.setVerticalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
-        self.scroll_area.setStyleSheet(Styles.get_modern_scrollbar_style())
+        # QSS will handle scrollbar styling
 
         self.scroll_widget = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
@@ -194,30 +176,21 @@ class PopupWindow(QWidget):
 
         # Footer
         footer = QFrame()
+        footer.setObjectName("footer")  # Use QSS for styling
         footer.setFixedHeight(28)
-        footer.setStyleSheet(
-            """
-            QFrame {
-                background: #2d2d2d;
-                border-bottom-left-radius: 6px;
-                border-bottom-right-radius: 6px;
-                border-top: 1px solid #3d3d3d;
-            }
-        """
-        )
 
         footer_layout = QHBoxLayout(footer)
         footer_layout.setContentsMargins(16, 6, 16, 6)
 
         footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
+        footer_label.setObjectName("footerLabel")  # Use QSS for styling
         footer_label.setFont(QFont("Segoe UI", 8))
-        footer_label.setStyleSheet("color: #888888; background: transparent;")
         footer_layout.addWidget(footer_label)
 
         # Stats
         self.stats_label = QLabel()
+        self.stats_label.setObjectName("statsLabel")  # Use QSS for styling
         self.stats_label.setFont(QFont("Segoe UI", 8))
-        self.stats_label.setStyleSheet("color: #666666; background: transparent;")
         footer_layout.addWidget(self.stats_label)
 
         container_layout.addWidget(footer)
@@ -300,25 +273,15 @@ class PopupWindow(QWidget):
             if self.current_search.strip():
                 empty_label = QLabel(f"🔍 No results found for '{self.current_search}'")
                 empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                empty_label.setStyleSheet(
-                    """
-                    color: #666666;
-                    font-size: 12px;
-                    padding: 30px;
-                    background: transparent;
-                """
-                )
+                empty_label.setObjectName(
+                    "emptyStateLabel"
+                )  # Use QSS instead of inline style
             else:
                 empty_label = QLabel("📋 No clipboard history yet")
                 empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                empty_label.setStyleSheet(
-                    """
-                    color: #666666;
-                    font-size: 12px;
-                    padding: 30px;
-                    background: transparent;
-                """
-                )
+                empty_label.setObjectName(
+                    "emptyStateLabel"
+                )  # Use QSS instead of inline style
             self.scroll_layout.insertWidget(0, empty_label)
 
         # Update stats

@@ -33,6 +33,7 @@ from ui.popup_window import PopupWindow
 from ui.settings_window import SettingsWindow
 from ui.system_tray import SystemTray
 from utils.config import Config
+from utils.qss_loader import QSSLoader
 
 # Configure enhanced logging
 # Setup enhanced logging first
@@ -291,6 +292,9 @@ class EnhancedClipboardManager:
         # Initialize hotkey manager with Super+V
         self.hotkey_manager = HotkeyManager(self.show_popup)
 
+        # Initialize QSS loader
+        self.qss_loader = QSSLoader()
+
         # Setup enhanced connections
         self.setup_connections()
 
@@ -344,6 +348,9 @@ class EnhancedClipboardManager:
         # Popup window focus management
         # if hasattr(self.popup_window, "hidden"):
         #     self.popup_window.hidden.connect(self.on_popup_hidden)
+
+        # Apply QSS to all components
+        self._apply_qss_styles()
 
     def setup_performance_monitoring(self):
         """Setup performance monitoring and cleanup"""
@@ -446,6 +453,22 @@ class EnhancedClipboardManager:
 
         except Exception as e:
             logger.error(f"Error updating settings: {e}")
+
+    def _apply_qss_styles(self):
+        """Apply QSS stylesheets to all UI components"""
+        try:
+            # Apply to popup window
+            self.qss_loader.apply_stylesheet(self.popup_window, "main.qss")
+
+            # Apply to settings window
+            self.qss_loader.apply_stylesheet(self.settings_window, "main.qss")
+
+            # SystemTray is QObject, not QWidget - skip QSS application
+            # The menu styling is handled in SystemTray.create_modern_menu()
+
+            logger.info("QSS stylesheets applied successfully")
+        except Exception as e:
+            logger.error(f"Error applying QSS stylesheets: {e}")
 
     def start(self):
         """Start the enhanced application with error handling"""

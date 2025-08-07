@@ -10,7 +10,6 @@ from PySide6.QtGui import QBrush, QColor, QFont, QIcon, QPainter, QPixmap, Qt
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from ui.about_popup import show_about_popup
-from ui.styles import Styles
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +91,15 @@ class SystemTray(QObject):
     def create_modern_menu(self):
         """Create modern context menu with enhanced styling"""
         menu = QMenu()
-        menu.setStyleSheet(Styles.get_system_tray_menu_style())
+
+        # Load QSS for menu styling
+        try:
+            from utils.qss_loader import QSSLoader
+
+            qss_loader = QSSLoader()
+            qss_loader.apply_stylesheet(menu, "main.qss")
+        except Exception as e:
+            logger.warning(f"Could not apply QSS to menu: {e}")
 
         # Show clipboard action with icon
         show_action = menu.addAction("📋  Show Clipboard History")
