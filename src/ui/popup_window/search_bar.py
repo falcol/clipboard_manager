@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton
 
-from ui.styles import Styles
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +23,8 @@ class SearchBar(QFrame):
 
     def setup_ui(self):
         self.setFixedHeight(36)
-        self.setStyleSheet(Styles.get_search_bar_style())
+        # Remove inline style, use QSS
+        self.setObjectName("searchBar")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 6, 12, 6)
@@ -38,30 +38,16 @@ class SearchBar(QFrame):
         # Search input
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search clipboard history...")
-        self.search_input.setStyleSheet(
-            "border: none; background: transparent; color: #ffffff; font-size: 11px;"
-        )
+        self.search_input.setObjectName(
+            "searchInput"
+        )  # Use QSS instead of inline style
         self.search_input.textChanged.connect(self.on_search_changed)
         layout.addWidget(self.search_input)
 
         # Clear button
         self.clear_btn = QPushButton("✕")
         self.clear_btn.setFixedSize(16, 16)
-        self.clear_btn.setStyleSheet(
-            """
-            QPushButton {
-                border: none;
-                background: transparent;
-                color: #888888;
-                border-radius: 8px;
-                font-size: 10px;
-            }
-            QPushButton:hover {
-                background: #3d3d3d;
-                color: #ffffff;
-            }
-        """
-        )
+        self.clear_btn.setObjectName("clearButton")  # Use QSS instead of inline style
         self.clear_btn.clicked.connect(self.clear_search)
         self.clear_btn.hide()
         layout.addWidget(self.clear_btn)

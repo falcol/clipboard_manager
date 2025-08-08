@@ -4,7 +4,6 @@ import platform
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
-from .styles import Styles
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ class AboutPopup(QDialog):
         self.setWindowTitle("About Clipboard Manager")
         self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint)
         self.setFixedSize(400, 300)
-        self.setStyleSheet(Styles.get_about_popup_style())
+        self.setObjectName("aboutPopup")  # Use QSS instead of inline style
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -24,7 +23,7 @@ class AboutPopup(QDialog):
 
         # Title
         title_label = QLabel("🔷 Clipboard Manager v1.0")
-        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #ffffff;")
+        title_label.setObjectName("aboutTitle")  # Use QSS instead of inline style
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Content
@@ -43,28 +42,13 @@ class AboutPopup(QDialog):
         content_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
         )
-        content_label.setStyleSheet(
-            "font-size: 12px; color: #cccccc; line-height: 1.4;"
-        )
+        content_label.setObjectName("aboutContent")  # Use QSS instead of inline style
 
         # Close button
         close_btn = QPushButton("Close")
         close_btn.setFixedSize(80, 30)
         close_btn.clicked.connect(self.close)
-        close_btn.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #404040;
-                border: 1px solid #606060;
-                border-radius: 4px;
-                color: #ffffff;
-                font-size: 12px;
-            }
-            QPushButton:hover {
-                background-color: #505050;
-            }
-            """
-        )
+        close_btn.setObjectName("aboutCloseButton")  # Use QSS instead of inline style
 
         # Button layout
         button_layout = QHBoxLayout()

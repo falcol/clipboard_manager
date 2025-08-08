@@ -1,0 +1,564 @@
+/* ===============================================
+   Clipboard Manager - Main Stylesheet
+   EXACT COPY of styles.py + ALL inline styles
+   =============================================== */
+
+/* ===============================================
+   MODERN POPUP STYLE
+   Exact copy of: Styles.get_modern_popup_style()
+   =============================================== */
+
+QFrame#popupWindow, QFrame#mainContainer {
+    background: #1f1f1f;
+    border-radius: 6px;
+    border: 1px solid #3d3d3d;
+}
+
+/* ===============================================
+   SEARCH BAR STYLE
+   Exact copy of: Styles.get_search_bar_style()
+   =============================================== */
+
+QFrame#searchBar {
+    background: #2d2d2d;
+    border: none;
+    border-top: 1px solid #3d3d3d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+/* Search input - from search_bar.py */
+QLineEdit#searchInput {
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 11px;
+}
+
+/* Search clear button - from search_bar.py */
+QPushButton#clearButton {
+    border: none;
+    background: transparent;
+    color: #888888;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+QPushButton#clearButton:hover {
+    background: #3d3d3d;
+    color: #ffffff;
+}
+
+/* ===============================================
+   MODERN CLIPBOARD ITEM STYLE
+   Exact copy of: Styles.get_modern_clipboard_item_style(hovered=False)
+   =============================================== */
+
+QFrame#clipboardItem {
+    background: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    margin: 1px;
+    padding: 3px;
+    font-size: 13px;  /* Giữ font size 13px */
+}
+
+QFrame#clipboardItem:hover {
+    background: #3d3d3d;
+    border: 1px solid #0078d4;
+}
+
+/* Labels inside clipboard items - EXACT copy from styles.py */
+QLabel {
+    color: #ffffff;
+    background: transparent;
+    border: none;
+}
+
+/* Icon label - from clipboard_item.py */
+QLabel#iconLabel {
+    color: #0078d4;
+    font-size: 14px;
+}
+
+/* Content label - from clipboard_item.py */
+QLabel#contentLabel {
+    color: #ffffff;
+    background: transparent;
+    border: none;
+    font-family: 'Segoe UI';
+    font-size: 13px;  /* Giữ font size 13px */
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+/* ===============================================
+   ACTION BUTTON STYLES
+   Exact copy of: Styles.get_action_button_style()
+   =============================================== */
+
+/* Base style for ALL buttons */
+QPushButton {
+    border: none;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: normal;
+    background: transparent;
+    color: #cccccc;
+}
+
+QPushButton:hover {
+    background: #3d3d3d;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background: #2d2d2d;
+}
+
+/* Pin button normal state - Exact copy of button_type="pin" */
+QPushButton#pinButton {
+    color: #888888;
+}
+
+QPushButton#pinButton:hover {
+    color: #0078d4;
+    background: rgba(0, 120, 212, 0.1);
+}
+
+/* Pin button active state - Exact copy of button_type="pin_active" */
+QPushButton#pinButtonActive {
+    color: #0078d4;
+    background: rgba(0, 120, 212, 0.1);
+}
+
+QPushButton#pinButtonActive:hover {
+    color: #ffffff;
+    background: rgba(0, 120, 212, 0.2);
+}
+
+/* Delete button - Exact copy of button_type="delete" */
+QPushButton#deleteButton {
+    color: #888888;
+}
+
+QPushButton#deleteButton:hover {
+    color: #ff4444;
+    background: rgba(255, 68, 68, 0.1);
+}
+
+/* ===============================================
+   MODERN SCROLLBAR STYLE
+   Exact copy of: Styles.get_modern_scrollbar_style()
+   =============================================== */
+
+QScrollArea {
+    border: none;
+    background: transparent;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 6px;
+    border: none;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #5a5a5a;
+    border-radius: 3px;
+    min-height: 20px;
+    margin: 1px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #7a7a7a;
+}
+
+QScrollBar::handle:vertical:pressed {
+    background: #0078d4;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+    border: none;
+    background: none;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+/* ===============================================
+   POPUP WINDOW STYLE
+   Exact copy of: Styles.get_popup_window_style()
+   =============================================== */
+
+QWidget {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border-radius: 6px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+/* Popup window scrollbar - from get_popup_window_style() */
+QScrollBar:vertical {
+    background-color: transparent;
+    width: 6px;
+    border-radius: 3px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #5a5a5a;
+    border-radius: 3px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #7a7a7a;
+}
+
+/* Popup window buttons - from get_popup_window_style() */
+QPushButton#clearAllButton {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #ffffff;
+}
+
+QPushButton#clearAllButton:hover {
+    background-color: #3d3d3d;
+}
+
+QPushButton#clearAllButton:pressed {
+    background-color: #1f1f1f;
+}
+
+/* ===============================================
+   CLIPBOARD ITEM STYLE (BACKWARD COMPATIBILITY)
+   Exact copy of: Styles.get_clipboard_item_style()
+   =============================================== */
+
+/* Alternative clipboard item styling */
+QFrame.clipboardItemAlt {
+    background-color: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    margin: 1px;
+}
+
+QFrame.clipboardItemAlt:hover {
+    background-color: #3d3d3d;
+}
+
+/* ===============================================
+   SETTINGS WINDOW STYLE
+   Exact copy of: Styles.get_settings_window_style()
+   =============================================== */
+
+QDialog#settingsDialog {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+QGroupBox {
+    font-weight: bold;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    background: #2d2d2d;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 15px;
+    padding: 0 8px 0 8px;
+    color: #0078d4;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Settings window labels */
+QLabel#settingsLabel {
+    color: #ffffff;
+    background: transparent;
+}
+
+/* Theme label - from settings_window.py */
+QLabel#themeLabel {
+    color: #888;
+}
+
+QSpinBox {
+    background: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    padding: 6px;
+    color: #ffffff;
+    font-size: 11px;
+}
+
+QSpinBox:focus {
+    border: 1px solid #0078d4;
+    background: #3d3d3d;
+}
+
+QSpinBox::up-button, QSpinBox::down-button {
+    background: #3d3d3d;
+    border: none;
+    width: 16px;
+    border-radius: 2px;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+    background: #0078d4;
+}
+
+QCheckBox {
+    color: #ffffff;
+    spacing: 8px;
+    font-size: 11px;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+}
+
+QCheckBox::indicator:unchecked {
+    background: #2d2d2d;
+    border: 1px solid #3d3d3d;
+}
+
+QCheckBox::indicator:unchecked:hover {
+    background: #3d3d3d;
+    border: 1px solid #0078d4;
+}
+
+QCheckBox::indicator:checked {
+    background: #0078d4;
+    border: 1px solid #0078d4;
+}
+
+QCheckBox::indicator:checked:hover {
+    background: #0086f0;
+}
+
+/* Settings window buttons */
+QPushButton#settingsButton {
+    background: #2d2d2d;
+    border: 1px solid #3d3d3d;
+    border-radius: 4px;
+    padding: 8px 16px;
+    color: #ffffff;
+    min-width: 90px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+QPushButton#settingsButton:hover {
+    background: #3d3d3d;
+    border: 1px solid #0078d4;
+}
+
+QPushButton#settingsButton:pressed {
+    background: #1f1f1f;
+    border: 1px solid #005a9e;
+}
+
+QPushButton#settingsButton:default {
+    background: #0078d4;
+    border: 1px solid #0078d4;
+}
+
+QPushButton#settingsButton:default:hover {
+    background: #0086f0;
+}
+
+/* ===============================================
+   SYSTEM TRAY MENU STYLE
+   Exact copy of: Styles.get_system_tray_menu_style()
+   =============================================== */
+
+QMenu {
+    background-color: #1f1f1f;
+    color: #ffffff;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    padding: 8px 0px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11px;
+}
+
+QMenu::item {
+    padding: 8px 20px;
+    margin: 1px 4px;
+    border-radius: 3px;
+}
+
+QMenu::item:selected {
+    background: #0078d4;
+}
+
+QMenu::item:pressed {
+    background: #005a9e;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #3d3d3d;
+    margin: 4px 10px;
+}
+
+/* ===============================================
+   ABOUT POPUP STYLE
+   Exact copy of: Styles.get_about_popup_style() + inline styles
+   =============================================== */
+
+QDialog#aboutPopup {
+    background-color: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 8px;
+}
+
+/* About popup title - from about_popup.py */
+QLabel#aboutTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff;
+}
+
+/* About popup content - from about_popup.py */
+QLabel#aboutContent {
+    font-size: 12px;
+    color: #cccccc;
+    line-height: 1.4;
+}
+
+/* About popup close button - from about_popup.py */
+QPushButton#aboutCloseButton {
+    background-color: #404040;
+    border: 1px solid #606060;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+QPushButton#aboutCloseButton:hover {
+    background-color: #505050;
+}
+
+/* ===============================================
+   IMAGE PREVIEW STYLES
+   From clipboard_item.py inline styles
+   =============================================== */
+
+/* Image thumbnail container */
+QFrame#imagePreviewContainer {
+    border: 1px solid #444444;
+    border-radius: 4px;
+    background: #333333;
+}
+
+/* Image type label */
+QLabel#imageTypeLabel {
+    color: #ffffff;
+    font-family: 'Segoe UI';
+    font-size: 9px;
+    font-weight: bold;
+}
+
+/* Image size label */
+QLabel#imageSizeLabel {
+    color: #cccccc;
+    font-family: 'Segoe UI';
+    font-size: 8px;
+}
+
+/* Image timestamp label */
+QLabel#imageTimeLabel {
+    color: #888888;
+    font-family: 'Segoe UI';
+    font-size: 7px;
+}
+
+/* ===============================================
+   EMPTY STATE STYLES
+   From popup_window.py inline styles
+   =============================================== */
+
+QLabel#emptyStateLabel {
+    color: #666666;
+    font-size: 12px;
+    padding: 30px;
+    background: transparent;
+}
+
+/* ===============================================
+   HTML PREVIEW STYLES
+   From clipboard_item.py inline styles
+   =============================================== */
+
+QTextEdit#htmlPreview {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-family: 'Segoe UI';
+    font-size: 10px;
+}
+
+/* ===============================================
+   HEADER AND FOOTER STYLES
+   =============================================== */
+
+/* Header elements */
+QFrame#header {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+        stop:0 #2d2d2d, stop:1 #1f1f1f);
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+QLabel#dragIcon {
+    color: #cccccc;
+    background: transparent;
+}
+
+QLabel#titleIcon {
+    color: #0078d4;
+    background: transparent;
+}
+
+QLabel#titleLabel {
+    color: #ffffff;
+    background: transparent;
+}
+
+/* Footer elements */
+QFrame#footer {
+    background: #2d2d2d;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-top: 1px solid #3d3d3d;
+}
+
+QLabel#footerLabel {
+    color: #888888;
+    background: transparent;
+}
+
+QLabel#statsLabel {
+    color: #666666;
+    background: transparent;
+}
+
+/* Content frame */
+QFrame#contentFrame {
+    background: #1f1f1f;
+}

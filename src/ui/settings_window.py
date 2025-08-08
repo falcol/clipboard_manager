@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from ui.styles import Styles
 from utils.config import Config
 
 logger = logging.getLogger(__name__)
@@ -39,7 +38,7 @@ class SettingsWindow(QDialog):
         """Setup the UI"""
         self.setWindowTitle("Clipboard Manager Settings")
         self.setFixedSize(400, 500)  # Increased height for new settings
-        self.setStyleSheet(Styles.get_settings_window_style())
+        self.setObjectName("settingsDialog")  # Use QSS instead of inline style
 
         layout = QVBoxLayout(self)
 
@@ -71,7 +70,7 @@ class SettingsWindow(QDialog):
 
         # Theme (placeholder for future)
         theme_label = QLabel("Dark theme (always on)")
-        theme_label.setStyleSheet("color: #888;")
+        theme_label.setObjectName("themeLabel")  # Use QSS instead of inline style
         appearance_layout.addRow(theme_label)
 
         layout.addWidget(appearance_group)

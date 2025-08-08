@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.styles import Styles
+from utils.qss_loader import QSSLoader
 
 logger = logging.getLogger(__name__)
 
@@ -36,26 +36,37 @@ class ClipboardItem(QFrame):
         super().__init__(parent)
         self.item_data = item_data
         self.is_hovered = False
+
+        # Set object name for QSS targeting
+        self.setObjectName("clipboardItem")
+
+        # Initialize QSS loader
+        self.qss_loader = QSSLoader()
+
         self.setup_ui()
         self.setup_animations()
 
+        # Apply QSS stylesheet
+        self.qss_loader.apply_stylesheet(self, "main.qss")
+
     def setup_ui(self):
-        """Setup Windows 10 dark mode UI for clipboard item"""
-        # Increased height to accommodate 3 lines of text
-        self.setFixedHeight(80)
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style())
+        """Setup Windows 10 dark mode UI for clipboard item - EXACTLY like styles.py"""
+        # Tăng height để đủ cho 3 dòng text với font 13px
+        self.setFixedHeight(90)  # Tăng từ 80 lên 90
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)  # Reduced spacing
 
-        # Content type icon
+        # Content type icon - INLINE STYLE like original (styles.py doesn't define icon styling)
         content_icon = self.get_content_icon()
         icon_label = QLabel(content_icon)
         icon_label.setFixedSize(20, 20)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setStyleSheet("color: #0078d4; font-size: 14px;")
+        icon_label.setStyleSheet(
+            "color: #0078d4; font-size: 14px;"
+        )  # EXACT like original
         layout.addWidget(icon_label)
 
         # Main content area with fixed width
@@ -85,7 +96,6 @@ class ClipboardItem(QFrame):
         self.pin_btn = QPushButton()
         self.pin_btn.setFixedSize(24, 24)
         self.pin_btn.setToolTip("Pin/Unpin item")
-        self.update_pin_button()
         self.pin_btn.clicked.connect(self.toggle_pin)
         self.actions_layout.addWidget(self.pin_btn)
 
@@ -93,15 +103,15 @@ class ClipboardItem(QFrame):
         self.delete_btn = QPushButton("🗑")
         self.delete_btn.setFixedSize(24, 24)
         self.delete_btn.setToolTip("Delete item")
-        self.delete_btn.setStyleSheet(Styles.get_action_button_style("delete"))
         self.delete_btn.clicked.connect(self.delete_item)
         self.actions_layout.addWidget(self.delete_btn)
 
-        # Initially set low opacity
-        self.pin_btn.setStyleSheet(self.pin_btn.styleSheet() + "opacity: 0.3;")
-        self.delete_btn.setStyleSheet(self.delete_btn.styleSheet() + "opacity: 0.3;")
-
         layout.addWidget(self.actions_widget)
+
+        # Update pin button and delete button styles AFTER widgets are created
+        self.update_pin_button()
+        # Apply delete button style - EXACT from styles.py
+        self.delete_btn.setStyleSheet(self.qss_loader.load_stylesheet("main.qss"))
 
     def setup_animations(self):
         """Setup hover animations"""
@@ -127,13 +137,68 @@ class ClipboardItem(QFrame):
             return "📝"
 
     def update_pin_button(self):
-        """Update pin button appearance"""
+        """Update pin button appearance using EXACTLY styles.py methods"""
         if self.item_data.get("is_pinned"):
             self.pin_btn.setText("📌")
-            self.pin_btn.setStyleSheet(Styles.get_action_button_style("pin_active"))
+            # Use EXACT style from styles.py get_action_button_style("pin_active")
+            pin_active_style = """
+                QPushButton {
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: normal;
+                    background: transparent;
+                    color: #cccccc;
+                }
+                QPushButton:hover {
+                    background: #3d3d3d;
+                    color: #ffffff;
+                }
+                QPushButton:pressed {
+                    background: #2d2d2d;
+                }
+                QPushButton {
+                    color: #0078d4;
+                    background: rgba(0, 120, 212, 0.1);
+                }
+                QPushButton:hover {
+                    color: #ffffff;
+                    background: rgba(0, 120, 212, 0.2);
+                }
+            """
+            self.pin_btn.setStyleSheet(pin_active_style)
         else:
             self.pin_btn.setText("📍")
-            self.pin_btn.setStyleSheet(Styles.get_action_button_style("pin"))
+            # Use EXACT style from styles.py get_action_button_style("pin")
+            pin_normal_style = """
+                QPushButton {
+                    border: none;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: normal;
+                    background: transparent;
+                    color: #cccccc;
+                }
+                QPushButton:hover {
+                    background: #3d3d3d;
+                    color: #ffffff;
+                }
+                QPushButton:pressed {
+                    background: #2d2d2d;
+                }
+                QPushButton {
+                    color: #888888;
+                }
+                QPushButton:hover {
+                    color: #0078d4;
+                    background: rgba(0, 120, 212, 0.1);
+                }
+            """
+            self.pin_btn.setStyleSheet(pin_normal_style)
+
+        # Re-apply QSS to update appearance
+        if hasattr(self, "qss_loader"):
+            self.qss_loader.apply_stylesheet(self, "main.qss")
 
     def mousePressEvent(self, event):
         """Handle mouse click to select item"""
@@ -142,45 +207,17 @@ class ClipboardItem(QFrame):
         super().mousePressEvent(event)
 
     def enterEvent(self, event):
-        """Handle mouse enter (hover) - show buttons clearly"""
+        """Handle mouse enter (hover) - use QSS hover states"""
         self.is_hovered = True
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style(hovered=True))
         self.shadow_effect.setEnabled(True)
-
-        # Show action buttons clearly
-        self.pin_btn.setStyleSheet(
-            self.pin_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
-        )
-        self.delete_btn.setStyleSheet(
-            self.delete_btn.styleSheet().replace("opacity: 0.3;", "opacity: 1.0;")
-        )
-
+        # QSS handles hover styling automatically
         super().enterEvent(event)
 
     def leaveEvent(self, event):
-        """Handle mouse leave - fade buttons"""
+        """Handle mouse leave - use QSS normal states"""
         self.is_hovered = False
-        self.setStyleSheet(Styles.get_modern_clipboard_item_style())
         self.shadow_effect.setEnabled(False)
-
-        # Fade action buttonsc
-        current_pin_style = self.pin_btn.styleSheet()
-        current_delete_style = self.delete_btn.styleSheet()
-
-        if "opacity: 1.0;" in current_pin_style:
-            self.pin_btn.setStyleSheet(
-                current_pin_style.replace("opacity: 1.0;", "opacity: 0.3;")
-            )
-        else:
-            self.pin_btn.setStyleSheet(current_pin_style + "opacity: 0.3;")
-
-        if "opacity: 1.0;" in current_delete_style:
-            self.delete_btn.setStyleSheet(
-                current_delete_style.replace("opacity: 1.0;", "opacity: 0.3;")
-            )
-        else:
-            self.delete_btn.setStyleSheet(current_delete_style + "opacity: 0.3;")
-
+        # QSS handles normal styling automatically
         super().leaveEvent(event)
 
     def toggle_pin(self):
@@ -205,6 +242,7 @@ class ClipboardItem(QFrame):
             # Show as plain text (most common for code)
             preview_text = self.item_data.get("preview", content[:150])
             preview_label = QLabel(preview_text)
+            preview_label.setObjectName("contentLabel")  # Use QSS for styling
             return self._style_text_label(preview_label)
 
         elif format_type == "html" and "text/html" in original_mime_types:
@@ -224,17 +262,10 @@ class ClipboardItem(QFrame):
                 safe_html = self._safe_html_preview(content)
                 preview_widget.setHtml(safe_html)
 
-                preview_widget.setStyleSheet(
-                    """
-                    QTextEdit {
-                        background: transparent;
-                        border: none;
-                        color: #ffffff;
-                        font-family: 'Segoe UI';
-                        font-size: 10px;
-                    }
-                """
-                )
+                # Apply basic styling via QSS
+                preview_widget.setObjectName(
+                    "htmlPreview"
+                )  # Use QSS instead of inline style
                 return preview_widget
             else:
                 # Treat as plain text even if it has HTML wrapper
@@ -242,11 +273,13 @@ class ClipboardItem(QFrame):
 
                 plain_content = re.sub(r"<[^>]+>", "", content)
                 preview_label = QLabel(plain_content[:150])
+                preview_label.setObjectName("contentLabel")
                 return self._style_text_label(preview_label)
 
         elif format_type == "rtf":
             # RTF preview
             preview_label = QLabel()
+            preview_label.setObjectName("contentLabel")
             preview_label.setTextFormat(Qt.TextFormat.RichText)
             rtf_text = self._rtf_to_display_text(content)
             preview_label.setText(rtf_text)
@@ -256,6 +289,7 @@ class ClipboardItem(QFrame):
             # Default plain text
             preview_text = self.item_data.get("preview", content[:150])
             preview_label = QLabel(preview_text)
+            preview_label.setObjectName("contentLabel")
             return self._style_text_label(preview_label)
 
     def _safe_html_preview(self, html: str) -> str:
@@ -301,16 +335,17 @@ class ClipboardItem(QFrame):
         return text[:200] + "..." if len(text) > 200 else text
 
     def _style_text_label(self, label: QLabel) -> QLabel:
-        """Apply consistent styling to text labels"""
+        """Apply consistent styling to text labels - EXACTLY like original"""
         label.setWordWrap(True)
-        label.setFont(QFont("Segoe UI", 10))
-        label.setStyleSheet("color: #ffffff; font-weight: 500; line-height: 1.2;")
+        label.setFont(QFont("Segoe UI", 13))  # Giữ font size 13px như user đã set
+        # NO setStyleSheet - styles.py doesn't define font styling inline
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        # Calculate height
+        # Calculate height EXACTLY cho 3 dòng với font 13px
         font_metrics = label.fontMetrics()
         line_height = font_metrics.height()
-        label.setFixedHeight(line_height * 3 + 8)
+        # Đảm bảo đúng 3 dòng, không bị cắt
+        label.setFixedHeight(line_height * 3)  # Bỏ +8 padding, chỉ 3 dòng chính xác
         label.setMaximumWidth(280)
         label.setMinimumWidth(100)
 
@@ -320,6 +355,7 @@ class ClipboardItem(QFrame):
         """Create image preview with proper thumbnail like Windows Clipboard"""
         preview_container = QWidget()
         preview_container.setFixedHeight(64)  # Larger for better image display
+        preview_container.setObjectName("imagePreviewContainer")  # Use QSS
 
         layout = QHBoxLayout(preview_container)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -328,15 +364,7 @@ class ClipboardItem(QFrame):
         # Image thumbnail
         thumbnail_label = QLabel()
         thumbnail_label.setFixedSize(56, 56)  # Square thumbnail
-        thumbnail_label.setStyleSheet(
-            """
-            QLabel {
-                border: 1px solid #444444;
-                border-radius: 4px;
-                background: #333333;
-            }
-        """
-        )
+        # Remove inline style, use QSS
 
         # Load and display thumbnail
         thumbnail_loaded = False
@@ -412,13 +440,7 @@ class ClipboardItem(QFrame):
         if not thumbnail_loaded:
             thumbnail_label.setText("🖼️")
             thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            thumbnail_label.setStyleSheet(
-                thumbnail_label.styleSheet()
-                + """
-                color: #888888;
-                font-size: 24px;
-            """
-            )
+            # Remove inline style, use QSS
 
         layout.addWidget(thumbnail_label)
 
@@ -434,22 +456,23 @@ class ClipboardItem(QFrame):
         format_type = self.item_data.get("format", "image")
 
         type_label = QLabel(f"{format_type.upper()}")
-        type_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
-        type_label.setStyleSheet("color: #ffffff;")
+        type_label.setObjectName("imageTypeLabel")  # Use QSS instead of inline style
         info_layout.addWidget(type_label)
 
         if width and height:
             size_label = QLabel(f"{width} × {height} px")
-            size_label.setFont(QFont("Segoe UI", 8))
-            size_label.setStyleSheet("color: #cccccc;")
+            size_label.setObjectName(
+                "imageSizeLabel"
+            )  # Use QSS instead of inline style
             info_layout.addWidget(size_label)
 
         # Timestamp or additional info
         timestamp = self.item_data.get("created_at", "")
         if timestamp:
             time_label = QLabel(f"Copied: {timestamp[:16]}")  # Show date/time
-            time_label.setFont(QFont("Segoe UI", 7))
-            time_label.setStyleSheet("color: #888888;")
+            time_label.setObjectName(
+                "imageTimeLabel"
+            )  # Use QSS instead of inline style
             info_layout.addWidget(time_label)
 
         info_layout.addStretch()
