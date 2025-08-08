@@ -59,11 +59,11 @@ class EnhancedClipboardManager:
         # Initialize enhanced configuration
         self.config = Config()
 
-        # Initialize data directory (chỉ 1 database)
+        # Initialize data directory (only 1 database)
         self.data_dir = Path(self.config.config_path.parent)
-        self.db_path = self.data_dir / "clipboard.db"  # Chỉ 1 file
+        self.db_path = self.data_dir / "clipboard.db"  # Only 1 file
 
-        # Initialize enhanced core components (migration tự động trong database)
+        # Initialize enhanced core components (migration automatically in database)
         self.database = EnhancedClipboardDatabase(self.db_path)
         self.content_manager = ContentManager(self.data_dir)
         self.search_engine = SearchEngine(self.database)
@@ -237,25 +237,36 @@ class EnhancedClipboardManager:
             cleanup_interval = self.config.get("cleanup_interval_hours", 24) * 3600000
             self.cleanup_timer.start(cleanup_interval)
 
+            # Apply theme immediately, no need to restart
+            self._apply_qss_styles()
+
             logger.info("All components updated with new settings")
 
         except Exception as e:
             logger.error(f"Error updating settings: {e}")
 
     def _apply_qss_styles(self):
-        """Apply QSS stylesheets to all UI components"""
+        """Apply QSS stylesheets to entire app (global)"""
         try:
-            # Apply to popup window
-            self.qss_loader.apply_stylesheet(self.popup_window, "main.qss")
+            theme_name = self.config.get("theme", "monochrome_dark")
+            theme_file = f"themes/{theme_name}.qss"
 
-            # Apply to settings window
-            self.qss_loader.apply_stylesheet(self.settings_window, "main.qss")
+            # Apply globally: main + theme
+            self.qss_loader.apply_app_stylesheet(["main.qss", theme_file])
+
+            # QMenu (tray menu) also receives global stylesheet; ensure menu exists
+            if getattr(self.system_tray, "menu", None):
+                # No-op; global stylesheet is enough, but if needed force polish:
+                try:
+                    self.system_tray.menu.ensurePolished()
+                except Exception:
+                    pass
 
             logger = get_logger(__name__)
-            logger.info("QSS stylesheets applied successfully")
+            logger.info(f"Applied global theme: {theme_name}")
         except Exception as e:
             logger = get_logger(__name__)
-            logger.error(f"Error applying QSS stylesheets: {e}")
+            logger.error(f"Error applying global QSS: {e}")
 
     def start(self):
         """Start the enhanced application with error handling"""

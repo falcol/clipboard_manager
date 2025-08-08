@@ -1,0 +1,68 @@
+/* Windows 11 Fluent Dark - no variables */
+
+QFrame#popupWindow, QFrame#mainContainer, QFrame#contentFrame {
+    background: #1f1f1f;
+    border: 1px solid #3d3d3d;
+}
+
+QFrame#header, QFrame#searchBar { background: #2b2b2b; border: none; }
+QLabel#titleLabel { color: #eaeaea; }
+QLabel#titleIcon { color: #0078d4; }
+
+QLineEdit#searchInput {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #eaeaea;
+    padding: 4px 6px;
+}
+QLineEdit#searchInput:focus {
+    border: 1px solid #0078d4;
+    background: #2f2f2f;
+}
+
+QPushButton {
+    background: transparent;
+    border: none;
+    color: #aaaaaa;
+    border-radius: 6px;
+}
+QPushButton:hover { background: #2a2a2a; color: #eaeaea; }
+QPushButton:pressed { background: #252525; }
+
+QPushButton#clearAllButton { padding: 6px 10px; color: #eaeaea; }
+
+QPushButton#clearButton { color: #bbbbbb; }
+QPushButton#clearButton:hover { background: #2a2a2a; color: #eaeaea; }
+
+QFrame#clipboardItem {
+    background: #2b2b2b;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    margin: 2px;
+    padding: 4px;
+}
+QFrame#clipboardItem:hover { border-color: #0078d4; background: #333333; }
+QLabel#contentLabel { color: #eaeaea; }
+
+QPushButton#pinButton { color: #888888; }
+QPushButton#pinButton:hover { color: #0078d4; background: rgba(0,120,212,0.10); }
+QPushButton#pinButtonActive { color: #0078d4; background: rgba(0,120,212,0.10); }
+QPushButton#pinButtonActive:hover { color: #ffffff; background: rgba(0,120,212,0.20); }
+QPushButton#deleteButton:hover { color: #ff4d4f; background: rgba(255,77,79,0.10); }
+
+QScrollBar:vertical { background: transparent; width: 6px; }
+QScrollBar::handle:vertical { background: #5a5a5a; border-radius: 3px; }
+QScrollBar::handle:vertical:hover { background: #7a7a7a; }
+
+/* Item hover/pressed/selected */
+QFrame#clipboardItem { background: #2b2b2b; border: 1px solid #3d3d3d; border-radius: 6px; }
+QFrame#clipboardItem:hover { background: #333333; border-color: #0078d4; }
+QFrame#clipboardItem[pressed="true"] { background: #2d2d2d; border-color: #5a5a5a; }
+QFrame#clipboardItem[selected="true"] { background: #313131; border-color: #0a86f0; }
+
+/* Action buttons via objectName */
+QPushButton#pinButton { color: #888888; }
+QPushButton#pinButton:hover { color: #0078d4; background: rgba(0,120,212,0.10); }
+QPushButton#pinButtonActive { color: #0078d4; background: rgba(0,120,212,0.10); }
+QPushButton#pinButtonActive:hover { color: #ffffff; background: rgba(0,120,212,0.20); }
+QPushButton#deleteButton:hover { color: #ff4d4f; background: rgba(255,77,79,0.10); }

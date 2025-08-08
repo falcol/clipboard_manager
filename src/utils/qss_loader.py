@@ -9,9 +9,9 @@ Loads and applies QSS stylesheets from files
 """
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QApplication, QWidget
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,15 @@ class QSSLoader:
             logger.error(f"Error loading QSS file {file_path}: {e}")
             return ""
 
+    def load_stylesheets(self, filenames: list[str]) -> str:
+        """Load and concatenate multiple QSS files."""
+        contents = []
+        for fn in filenames:
+            css = self.load_stylesheet(fn)
+            if css:
+                contents.append(css)
+        return "\n".join(contents)
+
     def apply_stylesheet(self, widget, filename: str):
         """Apply QSS stylesheet to widget"""
         stylesheet = self.load_stylesheet(filename)
@@ -67,6 +76,14 @@ class QSSLoader:
             logger.debug(
                 f"Applied {filename} to {widget.__class__.__name__} and children"
             )
+
+    def apply_app_stylesheet(self, filenames: list[str]):
+        """Apply QSS to the entire application."""
+        css = self.load_stylesheets(filenames)
+        if css:
+            app = cast(Optional[QApplication], QApplication.instance())
+            if app is not None:
+                app.setStyleSheet(css)
 
     def get_available_stylesheets(self) -> list:
         """Get list of available QSS files"""

@@ -516,6 +516,56 @@ QTextEdit#htmlPreview {
    HEADER AND FOOTER STYLES
    =============================================== */
 
+/* Header + Search bar */
+QFrame#header,
+QFrame#searchBar {
+    background: #1f1f1f;
+    border: none;
+}
+
+/* Search input: flat */
+QLineEdit#searchInput {
+    background: #1f1f1f;
+    border: none;
+    color: #dddddd;
+    padding: 4px 6px;
+    selection-background-color: #2a72c2;
+    selection-color: #ffffff;
+}
+
+/* Clear All button (header) */
+QPushButton#clearAllButton {
+    background: transparent;
+    border: none;
+    color: #dddddd;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+QPushButton#clearAllButton:hover {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+QPushButton#clearAllButton:pressed {
+    background: #242424;
+}
+
+/* Clear button in search (flat) */
+QPushButton#clearButton {
+    background: transparent;
+    border: none;
+    color: #bbbbbb;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+}
+QPushButton#clearButton:hover {
+    background: #2a2a2a;
+    color: #ffffff;
+}
+QPushButton#clearButton:pressed {
+    background: #242424;
+}
+
 /* Header elements */
 QFrame#header {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
@@ -561,4 +611,33 @@ QLabel#statsLabel {
 /* Content frame */
 QFrame#contentFrame {
     background: #1f1f1f;
+}
+
+/* Settings action buttons - default base; theme có thể override */
+QPushButton#primaryButton {
+    background: #0078d4; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px;
+}
+QPushButton#primaryButton:hover { background: #0a86f0; }
+QPushButton#primaryButton:pressed { background: #0568b3; }
+
+QPushButton#secondaryButton {
+    background: transparent; color: #dddddd; border: 1px solid #3d3d3d; border-radius: 6px; padding: 6px 12px;
+}
+QPushButton#secondaryButton:hover { background: #2a2a2a; }
+QPushButton#secondaryButton:pressed { background: #242424; }
+
+QPushButton#dangerButton {
+    background: transparent; color: #ff4d4f; border: 1px solid #663333; border-radius: 6px; padding: 6px 12px;
+}
+QPushButton#dangerButton:hover { background: rgba(255,77,79,0.12); }
+QPushButton#dangerButton:pressed { background: rgba(255,77,79,0.18); }
+
+/* Clipboard item states */
+QFrame#clipboardItem[pressed="true"] {
+    background: #262626;
+    border: 1px solid #5a5a5a;
+}
+QFrame#clipboardItem[selected="true"] {
+    background: #2c2c2c;
+    border: 1px solid #0078d4;
 }

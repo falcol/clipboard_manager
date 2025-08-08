@@ -1,21 +1,24 @@
 # clipboard_manager/src/ui/settings_window.py
 """
-Settings window for configuration
+Settings window for configuration - macOS-like layout and spacing
 """
 import logging
 
+from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
-    QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 from utils.config import Config
@@ -30,112 +33,153 @@ class SettingsWindow(QDialog):
 
     def __init__(self, config: Config):
         super().__init__()
-        self.config = config  # Keep the same variable name
+        self.config = config
+        self.setObjectName("settingsDialog")
+        # macOS-like: resizable, min-size instead of fixed-size
+        self.setMinimumSize(420, 520)
+        self.setWindowTitle("Preferences")
+
         self.setup_ui()
         self.load_settings()
 
     def setup_ui(self):
-        """Setup the UI"""
-        self.setWindowTitle("Clipboard Manager Settings")
-        self.setFixedSize(400, 500)  # Increased height for new settings
-        self.setObjectName("settingsDialog")  # Use QSS instead of inline style
+        """Setup the UI (macOS-like)"""
+        root = QVBoxLayout(self)
+        root.setContentsMargins(16, 16, 16, 16)
+        root.setSpacing(12)
 
-        layout = QVBoxLayout(self)
-
-        # General settings
-        general_group = QGroupBox("General Settings")
+        # General
+        general_group = QGroupBox("General")
+        general_group.setObjectName("preferencesSection")
+        general_group.setFlat(True)
         general_layout = QFormLayout(general_group)
+        general_layout.setLabelAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        general_layout.setFormAlignment(Qt.AlignmentFlag.AlignTop)
+        general_layout.setContentsMargins(8, 8, 8, 8)
+        general_layout.setHorizontalSpacing(12)
+        general_layout.setVerticalSpacing(10)
 
-        # Max items (like Windows clipboard manager)
+        # Max items
         self.max_items_spin = QSpinBox()
+        self.max_items_spin.setObjectName("formControl")
         self.max_items_spin.setRange(10, 100)
-        self.max_items_spin.setValue(25)  # Windows default: 25 items
+        self.max_items_spin.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
         general_layout.addRow("Max clipboard items:", self.max_items_spin)
 
-        # Max text length (like Windows clipboard manager)
+        # Max text length
         self.max_text_spin = QSpinBox()
-        self.max_text_spin.setRange(1000, 2000000)  # Up to 2MB like Windows
-        self.max_text_spin.setValue(1000000)  # 1MB default like Windows
+        self.max_text_spin.setObjectName("formControl")
+        self.max_text_spin.setRange(1000, 2_000_000)
+        self.max_text_spin.setSingleStep(1000)
         general_layout.addRow("Max text length:", self.max_text_spin)
 
-        # Auto-start
+        # Autostart
         self.autostart_check = QCheckBox("Start with system")
-        general_layout.addRow(self.autostart_check)
+        self.autostart_check.setObjectName("formCheck")
+        general_layout.addRow(QWidget(), self.autostart_check)  # align like macOS
+        root.addWidget(general_group)
 
-        layout.addWidget(general_group)
-
-        # Appearance settings
+        # Appearance
         appearance_group = QGroupBox("Appearance")
+        appearance_group.setObjectName("preferencesSection")
+        appearance_group.setFlat(True)
         appearance_layout = QFormLayout(appearance_group)
+        appearance_layout.setLabelAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        appearance_layout.setFormAlignment(Qt.AlignmentFlag.AlignTop)
+        appearance_layout.setContentsMargins(8, 8, 8, 8)
+        appearance_layout.setHorizontalSpacing(12)
+        appearance_layout.setVerticalSpacing(10)
 
-        # Theme (placeholder for future)
-        theme_label = QLabel("Dark theme (always on)")
-        theme_label.setObjectName("themeLabel")  # Use QSS instead of inline style
-        appearance_layout.addRow(theme_label)
+        self.theme_combo = QComboBox()
+        self.theme_combo.setObjectName("formControl")
+        self.theme_map = {
+            "Dark Amoled": "dark_amoled",
+            "Dark Solarized": "dark_solarized",
+            "Dark Win11": "dark_win11",
+            "Nord": "nord",
+            "Vespera": "vespera",
+        }
+        self.theme_combo.addItems(list(self.theme_map.keys()))
+        appearance_layout.addRow("Theme:", self.theme_combo)
+        root.addWidget(appearance_group)
 
-        layout.addWidget(appearance_group)
-
-        # Performance settings (RAM optimization)
+        # Performance
         performance_group = QGroupBox("Performance & RAM")
+        performance_group.setObjectName("preferencesSection")
+        performance_group.setFlat(True)
         performance_layout = QFormLayout(performance_group)
+        performance_layout.setLabelAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        performance_layout.setFormAlignment(Qt.AlignmentFlag.AlignTop)
+        performance_layout.setContentsMargins(8, 8, 8, 8)
+        performance_layout.setHorizontalSpacing(12)
+        performance_layout.setVerticalSpacing(10)
 
-        # Cache size
         self.cache_size_spin = QSpinBox()
+        self.cache_size_spin.setObjectName("formControl")
         self.cache_size_spin.setRange(10, 100)
-        self.cache_size_spin.setValue(25)
         self.cache_size_spin.setSuffix(" MB")
         performance_layout.addRow("Cache size:", self.cache_size_spin)
 
-        # Thumbnail size
         self.thumbnail_size_spin = QSpinBox()
+        self.thumbnail_size_spin.setObjectName("formControl")
         self.thumbnail_size_spin.setRange(32, 128)
-        self.thumbnail_size_spin.setValue(64)
         self.thumbnail_size_spin.setSuffix(" px")
         performance_layout.addRow("Thumbnail size:", self.thumbnail_size_spin)
 
-        # Image quality
         self.image_quality_spin = QSpinBox()
+        self.image_quality_spin.setObjectName("formControl")
         self.image_quality_spin.setRange(50, 95)
-        self.image_quality_spin.setValue(85)
         self.image_quality_spin.setSuffix("%")
         performance_layout.addRow("Image quality:", self.image_quality_spin)
 
-        # Cleanup interval
         self.cleanup_interval_spin = QSpinBox()
+        self.cleanup_interval_spin.setObjectName("formControl")
         self.cleanup_interval_spin.setRange(1, 48)
-        self.cleanup_interval_spin.setValue(12)
         self.cleanup_interval_spin.setSuffix(" hours")
         performance_layout.addRow("Cleanup interval:", self.cleanup_interval_spin)
 
-        layout.addWidget(performance_group)
+        root.addWidget(performance_group)
+        root.addStretch()
 
-        # Buttons
-        button_layout = QHBoxLayout()
-
-        save_btn = QPushButton("Save")
-        save_btn.clicked.connect(self.save_settings)
-
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.reject)
+        # Footer buttons - right aligned, flat macOS style
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
 
         reset_btn = QPushButton("Reset to Defaults")
+        reset_btn.setObjectName("dangerButton")
         reset_btn.clicked.connect(self.reset_settings)
 
-        button_layout.addWidget(reset_btn)
-        button_layout.addStretch()
-        button_layout.addWidget(cancel_btn)
-        button_layout.addWidget(save_btn)
+        footer.addWidget(reset_btn)
+        footer.addStretch()
 
-        layout.addLayout(button_layout)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setObjectName("secondaryButton")
+        cancel_btn.clicked.connect(self.reject)
+
+        save_btn = QPushButton("Save")
+        save_btn.setObjectName("primaryButton")
+        save_btn.clicked.connect(self.save_settings)
+
+        footer.addWidget(cancel_btn)
+        footer.addWidget(save_btn)
+
+        root.addLayout(footer)
 
     def load_settings(self):
         """Load settings from original config"""
-        # Use original_config instead of working_config
         self.max_items_spin.setValue(self.config.get("max_items", 25))
-        self.max_text_spin.setValue(self.config.get("max_text_length", 1000000))
+        self.max_text_spin.setValue(self.config.get("max_text_length", 1_000_000))
         self.autostart_check.setChecked(self.config.get("autostart", False))
 
-        # Performance settings
         self.cache_size_spin.setValue(self.config.get("cache_size_mb", 25))
         self.thumbnail_size_spin.setValue(self.config.get("thumbnail_size", 64))
         self.image_quality_spin.setValue(self.config.get("image_quality", 85))
@@ -143,21 +187,30 @@ class SettingsWindow(QDialog):
             self.config.get("cleanup_interval_hours", 12)
         )
 
+        current_theme = self.config.get("theme", "dark_win11")
+        try:
+            key = next(k for k, v in self.theme_map.items() if v == current_theme)
+            self.theme_combo.setCurrentText(key)
+        except StopIteration:
+            self.theme_combo.setCurrentText("Dark Win11")
+
     def save_settings(self):
         """Save settings only when Save button is clicked"""
         try:
-            # Update original config from working config
             self.config.set("max_items", self.max_items_spin.value())
             self.config.set("max_text_length", self.max_text_spin.value())
             self.config.set("autostart", self.autostart_check.isChecked())
 
-            # Performance settings
             self.config.set("cache_size_mb", self.cache_size_spin.value())
             self.config.set("thumbnail_size", self.thumbnail_size_spin.value())
             self.config.set("image_quality", self.image_quality_spin.value())
             self.config.set(
                 "cleanup_interval_hours", self.cleanup_interval_spin.value()
             )
+
+            # Theme
+            theme_key = self.theme_combo.currentText()
+            self.config.set("theme", self.theme_map.get(theme_key, "dark_win11"))
 
             self.config.save()
             self.settings_changed.emit()
@@ -166,7 +219,6 @@ class SettingsWindow(QDialog):
             from utils.autostart import AutostartManager
 
             autostart_manager = AutostartManager()
-
             if self.autostart_check.isChecked():
                 autostart_manager.enable()
             else:
@@ -186,14 +238,13 @@ class SettingsWindow(QDialog):
             "Are you sure you want to reset all settings to defaults?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
-
         if reply == QMessageBox.StandardButton.Yes:
-            self.config.reset_to_defaults()  # Use self.config
+            self.config.reset_to_defaults()
             self.load_settings()
 
     def reject(self):
         """Handle when cancel/close window"""
-        self.load_settings()  # Reset to original config
+        self.load_settings()
         super().reject()
 
     def showEvent(self, event):

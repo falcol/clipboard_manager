@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal as pyqtSignal
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -23,8 +22,9 @@ class SearchBar(QFrame):
 
     def setup_ui(self):
         self.setFixedHeight(36)
-        # Remove inline style, use QSS
         self.setObjectName("searchBar")
+        self.setFrameShape(QFrame.Shape.NoFrame)  # flat bar
+        self.setLineWidth(0)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(12, 6, 12, 6)
@@ -48,6 +48,8 @@ class SearchBar(QFrame):
         self.clear_btn = QPushButton("✕")
         self.clear_btn.setFixedSize(16, 16)
         self.clear_btn.setObjectName("clearButton")  # Use QSS instead of inline style
+        self.clear_btn.setFlat(True)  # flat
+        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)  # pointer
         self.clear_btn.clicked.connect(self.clear_search)
         self.clear_btn.hide()
         layout.addWidget(self.clear_btn)

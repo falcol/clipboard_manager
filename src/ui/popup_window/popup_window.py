@@ -64,7 +64,9 @@ class PopupWindow(QWidget):
         self.focus_timer.timeout.connect(self.check_focus)
 
         # Apply QSS after all setup is complete
-        self.qss_loader.apply_stylesheet(self, "main.qss")
+        #  Keep applying main.qss if needed for structure; global theme will override colors
+        # self.qss_loader.apply_stylesheet_to_widget_and_children(self, "main.qss")
+        # Theme: do application apply globally
 
     def setup_window(self):
         """Setup Windows 10 dark mode window properties"""
@@ -102,6 +104,7 @@ class PopupWindow(QWidget):
         self.header.setObjectName("header")  # Use QSS for styling
         self.header.setFixedHeight(48)
         self.header.setCursor(Qt.CursorShape.SizeAllCursor)
+        self.header.setFrameShape(QFrame.Shape.NoFrame)  # flat header
 
         header_layout = QHBoxLayout(self.header)
         header_layout.setContentsMargins(16, 12, 16, 12)
@@ -135,6 +138,8 @@ class PopupWindow(QWidget):
         # Clear all button
         self.clear_btn = QPushButton("Clear All")
         self.clear_btn.setObjectName("clearAllButton")  # Use QSS for styling
+        self.clear_btn.setFlat(True)  # flat look
+        self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)  # pointer on hover
         self.clear_btn.clicked.connect(self.clear_history)
         actions_layout.addWidget(self.clear_btn)
 
