@@ -1,24 +1,3 @@
-# 📋 Clipboard Manager
-
-A modern, cross-platform clipboard history manager built with Python and PySide6/Qt6.
-
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
-[![PySide6](https://img.shields.io/badge/PySide6-6.9+-green.svg)](https://wiki.qt.io/Qt_for_Python)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/clipboard-manager/clipboard-manager)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-## ✨ Features
-
-- **📝 Rich Clipboard History**: Automatically saves text, HTML, RTF, and image clipboard content
-- **📌 Pin Important Items**: Pin frequently used items to prevent deletion
-- **🔥 Global Hotkey**: Press `Super+C` (Linux) / `Windows+C` (Windows) / `Cmd+C` (macOS) to show clipboard history
-- **🎨 Modern UI**: Clean, dark interface with smooth animations and multiple themes
-- **💾 Efficient Storage**: SQLite-based storage with optimized memory usage
-- **🚀 System Integration**: System tray, auto-start, and native platform integration
-- **⚙️ Highly Configurable**: Customize items limit, text length, themes, and performance settings
-- **🔍 Smart Search**: Fast search and filtering through clipboard history
-- **🌍 Cross-Platform**: Works seamlessly on Linux, Windows, and macOS
-- **🔒 Privacy-First**: All data stored locally, no network connections
 
 ## 🚀 Quick Start
 
@@ -34,7 +13,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 ```bash
 # Clone the repository
-git clone https://github.com/clipboard-manager/clipboard-manager.git
+git clone https://github.com/falcol/clipboard_manager.git
 cd clipboard-manager
 
 # Create virtual environment
@@ -119,7 +98,30 @@ Global hotkeys by platform:
 ### Setting up Development Environment
 
 ```bash
-<code_block_to_apply_changes_from>
+# Clone repository
+git clone https://github.com/falcol/clipboard_manager.git
+cd clipboard-manager
+
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install development dependencies
+pip install -r requirements/base.txt
+pip install -e ".[dev]"  # Install in development mode
+
+# Install pre-commit hooks
+pre-commit install
+
+# Run tests
+pytest
+
+# Format code
+black src/
+flake8 src/
+
+# Type checking
+mypy src/
 ```
 
 ### Project Dependencies
@@ -364,13 +366,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 *Made with ❤️ for productive developers and power users everywhere.*
 ```
-
-Tóm tắt các thay đổi quan trọng:
-
-1. **Cấu trúc project hiện đại**: Sử dụng `pyproject.toml` làm chuẩn, `setup.py` cho tương thích legacy
-2. **Scripts cải tiến**: `install_linux.sh` với auto-detect distro, dependency management thông minh
-3. **Debian packaging**: `create_deb.py` hoàn toàn mới với proper metadata, systemd service, security
-4. **Documentation toàn diện**: README với cấu trúc rõ ràng, troubleshooting chi tiết, development guide
-5. **Best practices**: Virtual environments, proper dependency separation, security considerations
-
-Project structure giờ đây tuân theo Python packaging standards hiện đại và sẵn sàng cho production deployment!
