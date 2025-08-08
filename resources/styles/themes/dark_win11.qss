@@ -44,6 +44,11 @@ QFrame#clipboardItem {
 QFrame#clipboardItem:hover { border-color: #0078d4; background: #333333; }
 QLabel#contentLabel { color: #eaeaea; }
 
+/* Ensure cross-platform font fallback */
+QWidget, QDialog, QMenu, QLabel, QPushButton, QLineEdit, QTextEdit, QSpinBox, QCheckBox {
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
+}
+
 QPushButton#pinButton { color: #888888; }
 QPushButton#pinButton:hover { color: #0078d4; background: rgba(0,120,212,0.10); }
 QPushButton#pinButtonActive { color: #0078d4; background: rgba(0,120,212,0.10); }

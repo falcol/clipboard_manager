@@ -8,6 +8,11 @@ QFrame#header, QFrame#searchBar { background: #073642; border: none; }
 
 /* Inputs */
 QLineEdit#searchInput { background: transparent; border: 1px solid transparent; color: #eee8d5; padding: 4px 6px; }
+
+/* Cross-platform font fallback */
+QWidget, QDialog, QMenu, QLabel, QPushButton, QLineEdit, QTextEdit, QSpinBox, QCheckBox {
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
+}
 QLineEdit#searchInput:focus { border: 1px solid #268bd2; background: #0d3a46; }
 
 /* Buttons */

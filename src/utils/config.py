@@ -24,7 +24,7 @@ class Config:
         "max_items": 25,  # Like Windows clipboard manager (25 items max)
         "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
-        "theme": "dark",
+        "theme": "dark_win11",
         "show_notifications": False,
         # Enhanced Phase 1 settings
         "hotkey": "super+c",  # Changed from super+c to match Windows 11
@@ -53,10 +53,10 @@ class Config:
         "animation_speed": 150,  # ms
         "show_preview": True,
         "preview_timeout": 2000,  # ms
-        # Search settings
+        # Search settingsc
         "search_suggestions": True,
         "search_history": True,
-        "max_search_suggestions": 5,
+        "max_search_suggestions": 10,
         # Privacy settings
         "exclude_passwords": True,
         "exclude_credit_cards": True,

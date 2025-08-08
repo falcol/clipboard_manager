@@ -22,8 +22,6 @@ QFrame#popupWindow, QFrame#mainContainer {
 QFrame#searchBar {
     background: #2d2d2d;
     border: none;
-    border-top: 1px solid #3d3d3d;
-    border-bottom: 1px solid #3d3d3d;
 }
 
 /* Search input - from search_bar.py */
@@ -85,7 +83,8 @@ QLabel#contentLabel {
     color: #ffffff;
     background: transparent;
     border: none;
-    font-family: 'Segoe UI';
+    /* Cross-platform font stack: prefer Segoe on Windows, Noto Sans on Linux */
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 13px;  /* Giữ font size 13px */
     font-weight: 500;
     line-height: 1.2;
@@ -199,7 +198,8 @@ QWidget {
     background-color: #1f1f1f;
     color: #ffffff;
     border-radius: 6px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    /* Base font stack for all widgets */
+    font-family: 'Segoe UI', 'DejaVu Sans','Noto Sans', 'Ubuntu', 'Arial', sans-serif;
 }
 
 /* Popup window scrollbar - from get_popup_window_style() */
@@ -261,7 +261,7 @@ QFrame.clipboardItemAlt:hover {
 QDialog#settingsDialog {
     background-color: #1f1f1f;
     color: #ffffff;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
 }
 
 QGroupBox {
@@ -391,7 +391,7 @@ QMenu {
     border: 1px solid #3d3d3d;
     border-radius: 6px;
     padding: 8px 0px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 11px;
 }
 
@@ -468,7 +468,7 @@ QFrame#imagePreviewContainer {
 /* Image type label */
 QLabel#imageTypeLabel {
     color: #ffffff;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 9px;
     font-weight: bold;
 }
@@ -476,14 +476,14 @@ QLabel#imageTypeLabel {
 /* Image size label */
 QLabel#imageSizeLabel {
     color: #cccccc;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 8px;
 }
 
 /* Image timestamp label */
 QLabel#imageTimeLabel {
     color: #888888;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 7px;
 }
 
@@ -508,7 +508,7 @@ QTextEdit#htmlPreview {
     background: transparent;
     border: none;
     color: #ffffff;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 10px;
 }
 
@@ -570,9 +570,6 @@ QPushButton#clearButton:pressed {
 QFrame#header {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #2d2d2d, stop:1 #1f1f1f);
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom: 1px solid #3d3d3d;
 }
 
 QLabel#dragIcon {

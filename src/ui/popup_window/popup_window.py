@@ -115,18 +115,18 @@ class PopupWindow(QWidget):
         # Drag indicator
         drag_icon = QLabel("⋮⋮")
         drag_icon.setObjectName("dragIcon")  # Use QSS for styling
-        drag_icon.setFont(QFont("Segoe UI", 10))
+        drag_icon.setFont(QFont(QApplication.font().family(), 10))
         drag_icon.setToolTip("Drag to move window")
         title_layout.addWidget(drag_icon)
 
         title_icon = QLabel("📋")
         title_icon.setObjectName("titleIcon")  # Use QSS for styling
-        title_icon.setFont(QFont("Segoe UI", 14))
+        title_icon.setFont(QFont(QApplication.font().family(), 14))
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
         title_label.setObjectName("titleLabel")  # Use QSS for styling
-        title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        title_label.setFont(QFont(QApplication.font().family(), 12, QFont.Weight.Bold))
         title_layout.addWidget(title_label)
         title_layout.addStretch()
 
@@ -168,6 +168,15 @@ class PopupWindow(QWidget):
         )
         # QSS will handle scrollbar styling
 
+        # Reduce repaint cost during scrolling for better performance on Linux
+        try:
+            self.scroll_area.setFrameShape(QFrame.NoFrame)
+            self.scroll_area.viewport().setAttribute(
+                Qt.WidgetAttribute.WA_OpaquePaintEvent, True
+            )
+        except Exception:
+            pass
+
         self.scroll_widget = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
         self.scroll_layout.setContentsMargins(6, 6, 6, 6)
@@ -189,13 +198,13 @@ class PopupWindow(QWidget):
 
         footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
         footer_label.setObjectName("footerLabel")  # Use QSS for styling
-        footer_label.setFont(QFont("Segoe UI", 8))
+        footer_label.setFont(QFont(QApplication.font().family(), 8))
         footer_layout.addWidget(footer_label)
 
         # Stats
         self.stats_label = QLabel()
         self.stats_label.setObjectName("statsLabel")  # Use QSS for styling
-        self.stats_label.setFont(QFont("Segoe UI", 8))
+        self.stats_label.setFont(QFont(QApplication.font().family(), 8))
         footer_layout.addWidget(self.stats_label)
 
         container_layout.addWidget(footer)
@@ -618,6 +627,7 @@ class PopupWindow(QWidget):
         try:
             # Get current platform
             platform = sys.platform.lower()
+            import os
 
             # Check if clipboard has content - FIX THE LOGIC HERE
             clipboard = QApplication.clipboard()
@@ -632,14 +642,18 @@ class PopupWindow(QWidget):
             if has_content:
                 logger.info("Clipboard has content, simulating paste...")
 
-                if platform.startswith("win"):
-                    self._simulate_ctrl_v_windows()
-                elif platform.startswith("linux"):
-                    self._simulate_ctrl_v_linux()
-                elif platform.startswith("darwin"):
-                    self._simulate_ctrl_v_macos()
-                else:
+                # Wayland: skip key simulation; rely on clipboard being set
+                if os.environ.get("WAYLAND_DISPLAY"):
                     self._simulate_ctrl_v_fallback()
+                else:
+                    if platform.startswith("win"):
+                        self._simulate_ctrl_v_windows()
+                    elif platform.startswith("linux"):
+                        self._simulate_ctrl_v_linux()
+                    elif platform.startswith("darwin"):
+                        self._simulate_ctrl_v_macos()
+                    else:
+                        self._simulate_ctrl_v_fallback()
             else:
                 logger.warning("No content in clipboard to paste")
                 logger.debug(

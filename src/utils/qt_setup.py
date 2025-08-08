@@ -51,9 +51,14 @@ def _setup_windows_qt_environment(logger):
 
 def _setup_linux_qt_environment(logger):
     """Setup Linux/macOS Qt environment"""
-    # Linux/macOS settings
-    os.environ["QT_QPA_PLATFORM"] = "xcb:fallback=wayland:fallback=offscreen"
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    # Prefer not to force a specific platform string with invalid syntax.
+    # Let Qt choose Wayland if available, otherwise XCB.
+    if os.environ.get("WAYLAND_DISPLAY"):
+        os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
+    else:
+        os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+
+    os.environ.setdefault("QT_AUTO_SCREEN_SCALE_FACTOR", "1")
 
     # Linux plugin paths
     possible_paths = [
