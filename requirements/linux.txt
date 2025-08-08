@@ -1,0 +1,6 @@
+# Include base requirements
+-r base.txt
+
+# Linux-specific input handling
+evdev==1.9.2
+python-xlib==0.33

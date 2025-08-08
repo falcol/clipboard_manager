@@ -4,7 +4,6 @@ import platform
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -78,7 +77,7 @@ def show_about_popup(parent=None):
         current_platform = platform.system().lower()
         hotkey_display = {
             "windows": "Windows+C",
-            "linux": "Super+V",
+            "linux": "Super+C",
         }.get(current_platform, "Cmd+C")
 
         popup = AboutPopup(hotkey_display, parent)

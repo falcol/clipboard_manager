@@ -419,6 +419,14 @@ class PopupWindow(QWidget):
         try:
             content_type = item_data.get("content_type", "text")
 
+            # [DISABLED] Do not handle Windows-like file lists
+            original_mime_types = item_data.get("original_mime_types", []) or []
+            if "text/uri-list" in original_mime_types:
+                logger.info(
+                    "Skipping file URI list clipboard item (file copy not supported)"
+                )
+                return False
+
             # Handle IMAGE content (Windows-like behavior)
             if content_type == "image":
                 return self._copy_image_to_clipboard(item_data)

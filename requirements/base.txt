@@ -1,0 +1,24 @@
+# Core GUI and application framework
+PySide6==6.9.1
+PySide6_Addons==6.9.1
+PySide6_Essentials==6.9.1
+shiboken6==6.9.1
+
+# System utilities
+appdirs==1.4.4
+setproctitle==1.3.6
+
+# Input handling (cross-platform)
+pynput==1.8.1
+keyboard==0.13.5
+python-xlib==0.33  # Linux only, conditional install
+
+# Image processing
+pillow==11.3.0
+
+# Utility libraries
+click==8.2.1
+packaging==25.0
+platformdirs==4.3.8
+six==1.17.0
+typing_extensions==4.14.1

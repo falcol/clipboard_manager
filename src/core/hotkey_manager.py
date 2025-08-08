@@ -37,7 +37,7 @@ class HotkeyManager(QObject):
     def setup_hotkey_combination(self):
         """Setup hotkey combination based on platform"""
         if self.current_platform == "windows":
-            # Windows: Use Windows key + C (avoid conflict with Windows+V)
+            # Windows: Use Windows key + C (avoid conflict with Windows+C)
             try:
                 # Try Windows key first
                 windows_key = getattr(
@@ -69,7 +69,7 @@ class HotkeyManager(QObject):
             try:
                 super_key = getattr(keyboard.Key, "super_l", keyboard.Key.cmd)
                 self.hotkey_combination = {super_key, keyboard.KeyCode.from_char("c")}
-                logger.info("Linux: Using Super+V hotkey")
+                logger.info("Linux: Using Super+C hotkey")
             except Exception as e:
                 logger.error(f"Linux hotkey setup error: {e}")
                 self.hotkey_combination = {

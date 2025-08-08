@@ -63,6 +63,16 @@ class EnhancedClipboardWatcher(QObject):
         try:
             mime_data = self.clipboard.mimeData()
 
+            # [DISABLED] Skip Windows-like file list clipboard (file copies)
+            try:
+                if (
+                    hasattr(mime_data, "hasUrls") and mime_data.hasUrls()
+                ) or mime_data.hasFormat("text/uri-list"):
+                    logger.debug("Skipping file/URL clipboard content (text/uri-list)")
+                    return
+            except Exception:
+                pass
+
             # Collect ALL available formats (Windows-like behavior)
             available_formats = {
                 "text": mime_data.text() if mime_data.hasText() else None,

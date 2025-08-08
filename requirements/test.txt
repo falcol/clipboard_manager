@@ -1,0 +1,10 @@
+# Include base requirements
+-r base.txt
+
+# Testing framework
+pytest==8.4.1
+pytest-qt==4.5.0
+
+# Configuration and utilities for testing
+iniconfig==2.1.0
+pluggy==1.6.0
