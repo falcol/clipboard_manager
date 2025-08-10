@@ -126,7 +126,16 @@ class HotkeyManager(QObject):
 
         self.running = False
         if self.listener:
-            self.listener.stop()
+            try:
+                self.listener.stop()
+                # Join underlying thread to ensure listener fully stops
+                if hasattr(self.listener, "join"):
+                    try:
+                        self.listener.join(timeout=0.5)
+                    except Exception:
+                        pass
+            except Exception as e:
+                logger.error(f"Error stopping hotkey listener: {e}")
             self.listener = None
 
         logger.info("Hotkey manager stopped")

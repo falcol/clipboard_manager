@@ -123,7 +123,14 @@ class SystemTray(QObject):
         # Quit action
         quit_action = menu.addAction("❌  Quit Clipboard Manager")
         quit_action.setFont(QFont(QApplication.font().family(), 9))
-        quit_action.triggered.connect(self.quit_requested.emit)
+        # Ensure tray icon hides before quitting to avoid orphan tray entries
+        def _on_quit():
+            try:
+                self.hide()
+            except Exception:
+                pass
+            self.quit_requested.emit()
+        quit_action.triggered.connect(_on_quit)
 
         # Preload each action
         for action in menu.actions():

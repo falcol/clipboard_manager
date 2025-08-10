@@ -26,7 +26,7 @@ class EnhancedClipboardDatabase:
         if db_path is None:
             data_dir = Path(user_data_dir("ClipboardManager", "B1Corp"))
             data_dir.mkdir(parents=True, exist_ok=True)
-            db_path = data_dir / "clipboard.db"  # Chỉ 1 file duy nhất
+            db_path = data_dir / "clipboard.db"  # Only 1 file
 
         self.db_path = db_path
         self.data_dir = db_path.parent
@@ -60,6 +60,19 @@ class EnhancedClipboardDatabase:
             # Enable foreign key constraints
             cursor = self.connection.cursor()
             cursor.execute("PRAGMA foreign_keys = ON")
+
+            # SQLite performance optimizations
+            # Use WAL for better concurrent read/write, and reduce fsync cost
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA temp_store=MEMORY")
+                # Negative cache_size means kib in memory. ~8MB cache
+                cursor.execute("PRAGMA cache_size=-8192")
+                # Busy timeout to avoid immediate lock errors under contention
+                cursor.execute("PRAGMA busy_timeout=3000")
+            except Exception as pragma_err:
+                logger.warning(f"Failed to apply SQLite PRAGMAs: {pragma_err}")
 
             logger.info(f"Database connected: {self.db_path}")
 
@@ -166,7 +179,7 @@ class EnhancedClipboardDatabase:
             self._cleanup_old_items()
 
             logger.debug(f"Added text item {item_id} with format {format_type}")
-            return item_id if item_id else -1
+            return item_id or -1
 
         except Exception as e:
             logger.error(f"Failed to add text item: {e}")
@@ -239,7 +252,7 @@ class EnhancedClipboardDatabase:
             logger.info(
                 f"Added multi-format text item {item_id} (format: {format_type}, has_html: {bool(html_content)})"
             )
-            return item_id if item_id else -1
+            return item_id or -1
 
         except Exception as e:
             logger.error(f"Error adding multi-format text item: {e}")
@@ -266,9 +279,7 @@ class EnhancedClipboardDatabase:
                 hashlib.sha256(image_data).hexdigest(), "image"
             )
 
-            # Check for existing item
-            existing_id = self._get_existing_item_id(content_hash)
-            if existing_id:
+            if existing_id := self._get_existing_item_id(content_hash):
                 self._update_item_access(existing_id)
                 return existing_id
 
@@ -333,7 +344,7 @@ class EnhancedClipboardDatabase:
             logger.debug(
                 f"Added image item {item_id} ({width}x{height}, {len(image_data)} bytes)"
             )
-            return item_id if item_id else -1
+            return item_id or -1
 
         except Exception as e:
             logger.error(f"Failed to add image item: {e}")

@@ -2,6 +2,8 @@
 """
 Enhanced Clipboard Manager main application class
 """
+
+import contextlib
 import os
 import signal
 import sys
@@ -23,6 +25,7 @@ from utils.config import Config
 from utils.logging_config import get_logger
 from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
+from utils.single_instance import CrossPlatformSingleInstance
 
 
 class EnhancedClipboardManager:
@@ -62,6 +65,7 @@ class EnhancedClipboardManager:
 
         # Initialize enhanced configuration
         self.config = Config()
+        self._single_instance: CrossPlatformSingleInstance | None = None
 
         # Initialize data directory (only 1 database)
         self.data_dir = Path(self.config.config_path.parent)
@@ -375,6 +379,10 @@ class EnhancedClipboardManager:
             # Close database
             self.database.close()
 
+            # Release single-instance lock if we own it (when started via main)
+            with contextlib.suppress(Exception):
+                if getattr(self, "_single_instance", None):
+                    self._single_instance.release_lock()
             logger.info("Graceful shutdown completed")
             self.app.quit()
 

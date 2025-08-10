@@ -376,7 +376,12 @@ class PopupWindow(QWidget):
 
         # Fade in animation
         self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
-        self.fade_animation.setDuration(150)
+        # Use configurable fade animation duration
+        try:
+            duration = int(self.config.get("fade_animation_ms", 150))
+        except Exception:
+            duration = 150
+        self.fade_animation.setDuration(duration)
         self.fade_animation.setStartValue(0)
         self.fade_animation.setEndValue(1)
         self.fade_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -386,7 +391,7 @@ class PopupWindow(QWidget):
         self.load_items()
 
         # Start focus monitoring
-        self.focus_timer.start(100)
+        self.focus_timer.start(int(self.config.get("focus_check_ms", 100)))
 
     def check_focus(self):
         """Improved focus checking"""
@@ -422,7 +427,11 @@ class PopupWindow(QWidget):
 
         if copy_success:
             # Small delay to ensure clipboard is set
-            QTimer.singleShot(50, self._simulate_ctrl_v)
+            try:
+                delay = int(self.config.get("paste_delay_ms", 50))
+            except Exception:
+                delay = 50
+            QTimer.singleShot(delay, self._simulate_ctrl_v)
         else:
             logger.error("Failed to copy to clipboard, skipping paste simulation")
 
@@ -457,27 +466,27 @@ class PopupWindow(QWidget):
                 logger.error("No content to copy")
                 return False
 
-            logger.info(
+            logger.debug(
                 f"Copying Windows-style: format={format_type}, has_html={bool(html_content)}, mime_types={original_mime_types}"
             )
 
             # Windows behavior: ALWAYS set plain text as fallback
             mime_data.setText(content)
-            logger.info("Set plain text to clipboard")
+            logger.debug("Set plain text to clipboard")
 
             # Set HTML if available (Windows preserves both)
             if html_content and html_content.strip():
                 mime_data.setHtml(html_content)
-                logger.info("Set HTML content to clipboard (Windows-like multi-format)")
+                logger.debug("Set HTML content to clipboard (Windows-like multi-format)")
             elif format_type == "html" and content.strip().startswith("<"):
                 # Fallback: if no separate HTML but content looks like HTML
                 mime_data.setHtml(content)
-                logger.info("Set HTML content from main content")
+                logger.debug("Set HTML content from main content")
 
             # Handle RTF if available
             if format_type == "rtf":
                 mime_data.setData("text/rtf", content.encode("utf-8"))
-                logger.info("Set RTF content to clipboard")
+                logger.debug("Set RTF content to clipboard")
 
             # Set to system clipboard (main clipboard, not selection)
             clipboard = QApplication.clipboard()
@@ -595,18 +604,18 @@ class PopupWindow(QWidget):
             has_image = mime_data.hasImage()
 
             if has_text:
-                logger.info("✓ Plain text verified in clipboard")
+                logger.debug("✓ Plain text verified in clipboard")
             else:
                 logger.warning("✗ Plain text verification failed")
 
             if expected_html:
                 if has_html:
-                    logger.info("✓ HTML content verified in clipboard")
+                    logger.debug("✓ HTML content verified in clipboard")
                 else:
                     logger.warning("✗ HTML content verification failed")
 
             if has_image:
-                logger.info("✓ Image content verified in clipboard")
+                logger.debug("✓ Image content verified in clipboard")
 
             # Log available formats for debugging
             available = []
@@ -617,7 +626,7 @@ class PopupWindow(QWidget):
             if mime_data.hasImage():
                 available.append("image")
 
-            logger.info(f"Clipboard formats available: {available}")
+            logger.debug(f"Clipboard formats available: {available}")
 
         except Exception as e:
             logger.error(f"Multi-format clipboard verification error: {e}")

@@ -2,6 +2,9 @@
 """
 Application lifecycle management
 """
+
+import contextlib
+
 from utils.logging_config import get_logger
 
 
@@ -13,9 +16,13 @@ def start_application(manager):
         return manager.start()
     except KeyboardInterrupt:
         logger.info("Application interrupted by user")
+        with contextlib.suppress(Exception):
+            manager.quit_application()
         return 0
     except Exception as e:
         logger.error(f"Error starting application: {e}")
+        with contextlib.suppress(Exception):
+            manager.quit_application()
         return 1
 
 

@@ -37,6 +37,12 @@ class Config:
         "image_quality": 85,  # Reduced for RAM optimization
         "background_cleanup": True,
         "cleanup_interval_hours": 12,  # More frequent cleanup
+        # Timings (UI/Clipboard)
+        "clipboard_signal_debounce_ms": 120,
+        "clipboard_poll_ms": 300,
+        "paste_delay_ms": 50,
+        "focus_check_ms": 100,
+        "fade_animation_ms": 150,
         # Content management
         "intelligent_deduplication": True,
         "content_analysis": True,

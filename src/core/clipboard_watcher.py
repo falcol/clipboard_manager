@@ -8,6 +8,7 @@ Enhanced clipboard watcher with improved content management
 """
 import hashlib
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 from PySide6.QtCore import QObject, QTimer
@@ -40,20 +41,55 @@ class EnhancedClipboardWatcher(QObject):
         self.clipboard = QApplication.clipboard()
         self.last_content_hash = None
         self.running = False
+        # Polling timer fallback (Wayland, edge cases)
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_clipboard)
+
+        # Debounce timer for signal-based clipboard change handling
+        self._debounce_timer = QTimer()
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.timeout.connect(self.check_clipboard)
+
+        # Prefer Qt clipboard signal over polling when available
+        try:
+            self.clipboard.dataChanged.connect(self._on_clipboard_changed)
+            self._signal_connected = True
+        except Exception:
+            self._signal_connected = False
+
+        # Background executor for DB writes and heavy tasks (avoid UI freeze)
+        self._executor = ThreadPoolExecutor(max_workers=2)
 
     def start(self):
         """Start enhanced clipboard monitoring"""
         self.running = True
-        self.timer.start(300)  # Check every 300ms for better responsiveness
+        # Start polling only if signal cannot be used
+        if not getattr(self, "_signal_connected", False):
+            poll_ms = int(self.config.get("clipboard_poll_ms", 300))
+            self.timer.start(poll_ms)  # Fallback polling
         logger.info("Enhanced clipboard watcher started")
 
     def stop(self):
         """Stop clipboard monitoring"""
         self.running = False
         self.timer.stop()
+        self._debounce_timer.stop()
+        # Ensure background workers do not keep the process alive
+        try:
+            if getattr(self, "_executor", None) is not None:
+                # Cancel pending and do not wait for long-running tasks
+                self._executor.shutdown(wait=False, cancel_futures=True)
+        except Exception as e:
+            logger.error(f"Error shutting down clipboard watcher executor: {e}")
         logger.info("Enhanced clipboard watcher stopped")
+
+    def _on_clipboard_changed(self):
+        """Debounced handler for clipboard dataChanged signal."""
+        if not self.running:
+            return
+        # Debounce bursts (apps may emit multiple changes rapidly)
+        interval_ms = max(50, min(250, int(self.config.get("clipboard_signal_debounce_ms", 120))))
+        self._debounce_timer.start(interval_ms)
 
     def check_clipboard(self):
         """Enhanced clipboard change detection - preserve ALL formats like Windows"""
@@ -157,24 +193,27 @@ class EnhancedClipboardWatcher(QObject):
             "preferred_format": content_type,
         }
 
-        # Use existing method
-        item_id = self.database.add_text_item(content=content, metadata=metadata)
+        # Offload DB write to background thread
+        def _worker():
+            try:
+                item_id = self.database.add_text_item(content=content, metadata=metadata)
+                if item_id > 0:
+                    # Update last hash and emit signal back to UI (queued)
+                    self.last_content_hash = content_hash
+                    item_data = {
+                        "id": item_id,
+                        "content_type": "text",
+                        "content": content,
+                        "format": content_type,
+                        "original_mime_types": mime_types,
+                        "preview": content[:150] + "..." if len(content) > 150 else content,
+                    }
+                    self.content_changed.emit("text", item_data)
+                    logger.debug(f"Added text item {item_id} with format {content_type}")
+            except Exception as e:
+                logger.error(f"DB worker error (text): {e}")
 
-        if item_id > 0:
-            self.last_content_hash = content_hash
-
-            # Emit signal with enhanced data
-            item_data = {
-                "id": item_id,
-                "content_type": "text",
-                "content": content,
-                "format": content_type,
-                "original_mime_types": mime_types,
-                "preview": content[:150] + "..." if len(content) > 150 else content,
-            }
-
-            self.content_changed.emit("text", item_data)
-            logger.debug(f"Added text item {item_id} with format {content_type}")
+        self._executor.submit(_worker)
 
     def handle_image_content(self, pixmap: QPixmap):
         """Enhanced image content handling"""
@@ -199,38 +238,39 @@ class EnhancedClipboardWatcher(QObject):
             if content_hash == self.last_content_hash:
                 return
 
-            # Add to database
-            item_id = self.database.add_image_item(
-                image_data=image_data,
-                thumbnail_data=thumbnail_data,
-                width=pixmap.width(),
-                height=pixmap.height(),
-                image_format="PNG",
-                metadata={
-                    "source": "clipboard_watch",
-                    "original_size": len(image_data),
-                },
-            )
+            # Offload DB write to background thread (file I/O already done above)
+            def _worker():
+                try:
+                    item_id = self.database.add_image_item(
+                        image_data=image_data,
+                        thumbnail_data=thumbnail_data,
+                        width=pixmap.width(),
+                        height=pixmap.height(),
+                        image_format="PNG",
+                        metadata={
+                            "source": "clipboard_watch",
+                            "original_size": len(image_data),
+                        },
+                    )
+                    if item_id > 0:
+                        self.last_content_hash = content_hash
+                        item_data = {
+                            "id": item_id,
+                            "content_type": "image",
+                            "file_path": image_path,
+                            "thumbnail_path": thumbnail_path,
+                            "width": pixmap.width(),
+                            "height": pixmap.height(),
+                            "preview": thumbnail_path,
+                        }
+                        self.content_changed.emit("image", item_data)
+                        logger.debug(
+                            f"Added enhanced image item {item_id} ({pixmap.width()}x{pixmap.height()})"
+                        )
+                except Exception as e:
+                    logger.error(f"DB worker error (image): {e}")
 
-            if item_id > 0:
-                self.last_content_hash = content_hash
-
-                # Emit signal with enhanced data
-                item_data = {
-                    "id": item_id,
-                    "content_type": "image",
-                    "file_path": image_path,
-                    "thumbnail_path": thumbnail_path,
-                    "width": pixmap.width(),
-                    "height": pixmap.height(),
-                    "preview": thumbnail_path,
-                }
-
-                self.content_changed.emit("image", item_data)
-                logger.debug(
-                    # flake8: noqa: E501
-                    f"Added enhanced image item {item_id} ({pixmap.width()}x{pixmap.height()})"
-                )
+            self._executor.submit(_worker)
 
         except Exception as e:
             logger.error(f"Error handling image content: {e}")
@@ -276,36 +316,38 @@ class EnhancedClipboardWatcher(QObject):
         # Store with HTML content if available (Windows behavior)
         html_content = all_formats.get("html") if all_formats.get("html") else None
 
-        # Use enhanced database method
-        item_id = self.database.add_multi_format_text_item(
-            content=primary_content,
-            html_content=html_content,
-            format_type=primary_format,
-            metadata=metadata,
-        )
+        # Offload DB write to background thread
+        def _worker():
+            try:
+                item_id = self.database.add_multi_format_text_item(
+                    content=primary_content,
+                    html_content=html_content,
+                    format_type=primary_format,
+                    metadata=metadata,
+                )
+                if item_id > 0:
+                    self.last_content_hash = content_hash
+                    item_data = {
+                        "id": item_id,
+                        "content_type": "text",
+                        "content": primary_content,
+                        "html_content": html_content,
+                        "format": primary_format,
+                        "original_mime_types": mime_types,
+                        "preview": (
+                            primary_content[:150] + "..."
+                            if len(primary_content) > 150
+                            else primary_content
+                        ),
+                    }
+                    self.content_changed.emit("text", item_data)
+                    logger.debug(
+                        f"Added multi-format item {item_id} with format {primary_format}"
+                    )
+            except Exception as e:
+                logger.error(f"DB worker error (multi-format): {e}")
 
-        if item_id > 0:
-            self.last_content_hash = content_hash
-
-            # Emit signal with enhanced data
-            item_data = {
-                "id": item_id,
-                "content_type": "text",
-                "content": primary_content,
-                "html_content": html_content,
-                "format": primary_format,
-                "original_mime_types": mime_types,
-                "preview": (
-                    primary_content[:150] + "..."
-                    if len(primary_content) > 150
-                    else primary_content
-                ),
-            }
-
-            self.content_changed.emit("text", item_data)
-            logger.debug(
-                f"Added multi-format item {item_id} with format {primary_format}"
-            )
+        self._executor.submit(_worker)
 
     def update_config(self):
         """Update configuration settings"""
