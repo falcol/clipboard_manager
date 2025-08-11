@@ -89,8 +89,8 @@ class EnhancedClipboardManager:
         # Set system_tray reference in popup_window
         self.popup_window.system_tray = self.system_tray
 
-        # Initialize hotkey manager with Super+C
-        self.hotkey_manager = HotkeyManager(self.show_popup)
+        # Initialize hotkey manager driven by Config
+        self.hotkey_manager = HotkeyManager(self.show_popup, self.config)
 
         # Initialize QSS loader
         self.qss_loader = QSSLoader()
@@ -248,6 +248,11 @@ class EnhancedClipboardManager:
             # Apply theme immediately, no need to restart
             self._apply_qss_styles()
 
+            # Update hotkey manager from config (if hotkey changed)
+            with contextlib.suppress(Exception):
+                if getattr(self, "hotkey_manager", None):
+                    self.hotkey_manager.update_from_config()
+
             logger.info("All components updated with new settings")
 
         except Exception as e:
@@ -381,8 +386,10 @@ class EnhancedClipboardManager:
 
             # Release single-instance lock if we own it (when started via main)
             with contextlib.suppress(Exception):
-                if getattr(self, "_single_instance", None):
-                    self._single_instance.release_lock()
+                single = getattr(self, "_single_instance", None)
+                if single is not None:
+                    # Method exists on CrossPlatformSingleInstance
+                    single.release_lock()  # type: ignore[attr-defined]
             logger.info("Graceful shutdown completed")
             self.app.quit()
 
