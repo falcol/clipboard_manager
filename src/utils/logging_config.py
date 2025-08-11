@@ -16,12 +16,21 @@ from .config import Config
 
 
 class EnhancedLogFormatter(logging.Formatter):
-    """Enhanced formatter with file path and line number"""
+    """Enhanced formatter with file path and line number.
 
-    def __init__(self, include_path: bool = True, include_line: bool = True):
+    Color output is optional to keep file logs clean on all platforms.
+    """
+
+    def __init__(
+        self,
+        include_path: bool = True,
+        include_line: bool = True,
+        colorize: bool = True,
+    ):
         super().__init__()
         self.include_path = include_path
         self.include_line = include_line
+        self.colorize = colorize
 
     def format(self, record):
         # Add file path and line number to record
@@ -41,20 +50,23 @@ class EnhancedLogFormatter(logging.Formatter):
         else:
             location = filepath
 
-        # Enhanced format with colors and structure
-        if record.levelno >= logging.ERROR:
-            color = "\033[91m"  # Red for errors
-        elif record.levelno >= logging.WARNING:
-            color = "\033[93m"  # Yellow for warnings
-        elif record.levelno >= logging.INFO:
-            color = "\033[94m"  # Blue for info
+        # Enhanced format with optional colors and structure
+        if self.colorize:
+            if record.levelno >= logging.ERROR:
+                color = "\033[91m"  # Red for errors
+            elif record.levelno >= logging.WARNING:
+                color = "\033[93m"  # Yellow for warnings
+            elif record.levelno >= logging.INFO:
+                color = "\033[94m"  # Blue for info
+            else:
+                color = "\033[90m"  # Gray for debug
+            reset = "\033[0m"
+            level_part = f"{color}[{record.levelname:3}]{reset} "
         else:
-            color = "\033[90m"  # Gray for debug
-
-        reset = "\033[0m"
+            level_part = f"[{record.levelname:3}] "
 
         # Format: [LEVEL] [TIME] [FILE:LINE] MESSAGE
-        formatted = f"{color}[{record.levelname:3}]{reset} "
+        formatted = level_part
         formatted += f"[{self.formatTime(record, '%Y-%m-%d %H:%M:%S')}] "
         formatted += f"[{location}] "
         formatted += f"{record.getMessage()}"
@@ -104,9 +116,13 @@ class EnhancedLoggingConfig:
         root_logger.handlers.clear()
 
         # Create formatters
-        detailed_formatter = EnhancedLogFormatter(include_path=True, include_line=True)
-        # flake8: noqa: F841
-        simple_formatter = EnhancedLogFormatter(include_path=False, include_line=False)
+        detailed_formatter = EnhancedLogFormatter(
+            include_path=True, include_line=True, colorize=True
+        )
+        # File formatter should avoid ANSI color codes for better log readability
+        file_formatter = EnhancedLogFormatter(
+            include_path=True, include_line=True, colorize=False
+        )
 
         # Console handler
         if log_to_console:
@@ -126,7 +142,7 @@ class EnhancedLoggingConfig:
                 encoding="utf-8",
             )
             file_handler.setLevel(log_level)
-            file_handler.setFormatter(detailed_formatter)
+            file_handler.setFormatter(file_formatter)
             root_logger.addHandler(file_handler)
 
             # Error log file (only errors and critical)
@@ -138,7 +154,7 @@ class EnhancedLoggingConfig:
                 encoding="utf-8",
             )
             error_handler.setLevel(logging.ERROR)
-            error_handler.setFormatter(detailed_formatter)
+            error_handler.setFormatter(file_formatter)
             root_logger.addHandler(error_handler)
 
             # Debug log file (if debug level)
@@ -151,7 +167,7 @@ class EnhancedLoggingConfig:
                     encoding="utf-8",
                 )
                 debug_handler.setLevel(logging.DEBUG)
-                debug_handler.setFormatter(detailed_formatter)
+                debug_handler.setFormatter(file_formatter)
                 root_logger.addHandler(debug_handler)
 
         # Log startup message

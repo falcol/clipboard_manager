@@ -9,16 +9,14 @@ Intelligent content management for clipboard items
 import hashlib
 import json
 import logging
+from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, Tuple
 
-from PySide6.QtCore import QBuffer, QIODevice
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice
 from PySide6.QtGui import QPixmap
 
 logger = logging.getLogger(__name__)
-
-
-from collections import OrderedDict
 
 
 class ContentManager:
@@ -176,19 +174,32 @@ class ContentManager:
     # Private helper methods
     def _pixmap_to_bytes(self, pixmap: QPixmap, format: str, quality: int) -> bytes:
         """Convert QPixmap to bytes with optimization"""
-        byte_array = QBuffer()
-        byte_array.open(QIODevice.OpenModeFlag.WriteOnly)
+        try:
+            # Use QByteArray-backed buffer to avoid dangling data().data()
+            byte_array = QByteArray()
+            buffer = QBuffer(byte_array)
+            buffer.open(QIODevice.OpenModeFlag.WriteOnly)
 
-        # Optimize based on format
-        if format.upper() == "JPEG" and pixmap.hasAlphaChannel():
-            # Convert to RGB for JPEG (no alpha)
-            rgb_pixmap = QPixmap(pixmap.size())
-            rgb_pixmap.fill("white")
-            # Composite over white background
-            # (This is a simplified version - full implementation would use QPainter)
+            # Optimize based on format
+            if format.upper() == "JPEG" and pixmap.hasAlphaChannel():
+                # Convert ARGB to RGB by compositing over white background
+                from PySide6.QtGui import QColor, QPainter
 
-        pixmap.save(byte_array, format, quality)
-        return byte_array.data().data()
+                rgb_pixmap = QPixmap(pixmap.size())
+                rgb_pixmap.fill(QColor("white"))
+                painter = QPainter(rgb_pixmap)
+                painter.drawPixmap(0, 0, pixmap)
+                painter.end()
+                rgb_pixmap.save(buffer, format, quality)
+            else:
+                pixmap.save(buffer, format, quality)
+
+            buffer.close()
+            # QByteArray supports data(); ensure a pure bytes object is returned
+            return byte_array.data()
+        except Exception as e:
+            logger.error(f"Error converting pixmap to bytes: {e}")
+            return b""
 
     def _create_optimized_thumbnail(
         self, pixmap: QPixmap, max_size: int = 128

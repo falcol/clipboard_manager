@@ -4,6 +4,8 @@ Process utilities for cross-platform process name management
 """
 import sys
 
+from utils.logging_config import get_logger
+
 
 def setup_process_name(process_name: str = "ClipboardManager") -> bool:
     """
@@ -20,14 +22,16 @@ def setup_process_name(process_name: str = "ClipboardManager") -> bool:
         import setproctitle
 
         setproctitle.setproctitle(process_name)
-        print(f"Process name set to: {process_name}")
+        get_logger(__name__).info(f"Process name set to: {process_name}")
         return True
     except ImportError:
         # Fallback: modify sys.argv[0] for basic process name change
         try:
             sys.argv[0] = process_name
-            print(f"Process name fallback applied: {process_name}")
+            get_logger(__name__).info(
+                f"Process name fallback applied: {process_name}"
+            )
             return True
         except Exception as e:
-            print(f"Failed to set process name: {e}")
+            get_logger(__name__).error(f"Failed to set process name: {e}")
             return False

@@ -102,11 +102,13 @@ class Config:
     def save(self):
         """Save enhanced configuration to file"""
         try:
-            # Add metadata
+            # Add metadata with real timestamp
+            from datetime import datetime
+
             config_with_metadata = {
                 "_metadata": {
                     "version": "2.0",
-                    "created": "2024-01-01",  # Current timestamp would be better
+                    "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "phase": "1",
                 },
                 **self.config,

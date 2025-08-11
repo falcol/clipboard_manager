@@ -92,14 +92,7 @@ class SystemTray(QObject):
         """Create modern context menu with enhanced styling"""
         menu = QMenu()
 
-        # Load QSS for menu styling
-        try:
-            from utils.qss_loader import QSSLoader
-
-            qss_loader = QSSLoader()
-            qss_loader.apply_stylesheet(menu, "main.qss")
-        except Exception as e:
-            logger.warning(f"Could not apply QSS to menu: {e}")
+        # Styling is applied globally to QApplication; avoid redundant menu-specific QSS
 
         # Show clipboard action with icon
         show_action = menu.addAction("📋  Show Clipboard History")
