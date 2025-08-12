@@ -380,6 +380,28 @@ QPushButton#settingsButton:default:hover {
     background: #0086f0;
 }
 
+
+/* Settings: Compact Key Combo popup constraints */
+QComboBox#compactKeyCombo {
+    height: 48px;
+}
+
+QComboBox#compactKeyCombo QAbstractItemView {
+    max-height: 350px;      /* Popup height limit */
+    outline: 0px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: white;
+}
+
+QComboBox#compactKeyCombo QAbstractItemView::item {
+    height: 32px;
+    min-height: 22px;
+    max-height: 22px;
+    padding: 1px 6px;
+    border: none;
+}
+
 /* ===============================================
    SYSTEM TRAY MENU STYLE
    Exact copy of: Styles.get_system_tray_menu_style()

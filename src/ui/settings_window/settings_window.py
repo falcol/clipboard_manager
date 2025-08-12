@@ -23,47 +23,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ui.settings_window.compact_combo_box import CompactComboBox
 from utils.config import Config
 
 logger = logging.getLogger(__name__)
-
-
-class CompactComboBox(QComboBox):
-    """QComboBox with a strictly limited popup height.
-
-    Overrides showPopup to clamp the popup container's height regardless of
-    global QSS themes that might stretch it to screen height.
-    """
-
-    def showPopup(self) -> None:  # type: ignore[override]
-        super().showPopup()
-        try:
-            view = self.view()
-            view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-            view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-
-            try:
-                example_row_height = max(20, view.sizeHintForRow(0))
-            except Exception:
-                example_row_height = 22
-
-            max_visible = max(1, min(self.maxVisibleItems(), 6))
-            popup_height = min(240, example_row_height * max_visible + 8)
-
-            view.setMinimumHeight(popup_height)
-            view.setMaximumHeight(popup_height)
-
-            container = view.window()
-            if container is not None:
-                try:
-                    container.setMinimumHeight(popup_height)
-                    container.setMaximumHeight(popup_height)
-                    geo = container.geometry()
-                    container.setGeometry(geo.x(), geo.y(), geo.width(), popup_height)
-                except Exception:
-                    pass
-        except Exception:
-            pass
 
 
 class SettingsWindow(QDialog):
@@ -138,31 +101,12 @@ class SettingsWindow(QDialog):
         self.key_combo = CompactComboBox()
         self.key_combo.setObjectName("compactKeyCombo")  # Unique object name
         # Aggressive height limiting
-        self.key_combo.setMaxVisibleItems(5)
-        self.key_combo.setMinimumContentsLength(8)
+        self.key_combo.setMaxVisibleItems(15)
+        self.key_combo.setMinimumContentsLength(10)
         self.key_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.key_combo.setFixedHeight(28)
 
         # Use very specific CSS selector with !important
-        self.key_combo.setStyleSheet("""
-            QComboBox#compactKeyCombo QAbstractItemView {
-                max-height: 120px !important;
-                outline: 0px;
-                border: 1px solid #555;
-                selection-background-color: #0078d4;
-                background-color: #333;
-                color: white;
-            }
-            QComboBox#compactKeyCombo QAbstractItemView::item {
-                height: 22px !important;
-                min-height: 22px !important;
-                max-height: 22px !important;
-                padding: 1px 6px;
-                border: none;
-            }
-            QComboBox#compactKeyCombo {
-                height: 28px;
-            }
-        """)
         self._populate_key_combo()
         hotkey_row.addWidget(self.key_combo)
 
