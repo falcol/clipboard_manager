@@ -102,7 +102,7 @@ class PopupWindow(QWidget):
         # Header
         self.header = QFrame()
         self.header.setObjectName("header")  # Use QSS for styling
-        self.header.setFixedHeight(48)
+        self.header.setFixedHeight(80)  # taller to fit Clear All + Storage label
         self.header.setCursor(Qt.CursorShape.SizeAllCursor)
         self.header.setFrameShape(QFrame.Shape.NoFrame)  # flat header
 
@@ -141,7 +141,20 @@ class PopupWindow(QWidget):
         self.clear_btn.setFlat(True)  # flat look
         self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)  # pointer on hover
         self.clear_btn.clicked.connect(self.clear_history)
-        actions_layout.addWidget(self.clear_btn)
+
+        # Wrap actions: button + storage label stacked vertically
+        actions_box = QVBoxLayout()
+        actions_box.setContentsMargins(0, 0, 0, 0)
+        actions_box.setSpacing(2)
+        actions_box.addWidget(self.clear_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.storage_label = QLabel("")  # shows total clipboard storage usage
+        self.storage_label.setObjectName("statsLabel")
+        self.storage_label.setFont(QFont(QApplication.font().family(), 8))
+        self.storage_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        actions_box.addWidget(self.storage_label)
+
+        actions_layout.addLayout(actions_box)
 
         header_layout.addLayout(actions_layout)
         container_layout.addWidget(self.header)
@@ -170,7 +183,7 @@ class PopupWindow(QWidget):
 
         # Reduce repaint cost during scrolling for better performance on Linux
         try:
-            self.scroll_area.setFrameShape(QFrame.NoFrame)
+            self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
             self.scroll_area.viewport().setAttribute(
                 Qt.WidgetAttribute.WA_OpaquePaintEvent, True
             )
@@ -343,6 +356,14 @@ class PopupWindow(QWidget):
             self.stats_label.setText(f"{showing_items} of {total_items} items")
         else:
             self.stats_label.setText(f"{total_items} items")
+
+        # Update storage usage under Clear All
+        try:
+            stats = self.database.get_stats()
+            total_bytes = (stats.get("database_size_bytes", 0) or 0) + (stats.get("image_storage_bytes", 0) or 0)
+            self.storage_label.setText(f"Storage: {self._format_bytes(total_bytes)}")
+        except Exception:
+            self.storage_label.setText("")
 
     def show_at_cursor(self):
         """Show popup at cursor position"""
@@ -840,6 +861,20 @@ class PopupWindow(QWidget):
 
         except Exception as e:
             logger.error(f"Error restoring clipboard: {e}")
+
+    def _format_bytes(self, n: int) -> str:
+        """Human-readable bytes formatter"""
+        try:
+            n = int(n)
+        except Exception:
+            return "0 B"
+        units = ["B", "KB", "MB", "GB", "TB"]
+        size = float(n)
+        idx = 0
+        while size >= 1024 and idx < len(units) - 1:
+            size /= 1024.0
+            idx += 1
+        return f"{size:.1f} {units[idx]}"
 
     def _get_last_content_type(self):
         """Get content type of last selected item"""

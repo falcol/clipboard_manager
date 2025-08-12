@@ -542,7 +542,8 @@ QTextEdit#htmlPreview {
 QFrame#header,
 QFrame#searchBar {
     background: #1f1f1f;
-    border: none;
+    border: none;             /* remove any frame border */
+    outline: 0;               /* ensure no outline */
 }
 
 /* Search input: flat */
@@ -623,7 +624,7 @@ QLabel#footerLabel {
 }
 
 QLabel#statsLabel {
-    color: #666666;
+    color:rgb(250, 250, 250);
     background: transparent;
 }
 
