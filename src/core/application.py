@@ -2,14 +2,16 @@
 """
 Enhanced Clipboard Manager main application class
 """
+
+import contextlib
 import os
 import signal
 import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication, QMessageBox, QSystemTrayIcon
+from PySide6.QtGui import QFont, QFontDatabase
+from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory, QSystemTrayIcon
 
 from core.clipboard_watcher import EnhancedClipboardWatcher
 from core.content_manager import ContentManager
@@ -23,6 +25,7 @@ from utils.config import Config
 from utils.logging_config import get_logger
 from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
+from utils.single_instance import CrossPlatformSingleInstance
 
 
 class EnhancedClipboardManager:
@@ -33,9 +36,12 @@ class EnhancedClipboardManager:
         setup_qt_environment()
 
         try:
-            # Set High DPI scaling policy BEFORE creating QApplication
+            # Enable HiDPI pixmaps and use rounding policy that reduces blur on fractional scaling
+            QApplication.setAttribute(
+                Qt.ApplicationAttribute.AA_UseHighDpiPixmaps, True
+            )
             QApplication.setHighDpiScaleFactorRoundingPolicy(
-                Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+                Qt.HighDpiScaleFactorRoundingPolicy.RoundPreferFloor
             )
 
             self.app = QApplication(sys.argv)
@@ -46,10 +52,11 @@ class EnhancedClipboardManager:
             self.app.setApplicationVersion("1.0")
             self.app.setOrganizationName("Falcol")
 
-            # Set default font for modern UI
-            font = QFont("Segoe UI", 9)
-            font.setStyleHint(self.app.font().styleHint())
-            self.app.setFont(font)
+            # Use a neutral, cross-platform base style (then QSS will skin it)
+            self.app.setStyle(QStyleFactory.create("Fusion"))
+
+            # Set default font with cross-platform family fallbacks (prefer Noto Sans on Linux)
+            self.app.setFont(self._choose_system_ui_font())
 
         except Exception as e:
             logger = get_logger(__name__)
@@ -58,6 +65,7 @@ class EnhancedClipboardManager:
 
         # Initialize enhanced configuration
         self.config = Config()
+        self._single_instance: CrossPlatformSingleInstance | None = None
 
         # Initialize data directory (only 1 database)
         self.data_dir = Path(self.config.config_path.parent)
@@ -81,8 +89,8 @@ class EnhancedClipboardManager:
         # Set system_tray reference in popup_window
         self.popup_window.system_tray = self.system_tray
 
-        # Initialize hotkey manager with Super+C
-        self.hotkey_manager = HotkeyManager(self.show_popup)
+        # Initialize hotkey manager driven by Config
+        self.hotkey_manager = HotkeyManager(self.show_popup, self.config)
 
         # Initialize QSS loader
         self.qss_loader = QSSLoader()
@@ -240,6 +248,11 @@ class EnhancedClipboardManager:
             # Apply theme immediately, no need to restart
             self._apply_qss_styles()
 
+            # Update hotkey manager from config (if hotkey changed)
+            with contextlib.suppress(Exception):
+                if getattr(self, "hotkey_manager", None):
+                    self.hotkey_manager.update_from_config()
+
             logger.info("All components updated with new settings")
 
         except Exception as e:
@@ -248,8 +261,17 @@ class EnhancedClipboardManager:
     def _apply_qss_styles(self):
         """Apply QSS stylesheets to entire app (global)"""
         try:
-            theme_name = self.config.get("theme", "monochrome_dark")
-            theme_file = f"themes/{theme_name}.qss"
+            # Validate theme against available theme files and fallback safely
+            available_themes = {
+                "dark_win11": "themes/dark_win11.qss",
+                "dark_amoled": "themes/dark_amoled.qss",
+                "dark_solarized": "themes/dark_solarized.qss",
+                "nord": "themes/nord.qss",
+                "vespera": "themes/vespera.qss",
+            }
+
+            theme_name = self.config.get("theme", "dark_win11")
+            theme_file = available_themes.get(theme_name, available_themes["dark_win11"])
 
             # Apply globally: main + theme
             self.qss_loader.apply_app_stylesheet(["main.qss", theme_file])
@@ -362,6 +384,12 @@ class EnhancedClipboardManager:
             # Close database
             self.database.close()
 
+            # Release single-instance lock if we own it (when started via main)
+            with contextlib.suppress(Exception):
+                single = getattr(self, "_single_instance", None)
+                if single is not None:
+                    # Method exists on CrossPlatformSingleInstance
+                    single.release_lock()  # type: ignore[attr-defined]
             logger.info("Graceful shutdown completed")
             self.app.quit()
 
@@ -370,6 +398,52 @@ class EnhancedClipboardManager:
             logger.error(f"Error during shutdown: {e}")
             # Force quit if graceful shutdown fails
             self.app.quit()
+
+    def _choose_system_ui_font(self) -> QFont:
+        """Choose a readable, cross-platform UI font with sensible fallbacks.
+
+        - Windows: Segoe UI
+        - macOS: .SF NS Text / Helvetica Neue
+        - Linux: Noto Sans (preferred), Ubuntu, DejaVu Sans
+        """
+        try:
+            families_by_platform = []
+            if sys.platform.startswith("win"):
+                families_by_platform = ["Segoe UI", "Noto Sans", "Arial", "Sans Serif"]
+                point_size = 9
+            elif sys.platform.startswith("darwin"):
+                families_by_platform = [
+                    "Ubuntu",
+                    "DejaVu Sans",
+                    ".SF NS Text",
+                    "Helvetica Neue",
+                    "Noto Sans",
+                    "Arial",
+                    "Sans Serif",
+                ]
+                point_size = 12  # macOS default UI size is larger
+            else:
+                # Linux
+                families_by_platform = [
+                    "Noto Sans",
+                    "Ubuntu",
+                    "DejaVu Sans",
+                    "Segoe UI",
+                    "Arial",
+                    "Sans Serif",
+                ]
+                point_size = 10
+
+            db = QFontDatabase()
+            for family in families_by_platform:
+                if family in db.families():
+                    return QFont(family, point_size)
+
+            # Fallback to current app font but adjust size for readability
+            return QFont(self.app.font().family(), point_size)
+        except Exception:
+            # Absolute fallback
+            return QFont("Sans Serif", 10)
 
     def get_status_info(self):
         """Get current application status for debugging"""

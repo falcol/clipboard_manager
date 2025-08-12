@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import sqlite3
+import threading
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -26,7 +27,7 @@ class EnhancedClipboardDatabase:
         if db_path is None:
             data_dir = Path(user_data_dir("ClipboardManager", "B1Corp"))
             data_dir.mkdir(parents=True, exist_ok=True)
-            db_path = data_dir / "clipboard.db"  # Chỉ 1 file duy nhất
+            db_path = data_dir / "clipboard.db"  # Only 1 file
 
         self.db_path = db_path
         self.data_dir = db_path.parent
@@ -48,6 +49,33 @@ class EnhancedClipboardDatabase:
             migrator.migrate()
 
         self.init_database()
+        # Serialize access to a single SQLite connection across threads
+        self._lock = threading.RLock()
+
+    def compute_text_hash(self, content: str, format_type: str) -> str:
+        """Compute stable text hash combining format and content.
+
+        Using the same logic everywhere prevents inconsistent deduplication.
+        """
+        combined = f"{format_type}:{content}"
+        return hashlib.sha256(combined.encode()).hexdigest()[:16]
+
+    # Internal helper for serialized transactions
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _tx(self):
+        """Context manager to execute a write transaction under a re-entrant lock."""
+        with self._lock:
+            if self.connection is None:
+                raise RuntimeError("Database connection not initialized")
+            cursor = self.connection.cursor()
+            try:
+                yield cursor
+                self.connection.commit()
+            except Exception:
+                self.connection.rollback()
+                raise
 
     def init_database(self):
         """Initialize database connection (schema already migrated)"""
@@ -60,6 +88,19 @@ class EnhancedClipboardDatabase:
             # Enable foreign key constraints
             cursor = self.connection.cursor()
             cursor.execute("PRAGMA foreign_keys = ON")
+
+            # SQLite performance optimizations
+            # Use WAL for better concurrent read/write, and reduce fsync cost
+            try:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA temp_store=MEMORY")
+                # Negative cache_size means kib in memory. ~8MB cache
+                cursor.execute("PRAGMA cache_size=-8192")
+                # Busy timeout to avoid immediate lock errors under contention
+                cursor.execute("PRAGMA busy_timeout=3000")
+            except Exception as pragma_err:
+                logger.warning(f"Failed to apply SQLite PRAGMAs: {pragma_err}")
 
             logger.info(f"Database connected: {self.db_path}")
 
@@ -92,8 +133,11 @@ class EnhancedClipboardDatabase:
                 if format_type == "html":
                     html_content = content
 
-            # Generate content hash
-            content_hash = self.generate_content_hash(content, "text")
+            # Determine format for hashing
+            format_type = metadata.get("format", "plain") if metadata else "plain"
+
+            # Generate content hash (stable across code paths)
+            content_hash = self.compute_text_hash(content, format_type)
 
             # Check for existing item
             existing_id = self._get_existing_item_id(content_hash)
@@ -101,76 +145,74 @@ class EnhancedClipboardDatabase:
                 self._update_item_access(existing_id)
                 return existing_id
 
-            cursor = self.connection.cursor()
+            with self._tx() as cursor:
+                # Create preview based on actual content
+                if format_type == "html" and html_content:
+                    # Extract plain text from HTML for preview
+                    import re
 
-            # Create preview based on actual content
-            if format_type == "html" and html_content:
-                # Extract plain text from HTML for preview
-                import re
+                    plain_text = re.sub(r"<[^>]+>", "", content)
+                    preview = (
+                        plain_text[:150] + "..." if len(plain_text) > 150 else plain_text
+                    )
+                else:
+                    preview = self._create_text_preview(content)
 
-                plain_text = re.sub(r"<[^>]+>", "", content)
-                preview = (
-                    plain_text[:150] + "..." if len(plain_text) > 150 else plain_text
+                # Enhanced metadata with MIME info
+                enhanced_metadata = metadata or {}
+                enhanced_metadata.update(
+                    {
+                        "original_mime_types": original_mime_types,
+                        "detected_format": format_type,
+                    }
                 )
-            else:
-                preview = self._create_text_preview(content)
 
-            # Enhanced metadata with MIME info
-            enhanced_metadata = metadata or {}
-            enhanced_metadata.update(
-                {
-                    "original_mime_types": original_mime_types,
-                    "detected_format": format_type,
-                }
-            )
+                # Generate search content
+                search_content = self._generate_search_content(content)
 
-            # Generate search content
-            search_content = self._generate_search_content(content)
+                # Insert main item
+                cursor.execute(
+                    """
+                    INSERT INTO clipboard_items
+                    (content_type, content_hash, metadata, search_content)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (
+                        "text",
+                        content_hash,
+                        json.dumps(enhanced_metadata),
+                        search_content,
+                    ),
+                )
 
-            # Insert main item
-            cursor.execute(
-                """
-                INSERT INTO clipboard_items
-                (content_type, content_hash, metadata, search_content)
-                VALUES (?, ?, ?, ?)
-            """,
-                (
-                    "text",
-                    content_hash,
-                    json.dumps(enhanced_metadata),
-                    search_content,
-                ),
-            )
+                item_id = cursor.lastrowid
 
-            item_id = cursor.lastrowid
+                # Insert text content with format info
+                cursor.execute(
+                    """
+                    INSERT INTO text_content
+                    (id, content, html_content, format, preview, char_count, word_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        item_id,
+                        content,
+                        html_content,  # Only store if actually HTML
+                        format_type,
+                        preview,
+                        len(content),
+                        len(content.split()),
+                    ),
+                )
 
-            # Insert text content with format info
-            cursor.execute(
-                """
-                INSERT INTO text_content
-                (id, content, html_content, format, preview, char_count, word_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    item_id,
-                    content,
-                    html_content,  # Only store if actually HTML
-                    format_type,
-                    preview,
-                    len(content),
-                    len(content.split()),
-                ),
-            )
+                # Cleanup after successful insert
+                self._cleanup_old_items()
 
-            self.connection.commit()
-            self._cleanup_old_items()
-
-            logger.debug(f"Added text item {item_id} with format {format_type}")
-            return item_id if item_id else -1
+                logger.debug(f"Added text item {item_id} with format {format_type}")
+                return item_id or -1
 
         except Exception as e:
             logger.error(f"Failed to add text item: {e}")
-            self.connection.rollback()
             return -1
 
     def add_multi_format_text_item(
@@ -186,8 +228,8 @@ class EnhancedClipboardDatabase:
             return -1
 
         try:
-            # Generate content hash
-            content_hash = hashlib.sha256(content.encode()).hexdigest()[:16]
+            # Generate content hash using stable method
+            content_hash = self.compute_text_hash(content, format_type)
 
             # Check for existing item
             existing_id = self._get_existing_item_id(content_hash)
@@ -195,55 +237,52 @@ class EnhancedClipboardDatabase:
                 self._update_item_access(existing_id)
                 return existing_id
 
-            cursor = self.connection.cursor()
+            with self._tx() as cursor:
+                # Prepare search content
+                search_content = content[:500]  # First 500 chars for search
 
-            # Prepare search content
-            search_content = content[:500]  # First 500 chars for search
+                # Insert main item
+                cursor.execute(
+                    """
+                    INSERT INTO clipboard_items
+                    (content_type, content_hash, metadata, search_content)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (
+                        "text",
+                        content_hash,
+                        json.dumps(metadata) if metadata else None,
+                        search_content,
+                    ),
+                )
 
-            # Insert main item
-            cursor.execute(
-                """
-                INSERT INTO clipboard_items
-                (content_type, content_hash, metadata, search_content)
-                VALUES (?, ?, ?, ?)
-            """,
-                (
-                    "text",
-                    content_hash,
-                    json.dumps(metadata) if metadata else None,
-                    search_content,
-                ),
-            )
+                item_id = cursor.lastrowid
 
-            item_id = cursor.lastrowid
+                # Insert text content with HTML
+                cursor.execute(
+                    """
+                    INSERT INTO text_content
+                    (id, content, html_content, format, preview, char_count, word_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        item_id,
+                        content,
+                        html_content,  # Store HTML even if primary is plain text
+                        format_type,
+                        content[:200] + "..." if len(content) > 200 else content,
+                        len(content),
+                        len(content.split()),
+                    ),
+                )
 
-            # Insert text content with HTML
-            cursor.execute(
-                """
-                INSERT INTO text_content
-                (id, content, html_content, format, preview, char_count, word_count)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    item_id,
-                    content,
-                    html_content,  # Store HTML even if primary is plain text
-                    format_type,
-                    content[:200] + "..." if len(content) > 200 else content,
-                    len(content),
-                    len(content.split()),
-                ),
-            )
-
-            self.connection.commit()
             logger.info(
                 f"Added multi-format text item {item_id} (format: {format_type}, has_html: {bool(html_content)})"
             )
-            return item_id if item_id else -1
+            return item_id or -1
 
         except Exception as e:
             logger.error(f"Error adding multi-format text item: {e}")
-            self.connection.rollback()
             return -1
 
     def add_image_item(
@@ -266,78 +305,72 @@ class EnhancedClipboardDatabase:
                 hashlib.sha256(image_data).hexdigest(), "image"
             )
 
-            # Check for existing item
-            existing_id = self._get_existing_item_id(content_hash)
-            if existing_id:
+            if existing_id := self._get_existing_item_id(content_hash):
                 self._update_item_access(existing_id)
                 return existing_id
 
-            cursor = self.connection.cursor()
+            with self._tx() as cursor:
+                # Generate file paths
+                image_filename = f"{content_hash}.{image_format.lower()}"
+                thumbnail_filename = f"{content_hash}_thumb.{image_format.lower()}"
 
-            # Generate file paths
-            image_filename = f"{content_hash}.{image_format.lower()}"
-            thumbnail_filename = f"{content_hash}_thumb.{image_format.lower()}"
+                image_path = self.images_dir / image_filename
+                thumbnail_path = self.thumbnails_dir / thumbnail_filename
 
-            image_path = self.images_dir / image_filename
-            thumbnail_path = self.thumbnails_dir / thumbnail_filename
+                # Save image files
+                with open(image_path, "wb") as f:
+                    f.write(image_data)
+                with open(thumbnail_path, "wb") as f:
+                    f.write(thumbnail_data)
 
-            # Save image files
-            with open(image_path, "wb") as f:
-                f.write(image_data)
-            with open(thumbnail_path, "wb") as f:
-                f.write(thumbnail_data)
+                # Generate search content for images
+                search_content = f"image {image_format.lower()} {width}x{height}"
 
-            # Generate search content for images
-            search_content = f"image {image_format.lower()} {width}x{height}"
+                # Insert main item
+                cursor.execute(
+                    """
+                    INSERT INTO clipboard_items
+                    (content_type, content_hash, metadata, search_content)
+                    VALUES (?, ?, ?, ?)
+                """,
+                    (
+                        "image",
+                        content_hash,
+                        json.dumps(metadata) if metadata else None,
+                        search_content,
+                    ),
+                )
 
-            # Insert main item
-            cursor.execute(
-                """
-                INSERT INTO clipboard_items
-                (content_type, content_hash, metadata, search_content)
-                VALUES (?, ?, ?, ?)
-            """,
-                (
-                    "image",
-                    content_hash,
-                    json.dumps(metadata) if metadata else None,
-                    search_content,
-                ),
-            )
+                item_id = cursor.lastrowid
 
-            item_id = cursor.lastrowid
+                # Insert image content
+                cursor.execute(
+                    """
+                    INSERT INTO image_content
+                    (id, file_path, thumbnail_path, width, height, file_size, format)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                    (
+                        item_id,
+                        str(image_path),
+                        str(thumbnail_path),
+                        width,
+                        height,
+                        len(image_data),
+                        image_format,
+                    ),
+                )
 
-            # Insert image content
-            cursor.execute(
-                """
-                INSERT INTO image_content
-                (id, file_path, thumbnail_path, width, height, file_size, format)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-                (
-                    item_id,
-                    str(image_path),
-                    str(thumbnail_path),
-                    width,
-                    height,
-                    len(image_data),
-                    image_format,
-                ),
-            )
-
-            self.connection.commit()
-
-            # Cleanup old items
-            self._cleanup_old_items()
+                # Cleanup old items
+                self._cleanup_old_items()
 
             logger.debug(
                 f"Added image item {item_id} ({width}x{height}, {len(image_data)} bytes)"
             )
-            return item_id if item_id else -1
+            return item_id or -1
 
         except Exception as e:
             logger.error(f"Failed to add image item: {e}")
-            self.connection.rollback()
             return -1
 
     def get_items(
@@ -352,9 +385,11 @@ class EnhancedClipboardDatabase:
             return []
 
         try:
-            cursor = self.connection.cursor()
+            # Serialize reads as well because a single connection is shared
+            with self._lock:
+                cursor = self.connection.cursor()
 
-            base_query = """
+                base_query = """
                 SELECT ci.*,
                        tc.content as text_content, tc.preview as text_preview,
                        tc.char_count, tc.word_count,
@@ -365,47 +400,47 @@ class EnhancedClipboardDatabase:
                 LEFT JOIN image_content ic ON ci.id = ic.id
             """
 
-            conditions = []
-            params = []
+                conditions = []
+                params = []
 
-            # Add search filter
-            if search_query:
-                conditions.append("ci.search_content LIKE ?")
-                params.append(f"%{search_query.lower()}%")
+                # Add search filter
+                if search_query:
+                    conditions.append("ci.search_content LIKE ?")
+                    params.append(f"%{search_query.lower()}%")
 
-            # Build WHERE clause
-            if conditions:
-                base_query += " WHERE " + " AND ".join(conditions)
+                # Build WHERE clause
+                if conditions:
+                    base_query += " WHERE " + " AND ".join(conditions)
 
-            # Order by pinned first, then by timestamp
-            base_query += " ORDER BY ci.is_pinned DESC, ci.timestamp DESC"
+                # Order by pinned first, then by timestamp
+                base_query += " ORDER BY ci.is_pinned DESC, ci.timestamp DESC"
 
-            if limit:
-                base_query += " LIMIT ?"
-                params.append(limit)
+                if limit:
+                    base_query += " LIMIT ?"
+                    params.append(limit)
 
-            cursor.execute(base_query, params)
-            rows = cursor.fetchall()
+                cursor.execute(base_query, params)
+                rows = cursor.fetchall()
 
-            items = []
-            for row in rows:
-                item = dict(row)
+                items = []
+                for row in rows:
+                    item = dict(row)
 
-                # Add computed fields
-                if item["content_type"] == "text":
-                    item["content"] = item["text_content"]
-                    item["preview"] = item["text_preview"]
-                elif item["content_type"] == "image":
-                    item["content"] = item["file_path"]  # Path to image file
-                    item["preview"] = item["thumbnail_path"]  # Path to thumbnail
+                    # Add computed fields
+                    if item["content_type"] == "text":
+                        item["content"] = item["text_content"]
+                        item["preview"] = item["text_preview"]
+                    elif item["content_type"] == "image":
+                        item["content"] = item["file_path"]  # Path to image file
+                        item["preview"] = item["thumbnail_path"]  # Path to thumbnail
 
-                # Parse metadata
-                if item["metadata"]:
-                    item["metadata"] = json.loads(item["metadata"])
+                    # Parse metadata
+                    if item["metadata"]:
+                        item["metadata"] = json.loads(item["metadata"])
 
-                items.append(item)
+                    items.append(item)
 
-            return items
+                return items
 
         except Exception as e:
             logger.error(f"Failed to get items: {e}")
@@ -431,18 +466,16 @@ class EnhancedClipboardDatabase:
             return False
 
         try:
-            cursor = self.connection.cursor()
-            cursor.execute(
-                """
-                UPDATE clipboard_items
-                SET is_pinned = ?, timestamp = datetime('now', 'localtime')
-                WHERE id = ?
-            """,
-                (pinned, item_id),
-            )
-
-            self.connection.commit()
-            return cursor.rowcount > 0
+            with self._tx() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE clipboard_items
+                    SET is_pinned = ?, timestamp = datetime('now', 'localtime')
+                    WHERE id = ?
+                """,
+                    (pinned, item_id),
+                )
+                return cursor.rowcount > 0
 
         except Exception as e:
             logger.error(f"Failed to pin item {item_id}: {e}")
@@ -455,31 +488,28 @@ class EnhancedClipboardDatabase:
             return False
 
         try:
-            cursor = self.connection.cursor()
+            with self._tx() as cursor:
+                # Get file paths before deletion
+                cursor.execute(
+                    """
+                    SELECT file_path, thumbnail_path
+                    FROM image_content
+                    WHERE id = ?
+                """,
+                    (item_id,),
+                )
 
-            # Get file paths before deletion
-            cursor.execute(
-                """
-                SELECT file_path, thumbnail_path
-                FROM image_content
-                WHERE id = ?
-            """,
-                (item_id,),
-            )
+                image_row = cursor.fetchone()
 
-            image_row = cursor.fetchone()
+                # Delete from database (cascades to content tables)
+                cursor.execute("DELETE FROM clipboard_items WHERE id = ?", (item_id,))
 
-            # Delete from database (cascades to content tables)
-            cursor.execute("DELETE FROM clipboard_items WHERE id = ?", (item_id,))
-
-            # Delete associated files
-            if image_row:
-                for file_path in [image_row["file_path"], image_row["thumbnail_path"]]:
-                    if file_path and Path(file_path).exists():
-                        Path(file_path).unlink()
-
-            self.connection.commit()
-            return cursor.rowcount > 0
+                # Delete associated files
+                if image_row:
+                    for file_path in [image_row["file_path"], image_row["thumbnail_path"]]:
+                        if file_path and Path(file_path).exists():
+                            Path(file_path).unlink()
+                return cursor.rowcount > 0
 
         except Exception as e:
             logger.error(f"Failed to delete item {item_id}: {e}")
@@ -492,37 +522,35 @@ class EnhancedClipboardDatabase:
             return False
 
         try:
-            cursor = self.connection.cursor()
-
-            # Get file paths for items to be deleted
-            if keep_pinned:
-                cursor.execute(
+            with self._tx() as cursor:
+                # Get file paths for items to be deleted
+                if keep_pinned:
+                    cursor.execute(
+                        """
+                        SELECT ic.file_path, ic.thumbnail_path
+                        FROM image_content ic
+                        JOIN clipboard_items ci ON ic.id = ci.id
+                        WHERE ci.is_pinned = FALSE
                     """
-                    SELECT ic.file_path, ic.thumbnail_path
-                    FROM image_content ic
-                    JOIN clipboard_items ci ON ic.id = ci.id
-                    WHERE ci.is_pinned = FALSE
-                """
-                )
-            else:
-                cursor.execute("SELECT file_path, thumbnail_path FROM image_content")
+                    )
+                else:
+                    cursor.execute("SELECT file_path, thumbnail_path FROM image_content")
 
-            file_paths = cursor.fetchall()
+                file_paths = cursor.fetchall()
 
-            # Delete from database
-            if keep_pinned:
-                cursor.execute("DELETE FROM clipboard_items WHERE is_pinned = FALSE")
-            else:
-                cursor.execute("DELETE FROM clipboard_items")
+                # Delete from database
+                if keep_pinned:
+                    cursor.execute("DELETE FROM clipboard_items WHERE is_pinned = FALSE")
+                else:
+                    cursor.execute("DELETE FROM clipboard_items")
 
-            # Delete associated files
-            for row in file_paths:
-                for file_path in [row["file_path"], row["thumbnail_path"]]:
-                    if file_path and Path(file_path).exists():
-                        Path(file_path).unlink()
+                # Delete associated files
+                for row in file_paths:
+                    for file_path in [row["file_path"], row["thumbnail_path"]]:
+                        if file_path and Path(file_path).exists():
+                            Path(file_path).unlink()
 
-            self.connection.commit()
-            return True
+                return True
 
         except Exception as e:
             logger.error(f"Failed to clear history: {e}")
@@ -535,17 +563,18 @@ class EnhancedClipboardDatabase:
             logger.error("Database connection not initialized")
             return None
 
-        cursor = self.connection.cursor()
-        cursor.execute(
-            """
-            SELECT id FROM clipboard_items
-            WHERE content_hash = ?
-        """,
-            (content_hash,),
-        )
+        with self._lock:
+            cursor = self.connection.cursor()
+            cursor.execute(
+                """
+                SELECT id FROM clipboard_items
+                WHERE content_hash = ?
+                """,
+                (content_hash,),
+            )
 
-        row = cursor.fetchone()
-        return row["id"] if row else None
+            row = cursor.fetchone()
+            return row["id"] if row else None
 
     def _update_item_access(self, item_id: int):
         """Update access count and timestamp for existing item"""
@@ -553,17 +582,16 @@ class EnhancedClipboardDatabase:
             logger.error("Database connection not initialized")
             return
 
-        cursor = self.connection.cursor()
-        cursor.execute(
-            """
-            UPDATE clipboard_items
-            SET access_count = access_count + 1,
-                timestamp = datetime('now', 'localtime')
-            WHERE id = ?
-        """,
-            (item_id,),
-        )
-        self.connection.commit()
+        with self._tx() as cursor:
+            cursor.execute(
+                """
+                UPDATE clipboard_items
+                SET access_count = access_count + 1,
+                    timestamp = datetime('now', 'localtime')
+                WHERE id = ?
+                """,
+                (item_id,),
+            )
 
     def _create_text_preview(self, text: str, max_length: int = 100) -> str:
         """Create intelligent text preview"""
@@ -594,39 +622,37 @@ class EnhancedClipboardDatabase:
             return
 
         try:
-            cursor = self.connection.cursor()
-
-            # Get items to delete (old unpinned items beyond limit)
-            cursor.execute(
-                """
-                SELECT ci.id, ic.file_path, ic.thumbnail_path
-                FROM clipboard_items ci
-                LEFT JOIN image_content ic ON ci.id = ic.id
-                WHERE ci.is_pinned = FALSE
-                ORDER BY ci.access_count ASC, ci.timestamp ASC
-                LIMIT -1 OFFSET ?
-            """,
-                (max_items,),
-            )
-
-            items_to_delete = cursor.fetchall()
-
-            # Delete old items
-            for item in items_to_delete:
-                # Delete files
-                if item["file_path"] and Path(item["file_path"]).exists():
-                    Path(item["file_path"]).unlink()
-                if item["thumbnail_path"] and Path(item["thumbnail_path"]).exists():
-                    Path(item["thumbnail_path"]).unlink()
-
-                # Delete from database
+            with self._tx() as cursor:
+                # Get items to delete (old unpinned items beyond limit)
                 cursor.execute(
-                    "DELETE FROM clipboard_items WHERE id = ?", (item["id"],)
+                    """
+                    SELECT ci.id, ic.file_path, ic.thumbnail_path
+                    FROM clipboard_items ci
+                    LEFT JOIN image_content ic ON ci.id = ic.id
+                    WHERE ci.is_pinned = FALSE
+                    ORDER BY ci.access_count ASC, ci.timestamp ASC
+                    LIMIT -1 OFFSET ?
+                    """,
+                    (max_items,),
                 )
 
-            if items_to_delete:
-                self.connection.commit()
-                logger.info(f"Cleaned up {len(items_to_delete)} old items")
+                items_to_delete = cursor.fetchall()
+
+                # Delete old items
+                for item in items_to_delete:
+                    # Delete files
+                    if item["file_path"] and Path(item["file_path"]).exists():
+                        Path(item["file_path"]).unlink()
+                    if item["thumbnail_path"] and Path(item["thumbnail_path"]).exists():
+                        Path(item["thumbnail_path"]).unlink()
+
+                    # Delete from database
+                    cursor.execute(
+                        "DELETE FROM clipboard_items WHERE id = ?", (item["id"],)
+                    )
+
+                if items_to_delete:
+                    logger.info(f"Cleaned up {len(items_to_delete)} old items")
 
         except Exception as e:
             logger.error(f"Failed to cleanup old items: {e}")
@@ -638,7 +664,8 @@ class EnhancedClipboardDatabase:
             return {}
 
         try:
-            cursor = self.connection.cursor()
+            with self._lock:
+                cursor = self.connection.cursor()
 
             # Basic counts
             cursor.execute("SELECT COUNT(*) as total FROM clipboard_items")

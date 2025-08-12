@@ -48,11 +48,16 @@ class QSSLoader:
 
     def load_stylesheets(self, filenames: list[str]) -> str:
         """Load and concatenate multiple QSS files."""
-        contents = []
+        contents: list[str] = []
+        missing: list[str] = []
         for fn in filenames:
             css = self.load_stylesheet(fn)
             if css:
                 contents.append(css)
+            else:
+                missing.append(fn)
+        if missing:
+            logger.warning(f"Missing QSS files: {missing}")
         return "\n".join(contents)
 
     def apply_stylesheet(self, widget, filename: str):

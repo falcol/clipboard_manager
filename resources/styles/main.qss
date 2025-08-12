@@ -22,8 +22,6 @@ QFrame#popupWindow, QFrame#mainContainer {
 QFrame#searchBar {
     background: #2d2d2d;
     border: none;
-    border-top: 1px solid #3d3d3d;
-    border-bottom: 1px solid #3d3d3d;
 }
 
 /* Search input - from search_bar.py */
@@ -85,7 +83,8 @@ QLabel#contentLabel {
     color: #ffffff;
     background: transparent;
     border: none;
-    font-family: 'Segoe UI';
+    /* Cross-platform font stack: prefer Segoe on Windows, Noto Sans on Linux */
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 13px;  /* Giữ font size 13px */
     font-weight: 500;
     line-height: 1.2;
@@ -199,7 +198,8 @@ QWidget {
     background-color: #1f1f1f;
     color: #ffffff;
     border-radius: 6px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    /* Base font stack for all widgets */
+    font-family: 'Segoe UI', 'DejaVu Sans','Noto Sans', 'Ubuntu', 'Arial', sans-serif;
 }
 
 /* Popup window scrollbar - from get_popup_window_style() */
@@ -261,7 +261,7 @@ QFrame.clipboardItemAlt:hover {
 QDialog#settingsDialog {
     background-color: #1f1f1f;
     color: #ffffff;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
 }
 
 QGroupBox {
@@ -270,7 +270,7 @@ QGroupBox {
     border-radius: 6px;
     margin-top: 12px;
     padding-top: 12px;
-    background: #2d2d2d;
+    background: transparent;
 }
 
 QGroupBox::title {
@@ -380,6 +380,28 @@ QPushButton#settingsButton:default:hover {
     background: #0086f0;
 }
 
+
+/* Settings: Compact Key Combo popup constraints */
+QComboBox#compactKeyCombo {
+    height: 32px;
+}
+
+QComboBox#compactKeyCombo QAbstractItemView {
+    max-height: 280px;      /* Popup height limit */
+    outline: 0px;
+    border: 1px solid #555;
+    background-color: #333;
+    color: white;
+}
+
+QComboBox#compactKeyCombo QAbstractItemView::item {
+    height: 32px;
+    min-height: 22px;
+    max-height: 22px;
+    padding: 1px 6px;
+    border: none;
+}
+
 /* ===============================================
    SYSTEM TRAY MENU STYLE
    Exact copy of: Styles.get_system_tray_menu_style()
@@ -391,7 +413,7 @@ QMenu {
     border: 1px solid #3d3d3d;
     border-radius: 6px;
     padding: 8px 0px;
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 11px;
 }
 
@@ -468,7 +490,7 @@ QFrame#imagePreviewContainer {
 /* Image type label */
 QLabel#imageTypeLabel {
     color: #ffffff;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 9px;
     font-weight: bold;
 }
@@ -476,14 +498,14 @@ QLabel#imageTypeLabel {
 /* Image size label */
 QLabel#imageSizeLabel {
     color: #cccccc;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 8px;
 }
 
 /* Image timestamp label */
 QLabel#imageTimeLabel {
     color: #888888;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 7px;
 }
 
@@ -508,7 +530,7 @@ QTextEdit#htmlPreview {
     background: transparent;
     border: none;
     color: #ffffff;
-    font-family: 'Segoe UI';
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
     font-size: 10px;
 }
 
@@ -520,7 +542,8 @@ QTextEdit#htmlPreview {
 QFrame#header,
 QFrame#searchBar {
     background: #1f1f1f;
-    border: none;
+    border: none;             /* remove any frame border */
+    outline: 0;               /* ensure no outline */
 }
 
 /* Search input: flat */
@@ -570,9 +593,6 @@ QPushButton#clearButton:pressed {
 QFrame#header {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #2d2d2d, stop:1 #1f1f1f);
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    border-bottom: 1px solid #3d3d3d;
 }
 
 QLabel#dragIcon {
@@ -604,7 +624,7 @@ QLabel#footerLabel {
 }
 
 QLabel#statsLabel {
-    color: #666666;
+    color:rgb(250, 250, 250);
     background: transparent;
 }
 
@@ -615,19 +635,34 @@ QFrame#contentFrame {
 
 /* Settings action buttons - default base; theme có thể override */
 QPushButton#primaryButton {
-    background: #0078d4; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px;
+    background: #0078d4; color: #ffffff; border: none;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 108px;
+    font-size: 12px;
+    font-weight: 600;
 }
 QPushButton#primaryButton:hover { background: #0a86f0; }
 QPushButton#primaryButton:pressed { background: #0568b3; }
 
 QPushButton#secondaryButton {
-    background: transparent; color: #dddddd; border: 1px solid #3d3d3d; border-radius: 6px; padding: 6px 12px;
+    background: transparent; color: #dddddd; border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 96px;
+    font-size: 12px;
+    font-weight: 500;
 }
-QPushButton#secondaryButton:hover { background: #2a2a2a; }
+QPushButton#secondaryButton:hover { background: #2a2a2a; border-color: #4a4a4a; }
 QPushButton#secondaryButton:pressed { background: #242424; }
 
 QPushButton#dangerButton {
-    background: transparent; color: #ff4d4f; border: 1px solid #663333; border-radius: 6px; padding: 6px 12px;
+    background: transparent; color: #ff4d4f; border: 1px solid #663333;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 140px;
+    font-size: 12px;
+    font-weight: 600;
 }
 QPushButton#dangerButton:hover { background: rgba(255,77,79,0.12); }
 QPushButton#dangerButton:pressed { background: rgba(255,77,79,0.18); }

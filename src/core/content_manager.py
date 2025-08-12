@@ -9,10 +9,11 @@ Intelligent content management for clipboard items
 import hashlib
 import json
 import logging
+from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, Tuple
 
-from PySide6.QtCore import QBuffer, QIODevice
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice
 from PySide6.QtGui import QPixmap
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 class ContentManager:
     """Intelligent content storage and retrieval manager"""
 
-    def __init__(self, data_dir: Path):
+    def __init__(self, data_dir: Path, cache_size_mb: Optional[int] = None):
         self.data_dir = data_dir
         self.images_dir = data_dir / "images"
         self.thumbnails_dir = data_dir / "thumbnails"
@@ -31,9 +32,11 @@ class ContentManager:
         for directory in [self.images_dir, self.thumbnails_dir, self.cache_dir]:
             directory.mkdir(parents=True, exist_ok=True)
 
-        # In-memory cache for frequently accessed items
-        self.memory_cache = {}
-        self.cache_size_limit = 50 * 1024 * 1024  # 50MB
+        # In-memory LRU cache for frequently accessed pixmaps
+        self.memory_cache: OrderedDict[str, QPixmap] = OrderedDict()
+        # Configure cache size (bytes)
+        limit_mb = 50 if cache_size_mb is None else max(10, min(cache_size_mb, 500))
+        self.cache_size_limit = limit_mb * 1024 * 1024
         self.current_cache_size = 0
 
     def store_image(
@@ -84,7 +87,10 @@ class ContentManager:
             # Check memory cache first
             cache_key = str(path)
             if cache_key in self.memory_cache:
-                return self.memory_cache[cache_key]
+                # Promote to most-recently used
+                pix = self.memory_cache.pop(cache_key)
+                self.memory_cache[cache_key] = pix
+                return pix
 
             # Load from disk
             pixmap = QPixmap()
@@ -168,19 +174,32 @@ class ContentManager:
     # Private helper methods
     def _pixmap_to_bytes(self, pixmap: QPixmap, format: str, quality: int) -> bytes:
         """Convert QPixmap to bytes with optimization"""
-        byte_array = QBuffer()
-        byte_array.open(QIODevice.OpenModeFlag.WriteOnly)
+        try:
+            # Use QByteArray-backed buffer to avoid dangling data().data()
+            byte_array = QByteArray()
+            buffer = QBuffer(byte_array)
+            buffer.open(QIODevice.OpenModeFlag.WriteOnly)
 
-        # Optimize based on format
-        if format.upper() == "JPEG" and pixmap.hasAlphaChannel():
-            # Convert to RGB for JPEG (no alpha)
-            rgb_pixmap = QPixmap(pixmap.size())
-            rgb_pixmap.fill("white")
-            # Composite over white background
-            # (This is a simplified version - full implementation would use QPainter)
+            # Optimize based on format
+            if format.upper() == "JPEG" and pixmap.hasAlphaChannel():
+                # Convert ARGB to RGB by compositing over white background
+                from PySide6.QtGui import QColor, QPainter
 
-        pixmap.save(byte_array, format, quality)
-        return byte_array.data().data()
+                rgb_pixmap = QPixmap(pixmap.size())
+                rgb_pixmap.fill(QColor("white"))
+                painter = QPainter(rgb_pixmap)
+                painter.drawPixmap(0, 0, pixmap)
+                painter.end()
+                rgb_pixmap.save(buffer, format, quality)
+            else:
+                pixmap.save(buffer, format, quality)
+
+            buffer.close()
+            # QByteArray supports data(); ensure a pure bytes object is returned
+            return byte_array.data()
+        except Exception as e:
+            logger.error(f"Error converting pixmap to bytes: {e}")
+            return b""
 
     def _create_optimized_thumbnail(
         self, pixmap: QPixmap, max_size: int = 128
@@ -287,31 +306,35 @@ class ContentManager:
         return list(dict.fromkeys(keywords))[:10]
 
     def _add_to_cache(self, key: str, pixmap: QPixmap):
-        """Add pixmap to memory cache with size management"""
-        # Estimate size (rough calculation)
-        estimated_size = pixmap.width() * pixmap.height() * 4  # RGBA
+        """Add pixmap to memory cache with size management (LRU)."""
+        # Estimate size (approx RGBA)
+        estimated_size = max(0, pixmap.width() * pixmap.height() * 4)
 
-        # Check if we have space
-        if self.current_cache_size + estimated_size > self.cache_size_limit:
-            self._cleanup_cache()
+        # If key exists, remove old before re-insert to update order and size
+        if key in self.memory_cache:
+            old = self.memory_cache.pop(key)
+            self.current_cache_size -= max(0, old.width() * old.height() * 4)
 
-        # Add to cache
+        # Evict least-recently used until there is space
+        while self.current_cache_size + estimated_size > self.cache_size_limit and self.memory_cache:
+            evicted_key, evicted_pix = self.memory_cache.popitem(last=False)
+            self.current_cache_size -= max(0, evicted_pix.width() * evicted_pix.height() * 4)
+            logger.debug(f"LRU evicted from cache: {evicted_key}")
+
+        # Insert as most-recently used
         self.memory_cache[key] = pixmap
         self.current_cache_size += estimated_size
 
     def _cleanup_cache(self):
-        """Clean up memory cache (simple LRU-like strategy)"""
-        # For now, just clear half the cache
-        # A proper implementation would track access times
-        items_to_remove = len(self.memory_cache) // 2
-
-        keys_to_remove = list(self.memory_cache.keys())[:items_to_remove]
-        for key in keys_to_remove:
-            del self.memory_cache[key]
-
-        # Recalculate cache size
-        self.current_cache_size = self.current_cache_size // 2
-        logger.info(f"Cache cleaned up, removed {items_to_remove} items")
+        """Evict items until usage is under 80% of limit."""
+        target = int(self.cache_size_limit * 0.8)
+        removed = 0
+        while self.current_cache_size > target and self.memory_cache:
+            _, pix = self.memory_cache.popitem(last=False)
+            self.current_cache_size -= max(0, pix.width() * pix.height() * 4)
+            removed += 1
+        if removed:
+            logger.info(f"Cache cleaned up, removed {removed} items, size={self.current_cache_size} bytes")
 
     def _create_html_preview(self, html: str) -> str:
         """Create safe HTML preview"""

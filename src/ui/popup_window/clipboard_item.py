@@ -7,8 +7,9 @@ from typing import Dict
 
 from PySide6.QtCore import Qt
 from PySide6.QtCore import Signal as pyqtSignal
-from PySide6.QtGui import QColor, QFont, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
@@ -69,9 +70,8 @@ class ClipboardItem(QFrame):
         icon_label = QLabel(content_icon)
         icon_label.setFixedSize(20, 20)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setStyleSheet(
-            "color: #0078d4; font-size: 14px;"
-        )  # EXACT like original
+        # Prefer QSS: set object name and style via stylesheet
+        icon_label.setObjectName("iconLabel")
         layout.addWidget(icon_label)
 
         # Main content area with fixed width
@@ -105,8 +105,16 @@ class ClipboardItem(QFrame):
         self.pin_btn.clicked.connect(self.toggle_pin)
         self.actions_layout.addWidget(self.pin_btn)
 
-        # Delete button
-        self.delete_btn = QPushButton("🗑")
+        # Delete button (use system icon theme with fallback emoji)
+        self.delete_btn = QPushButton()
+        try:
+            delete_icon = QIcon.fromTheme("edit-delete")
+            if not delete_icon.isNull():
+                self.delete_btn.setIcon(delete_icon)
+            else:
+                self.delete_btn.setText("🗑")
+        except Exception:
+            self.delete_btn.setText("🗑")
         self.delete_btn.setObjectName("deleteButton")
         self.delete_btn.setFixedSize(24, 24)
         self.delete_btn.setToolTip("Delete item")
@@ -117,13 +125,20 @@ class ClipboardItem(QFrame):
 
         # Update pin button and delete button styles AFTER widgets are created
         self.update_pin_button()
+        # Accessibility names
+        try:
+            self.pin_btn.setAccessibleName("Pin item")
+            self.delete_btn.setAccessibleName("Delete item")
+        except Exception:
+            pass
         # REMOVE delete_btn.setStyleSheet(...)
         # self.delete_btn.setStyleSheet(self.qss_loader.load_stylesheet("main.qss"))
 
     def setup_animations(self):
         """Setup hover animations"""
         self.shadow_effect = QGraphicsDropShadowEffect()
-        self.shadow_effect.setBlurRadius(8)
+        # Slightly reduced blur radius for better performance on Linux
+        self.shadow_effect.setBlurRadius(6)
         self.shadow_effect.setColor(QColor(0, 120, 212, 80))
         self.shadow_effect.setOffset(0, 1)
         self.shadow_effect.setEnabled(False)
@@ -146,10 +161,21 @@ class ClipboardItem(QFrame):
     def update_pin_button(self):
         """Update pin button appearance using EXACTLY styles.py methods"""
         if self.item_data.get("is_pinned"):
-            self.pin_btn.setText("📌")
+            # Prefer system icon if available; fallback to emoji
+            pin_icon = QIcon.fromTheme("flag-red")
+            if not pin_icon.isNull():
+                self.pin_btn.setIcon(pin_icon)
+                self.pin_btn.setText("")
+            else:
+                self.pin_btn.setText("📌")
             self.pin_btn.setObjectName("pinButtonActive")
         else:
-            self.pin_btn.setText("📍")
+            pin_icon = QIcon.fromTheme("flag")
+            if not pin_icon.isNull():
+                self.pin_btn.setIcon(pin_icon)
+                self.pin_btn.setText("")
+            else:
+                self.pin_btn.setText("📍")
             self.pin_btn.setObjectName("pinButton")
         self.pin_btn.setStyleSheet("")  # ensure QSS re-evaluates
         self._repolish(self.pin_btn)
@@ -300,7 +326,7 @@ class ClipboardItem(QFrame):
     def _style_text_label(self, label: QLabel) -> QLabel:
         """Apply consistent styling to text labels - EXACTLY like original"""
         label.setWordWrap(True)
-        label.setFont(QFont("Segoe UI", 13))  # Keep font size 13px as user set
+        label.setFont(QFont(QApplication.font().family(), 13))
         # NO setStyleSheet - styles.py doesn't define font styling inline
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 

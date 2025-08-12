@@ -92,38 +92,38 @@ class SystemTray(QObject):
         """Create modern context menu with enhanced styling"""
         menu = QMenu()
 
-        # Load QSS for menu styling
-        try:
-            from utils.qss_loader import QSSLoader
-
-            qss_loader = QSSLoader()
-            qss_loader.apply_stylesheet(menu, "main.qss")
-        except Exception as e:
-            logger.warning(f"Could not apply QSS to menu: {e}")
+        # Styling is applied globally to QApplication; avoid redundant menu-specific QSS
 
         # Show clipboard action with icon
         show_action = menu.addAction("📋  Show Clipboard History")
-        show_action.setFont(QFont("Segoe UI", 10, QFont.Weight.Medium))
+        show_action.setFont(QFont(QApplication.font().family(), 10, QFont.Weight.Medium))
         show_action.triggered.connect(self.show_clipboard)
 
         menu.addSeparator()
 
         # Settings action
         settings_action = menu.addAction("⚙️  Settings")
-        settings_action.setFont(QFont("Segoe UI", 9))
+        settings_action.setFont(QFont(QApplication.font().family(), 9))
         settings_action.triggered.connect(self.show_settings)
 
         # About action
         about_action = menu.addAction("ℹ️  About")
-        about_action.setFont(QFont("Segoe UI", 9))
+        about_action.setFont(QFont(QApplication.font().family(), 9))
         about_action.triggered.connect(self.show_about)
 
         menu.addSeparator()
 
         # Quit action
         quit_action = menu.addAction("❌  Quit Clipboard Manager")
-        quit_action.setFont(QFont("Segoe UI", 9))
-        quit_action.triggered.connect(self.quit_requested.emit)
+        quit_action.setFont(QFont(QApplication.font().family(), 9))
+        # Ensure tray icon hides before quitting to avoid orphan tray entries
+        def _on_quit():
+            try:
+                self.hide()
+            except Exception:
+                pass
+            self.quit_requested.emit()
+        quit_action.triggered.connect(_on_quit)
 
         # Preload each action
         for action in menu.actions():

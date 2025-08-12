@@ -1,14 +1,21 @@
 # clipboard_manager/src/core/hotkey_manager.py
 """
-Global hotkey management using pynput with enhanced Windows support
+Global hotkey management using pynput with enhanced cross-platform support.
+
+Reads the hotkey combination from Config (e.g. "super+c", "ctrl+shift+v").
+Falls back to a reasonable per-platform default if parsing fails.
 """
 import logging
 import platform
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional, Set
 
 from pynput import keyboard
 from PySide6.QtCore import QObject
 from PySide6.QtCore import Signal as pyqtSignal
+
+if TYPE_CHECKING:
+    # Imported only for type checking to avoid runtime dependency cycle
+    from utils.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -18,12 +25,13 @@ class HotkeyManager(QObject):
 
     hotkey_triggered = pyqtSignal()
 
-    def __init__(self, callback: Callable[[], None]):
+    def __init__(self, callback: Callable[[], None], config: Optional["Config"] = None):
         super().__init__()
         self.callback = callback
         self.listener: Optional[keyboard.Listener] = None
         self.running = False
         self.current_platform = platform.system().lower()
+        self.config = config
 
         # Enhanced cross-platform hotkey detection
         self.setup_hotkey_combination()
@@ -35,57 +43,97 @@ class HotkeyManager(QObject):
         self.hotkey_triggered.connect(self.callback)
 
     def setup_hotkey_combination(self):
-        """Setup hotkey combination based on platform"""
-        if self.current_platform == "windows":
-            # Windows: Use Windows key + C (avoid conflict with Windows+C)
+        """Setup hotkey combination based on config or platform defaults."""
+        # Try from config first
+        hotkey_str = None
+        if self.config is not None:
             try:
-                # Try Windows key first
-                windows_key = getattr(
-                    keyboard.Key, "cmd", keyboard.Key.cmd
-                )  # Windows key
-                if windows_key:
-                    self.hotkey_combination = {
-                        windows_key,
-                        keyboard.KeyCode.from_char("c"),
-                    }
-                    logger.info("Windows: Using Windows+C hotkey")
-                else:
-                    # Fallback to cmd (Command key on Windows)
-                    self.hotkey_combination = {
-                        keyboard.Key.cmd,
-                        keyboard.KeyCode.from_char("c"),
-                    }
-                    logger.info("Windows: Using Cmd+C hotkey (fallback)")
-            except Exception as e:
-                logger.error(f"Windows hotkey setup error: {e}")
-                # Final fallback
-                self.hotkey_combination = {
+                hotkey_str = self.config.get("hotkey")
+            except Exception:
+                hotkey_str = None
+
+        combination: Optional[Set[object]] = None
+        if isinstance(hotkey_str, str) and hotkey_str.strip():
+            combination = self._parse_hotkey(hotkey_str)
+
+        # Fallback per platform
+        if not combination:
+            if self.current_platform == "windows":
+                # Avoid default Windows+C conflict by using Windows+Shift+V
+                combination = self._parse_hotkey("win+shift+v") or {
+                    keyboard.Key.cmd,
+                    keyboard.Key.shift,
+                    keyboard.KeyCode.from_char("v"),
+                }
+            elif self.current_platform == "linux":
+                combination = self._parse_hotkey("super+c") or {
+                    getattr(keyboard.Key, "super_l", keyboard.Key.cmd),
+                    keyboard.KeyCode.from_char("c"),
+                }
+            else:
+                combination = self._parse_hotkey("cmd+c") or {
                     keyboard.Key.cmd,
                     keyboard.KeyCode.from_char("c"),
                 }
 
-        elif self.current_platform == "linux":
-            # Linux: Use Super key + V (keep original)
-            try:
-                super_key = getattr(keyboard.Key, "super_l", keyboard.Key.cmd)
-                self.hotkey_combination = {super_key, keyboard.KeyCode.from_char("c")}
-                logger.info("Linux: Using Super+C hotkey")
-            except Exception as e:
-                logger.error(f"Linux hotkey setup error: {e}")
-                self.hotkey_combination = {
-                    keyboard.Key.cmd,
-                    keyboard.KeyCode.from_char("c"),
-                }
+        self.hotkey_combination = combination
+        logger.info(f"Hotkey combination: {self._display_hotkey()} -> {self.hotkey_combination}")
 
-        else:
-            # macOS and others: Use Cmd + C
-            self.hotkey_combination = {
-                keyboard.Key.cmd,
-                keyboard.KeyCode.from_char("c"),
+    def _parse_hotkey(self, hotkey: str) -> Optional[Set[object]]:
+        """Parse a hotkey string like 'ctrl+alt+h' to a set of pynput keys.
+
+        Returns None if parsing fails.
+        """
+        try:
+            parts = [p.strip().lower() for p in hotkey.split("+") if p.strip()]
+            if not parts:
+                return None
+
+            keyset: Set[object] = set()
+            modmap = {
+                "ctrl": keyboard.Key.ctrl,
+                "control": keyboard.Key.ctrl,
+                "alt": keyboard.Key.alt,
+                "shift": keyboard.Key.shift,
+                "cmd": keyboard.Key.cmd,
+                "win": getattr(keyboard.Key, "cmd", keyboard.Key.cmd),
+                "super": getattr(keyboard.Key, "super_l", keyboard.Key.cmd),
+                "super_l": getattr(keyboard.Key, "super_l", keyboard.Key.cmd),
             }
-            logger.info(f"{self.current_platform}: Using Cmd+C hotkey")
+            for token in parts:
+                if token in modmap:
+                    keyset.add(modmap[token])
+                else:
+                    # Assume last token is the main key
+                    if len(token) == 1:
+                        keyset.add(keyboard.KeyCode.from_char(token))
+                    else:
+                        # Named special key (e.g., 'enter', 'tab')
+                        special = getattr(keyboard.Key, token, None)
+                        if special is None:
+                            return None
+                        keyset.add(special)
 
-        logger.info(f"Hotkey combination: {self.hotkey_combination}")
+            return keyset if keyset else None
+        except Exception as e:
+            logger.error(f"Failed to parse hotkey '{hotkey}': {e}")
+            return None
+
+    def _display_hotkey(self) -> str:
+        """Return a human-readable string for current hotkey from config if available."""
+        if self.config is not None:
+            try:
+                hk = self.config.get("hotkey")
+                if isinstance(hk, str) and hk:
+                    return hk
+            except Exception:
+                pass
+        # Fallback
+        if self.current_platform == "windows":
+            return "win+shift+v"
+        if self.current_platform == "linux":
+            return "super+c"
+        return "cmd+c"
 
     def start(self):
         """Start global hotkey listener with enhanced error handling"""
@@ -110,6 +158,19 @@ class HotkeyManager(QObject):
             logger.error(f"Failed to start hotkey manager: {e}")
             self.running = False
 
+    def update_from_config(self):
+        """Re-setup the hotkey based on (possibly updated) config."""
+        try:
+            # Stop existing listener
+            if self.listener is not None and self.running:
+                self.stop()
+            # Recompute combination
+            self.setup_hotkey_combination()
+            # Restart if previously running
+            self.start()
+        except Exception as e:
+            logger.error(f"Failed to update hotkey from config: {e}")
+
     def test_key_detection(self):
         """Test key detection for debugging"""
         try:
@@ -126,7 +187,16 @@ class HotkeyManager(QObject):
 
         self.running = False
         if self.listener:
-            self.listener.stop()
+            try:
+                self.listener.stop()
+                # Join underlying thread to ensure listener fully stops
+                if hasattr(self.listener, "join"):
+                    try:
+                        self.listener.join(timeout=0.5)
+                    except Exception:
+                        pass
+            except Exception as e:
+                logger.error(f"Error stopping hotkey listener: {e}")
             self.listener = None
 
         logger.info("Hotkey manager stopped")
@@ -189,6 +259,7 @@ class HotkeyManager(QObject):
         return {
             "platform": self.current_platform,
             "combination": [str(k) for k in self.hotkey_combination],
+            "display": self._display_hotkey(),
             "running": self.running,
             "pressed_keys": [str(k) for k in self.pressed_keys],
         }

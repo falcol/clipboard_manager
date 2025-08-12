@@ -102,7 +102,7 @@ class PopupWindow(QWidget):
         # Header
         self.header = QFrame()
         self.header.setObjectName("header")  # Use QSS for styling
-        self.header.setFixedHeight(48)
+        self.header.setFixedHeight(80)  # taller to fit Clear All + Storage label
         self.header.setCursor(Qt.CursorShape.SizeAllCursor)
         self.header.setFrameShape(QFrame.Shape.NoFrame)  # flat header
 
@@ -115,18 +115,18 @@ class PopupWindow(QWidget):
         # Drag indicator
         drag_icon = QLabel("⋮⋮")
         drag_icon.setObjectName("dragIcon")  # Use QSS for styling
-        drag_icon.setFont(QFont("Segoe UI", 10))
+        drag_icon.setFont(QFont(QApplication.font().family(), 10))
         drag_icon.setToolTip("Drag to move window")
         title_layout.addWidget(drag_icon)
 
         title_icon = QLabel("📋")
         title_icon.setObjectName("titleIcon")  # Use QSS for styling
-        title_icon.setFont(QFont("Segoe UI", 14))
+        title_icon.setFont(QFont(QApplication.font().family(), 14))
         title_layout.addWidget(title_icon)
 
         title_label = QLabel("Clipboard Manager")
         title_label.setObjectName("titleLabel")  # Use QSS for styling
-        title_label.setFont(QFont("Segoe UI", 12, QFont.Weight.Bold))
+        title_label.setFont(QFont(QApplication.font().family(), 12, QFont.Weight.Bold))
         title_layout.addWidget(title_label)
         title_layout.addStretch()
 
@@ -141,7 +141,20 @@ class PopupWindow(QWidget):
         self.clear_btn.setFlat(True)  # flat look
         self.clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)  # pointer on hover
         self.clear_btn.clicked.connect(self.clear_history)
-        actions_layout.addWidget(self.clear_btn)
+
+        # Wrap actions: button + storage label stacked vertically
+        actions_box = QVBoxLayout()
+        actions_box.setContentsMargins(0, 0, 0, 0)
+        actions_box.setSpacing(2)
+        actions_box.addWidget(self.clear_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.storage_label = QLabel("")  # shows total clipboard storage usage
+        self.storage_label.setObjectName("statsLabel")
+        self.storage_label.setFont(QFont(QApplication.font().family(), 8))
+        self.storage_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        actions_box.addWidget(self.storage_label)
+
+        actions_layout.addLayout(actions_box)
 
         header_layout.addLayout(actions_layout)
         container_layout.addWidget(self.header)
@@ -168,6 +181,15 @@ class PopupWindow(QWidget):
         )
         # QSS will handle scrollbar styling
 
+        # Reduce repaint cost during scrolling for better performance on Linux
+        try:
+            self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+            self.scroll_area.viewport().setAttribute(
+                Qt.WidgetAttribute.WA_OpaquePaintEvent, True
+            )
+        except Exception:
+            pass
+
         self.scroll_widget = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_widget)
         self.scroll_layout.setContentsMargins(6, 6, 6, 6)
@@ -189,13 +211,13 @@ class PopupWindow(QWidget):
 
         footer_label = QLabel("Click to paste • Ctrl+F to search • Drag header to move")
         footer_label.setObjectName("footerLabel")  # Use QSS for styling
-        footer_label.setFont(QFont("Segoe UI", 8))
+        footer_label.setFont(QFont(QApplication.font().family(), 8))
         footer_layout.addWidget(footer_label)
 
         # Stats
         self.stats_label = QLabel()
         self.stats_label.setObjectName("statsLabel")  # Use QSS for styling
-        self.stats_label.setFont(QFont("Segoe UI", 8))
+        self.stats_label.setFont(QFont(QApplication.font().family(), 8))
         footer_layout.addWidget(self.stats_label)
 
         container_layout.addWidget(footer)
@@ -335,6 +357,14 @@ class PopupWindow(QWidget):
         else:
             self.stats_label.setText(f"{total_items} items")
 
+        # Update storage usage under Clear All
+        try:
+            stats = self.database.get_stats()
+            total_bytes = (stats.get("database_size_bytes", 0) or 0) + (stats.get("image_storage_bytes", 0) or 0)
+            self.storage_label.setText(f"Storage: {self._format_bytes(total_bytes)}")
+        except Exception:
+            self.storage_label.setText("")
+
     def show_at_cursor(self):
         """Show popup at cursor position"""
         # Reset search when showing popup
@@ -367,7 +397,12 @@ class PopupWindow(QWidget):
 
         # Fade in animation
         self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
-        self.fade_animation.setDuration(150)
+        # Use configurable fade animation duration
+        try:
+            duration = int(self.config.get("fade_animation_ms", 150))
+        except Exception:
+            duration = 150
+        self.fade_animation.setDuration(duration)
         self.fade_animation.setStartValue(0)
         self.fade_animation.setEndValue(1)
         self.fade_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -377,7 +412,7 @@ class PopupWindow(QWidget):
         self.load_items()
 
         # Start focus monitoring
-        self.focus_timer.start(100)
+        self.focus_timer.start(int(self.config.get("focus_check_ms", 100)))
 
     def check_focus(self):
         """Improved focus checking"""
@@ -413,7 +448,11 @@ class PopupWindow(QWidget):
 
         if copy_success:
             # Small delay to ensure clipboard is set
-            QTimer.singleShot(50, self._simulate_ctrl_v)
+            try:
+                delay = int(self.config.get("paste_delay_ms", 50))
+            except Exception:
+                delay = 50
+            QTimer.singleShot(delay, self._simulate_ctrl_v)
         else:
             logger.error("Failed to copy to clipboard, skipping paste simulation")
 
@@ -448,27 +487,27 @@ class PopupWindow(QWidget):
                 logger.error("No content to copy")
                 return False
 
-            logger.info(
+            logger.debug(
                 f"Copying Windows-style: format={format_type}, has_html={bool(html_content)}, mime_types={original_mime_types}"
             )
 
             # Windows behavior: ALWAYS set plain text as fallback
             mime_data.setText(content)
-            logger.info("Set plain text to clipboard")
+            logger.debug("Set plain text to clipboard")
 
             # Set HTML if available (Windows preserves both)
             if html_content and html_content.strip():
                 mime_data.setHtml(html_content)
-                logger.info("Set HTML content to clipboard (Windows-like multi-format)")
+                logger.debug("Set HTML content to clipboard (Windows-like multi-format)")
             elif format_type == "html" and content.strip().startswith("<"):
                 # Fallback: if no separate HTML but content looks like HTML
                 mime_data.setHtml(content)
-                logger.info("Set HTML content from main content")
+                logger.debug("Set HTML content from main content")
 
             # Handle RTF if available
             if format_type == "rtf":
                 mime_data.setData("text/rtf", content.encode("utf-8"))
-                logger.info("Set RTF content to clipboard")
+                logger.debug("Set RTF content to clipboard")
 
             # Set to system clipboard (main clipboard, not selection)
             clipboard = QApplication.clipboard()
@@ -586,18 +625,18 @@ class PopupWindow(QWidget):
             has_image = mime_data.hasImage()
 
             if has_text:
-                logger.info("✓ Plain text verified in clipboard")
+                logger.debug("✓ Plain text verified in clipboard")
             else:
                 logger.warning("✗ Plain text verification failed")
 
             if expected_html:
                 if has_html:
-                    logger.info("✓ HTML content verified in clipboard")
+                    logger.debug("✓ HTML content verified in clipboard")
                 else:
                     logger.warning("✗ HTML content verification failed")
 
             if has_image:
-                logger.info("✓ Image content verified in clipboard")
+                logger.debug("✓ Image content verified in clipboard")
 
             # Log available formats for debugging
             available = []
@@ -608,7 +647,7 @@ class PopupWindow(QWidget):
             if mime_data.hasImage():
                 available.append("image")
 
-            logger.info(f"Clipboard formats available: {available}")
+            logger.debug(f"Clipboard formats available: {available}")
 
         except Exception as e:
             logger.error(f"Multi-format clipboard verification error: {e}")
@@ -618,6 +657,7 @@ class PopupWindow(QWidget):
         try:
             # Get current platform
             platform = sys.platform.lower()
+            import os
 
             # Check if clipboard has content - FIX THE LOGIC HERE
             clipboard = QApplication.clipboard()
@@ -632,14 +672,18 @@ class PopupWindow(QWidget):
             if has_content:
                 logger.info("Clipboard has content, simulating paste...")
 
-                if platform.startswith("win"):
-                    self._simulate_ctrl_v_windows()
-                elif platform.startswith("linux"):
-                    self._simulate_ctrl_v_linux()
-                elif platform.startswith("darwin"):
-                    self._simulate_ctrl_v_macos()
-                else:
+                # Wayland: skip key simulation; rely on clipboard being set
+                if os.environ.get("WAYLAND_DISPLAY"):
                     self._simulate_ctrl_v_fallback()
+                else:
+                    if platform.startswith("win"):
+                        self._simulate_ctrl_v_windows()
+                    elif platform.startswith("linux"):
+                        self._simulate_ctrl_v_linux()
+                    elif platform.startswith("darwin"):
+                        self._simulate_ctrl_v_macos()
+                    else:
+                        self._simulate_ctrl_v_fallback()
             else:
                 logger.warning("No content in clipboard to paste")
                 logger.debug(
@@ -817,6 +861,20 @@ class PopupWindow(QWidget):
 
         except Exception as e:
             logger.error(f"Error restoring clipboard: {e}")
+
+    def _format_bytes(self, n: int) -> str:
+        """Human-readable bytes formatter"""
+        try:
+            n = int(n)
+        except Exception:
+            return "0 B"
+        units = ["B", "KB", "MB", "GB", "TB"]
+        size = float(n)
+        idx = 0
+        while size >= 1024 and idx < len(units) - 1:
+            size /= 1024.0
+            idx += 1
+        return f"{size:.1f} {units[idx]}"
 
     def _get_last_content_type(self):
         """Get content type of last selected item"""

@@ -24,7 +24,7 @@ class Config:
         "max_items": 25,  # Like Windows clipboard manager (25 items max)
         "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
-        "theme": "dark",
+        "theme": "dark_win11",
         "show_notifications": False,
         # Enhanced Phase 1 settings
         "hotkey": "super+c",  # Changed from super+c to match Windows 11
@@ -37,6 +37,12 @@ class Config:
         "image_quality": 85,  # Reduced for RAM optimization
         "background_cleanup": True,
         "cleanup_interval_hours": 12,  # More frequent cleanup
+        # Timings (UI/Clipboard)
+        "clipboard_signal_debounce_ms": 120,
+        "clipboard_poll_ms": 300,
+        "paste_delay_ms": 50,
+        "focus_check_ms": 100,
+        "fade_animation_ms": 150,
         # Content management
         "intelligent_deduplication": True,
         "content_analysis": True,
@@ -53,10 +59,10 @@ class Config:
         "animation_speed": 150,  # ms
         "show_preview": True,
         "preview_timeout": 2000,  # ms
-        # Search settings
+        # Search settingsc
         "search_suggestions": True,
         "search_history": True,
-        "max_search_suggestions": 5,
+        "max_search_suggestions": 10,
         # Privacy settings
         "exclude_passwords": True,
         "exclude_credit_cards": True,
@@ -96,11 +102,13 @@ class Config:
     def save(self):
         """Save enhanced configuration to file"""
         try:
-            # Add metadata
+            # Add metadata with real timestamp
+            from datetime import datetime
+
             config_with_metadata = {
                 "_metadata": {
                     "version": "2.0",
-                    "created": "2024-01-01",  # Current timestamp would be better
+                    "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "phase": "1",
                 },
                 **self.config,

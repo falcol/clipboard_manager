@@ -37,6 +37,12 @@ def main():
 
         # Phase 3: Create and start application
         manager = create_clipboard_manager()
+        # Pass single instance handle into manager for later release
+        try:
+            # Not all code paths require this, but keep reference for cleanup
+            manager._single_instance = single_instance  # type: ignore[attr-defined]
+        except Exception:
+            pass
         return start_application(manager)
 
     except KeyboardInterrupt:
