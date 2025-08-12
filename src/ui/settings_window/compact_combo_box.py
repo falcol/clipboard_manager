@@ -18,7 +18,7 @@ class CompactComboBox(QComboBox):
                 example_row_height = 22
 
             max_visible = max(1, min(self.maxVisibleItems(), 20))
-            popup_height = min(350, example_row_height * max_visible + 8)
+            popup_height = min(280, example_row_height * max_visible + 8)
 
             view.setMinimumHeight(popup_height)
             view.setMaximumHeight(popup_height)

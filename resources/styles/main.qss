@@ -270,7 +270,7 @@ QGroupBox {
     border-radius: 6px;
     margin-top: 12px;
     padding-top: 12px;
-    background: #2d2d2d;
+    background: transparent;
 }
 
 QGroupBox::title {
@@ -383,11 +383,11 @@ QPushButton#settingsButton:default:hover {
 
 /* Settings: Compact Key Combo popup constraints */
 QComboBox#compactKeyCombo {
-    height: 48px;
+    height: 32px;
 }
 
 QComboBox#compactKeyCombo QAbstractItemView {
-    max-height: 350px;      /* Popup height limit */
+    max-height: 280px;      /* Popup height limit */
     outline: 0px;
     border: 1px solid #555;
     background-color: #333;
@@ -634,19 +634,34 @@ QFrame#contentFrame {
 
 /* Settings action buttons - default base; theme có thể override */
 QPushButton#primaryButton {
-    background: #0078d4; color: #ffffff; border: none; border-radius: 6px; padding: 6px 12px;
+    background: #0078d4; color: #ffffff; border: none;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 108px;
+    font-size: 12px;
+    font-weight: 600;
 }
 QPushButton#primaryButton:hover { background: #0a86f0; }
 QPushButton#primaryButton:pressed { background: #0568b3; }
 
 QPushButton#secondaryButton {
-    background: transparent; color: #dddddd; border: 1px solid #3d3d3d; border-radius: 6px; padding: 6px 12px;
+    background: transparent; color: #dddddd; border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 96px;
+    font-size: 12px;
+    font-weight: 500;
 }
-QPushButton#secondaryButton:hover { background: #2a2a2a; }
+QPushButton#secondaryButton:hover { background: #2a2a2a; border-color: #4a4a4a; }
 QPushButton#secondaryButton:pressed { background: #242424; }
 
 QPushButton#dangerButton {
-    background: transparent; color: #ff4d4f; border: 1px solid #663333; border-radius: 6px; padding: 6px 12px;
+    background: transparent; color: #ff4d4f; border: 1px solid #663333;
+    border-radius: 8px;
+    min-height: 32px;         /* was 36px */
+    min-width: 140px;
+    font-size: 12px;
+    font-weight: 600;
 }
 QPushButton#dangerButton:hover { background: rgba(255,77,79,0.12); }
 QPushButton#dangerButton:pressed { background: rgba(255,77,79,0.18); }

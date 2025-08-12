@@ -113,7 +113,6 @@ class SettingsWindow(QDialog):
         # Clear button
         self.hotkey_clear_btn = QPushButton("Clear")
         self.hotkey_clear_btn.setObjectName("secondaryButton")
-        self.hotkey_clear_btn.setFixedHeight(24)
         hotkey_row.addWidget(self.hotkey_clear_btn)
 
         # Preview label
