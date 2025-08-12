@@ -39,7 +39,7 @@ class SettingsWindow(QDialog):
         self.config = config
         self.setObjectName("settingsDialog")
         # macOS-like: resizable, min-size instead of fixed-size
-        self.setMinimumSize(420, 520)
+        self.setMinimumSize(820, 620)
         self.setWindowTitle("Preferences")
 
         self.setup_ui()
