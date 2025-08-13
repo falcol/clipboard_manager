@@ -268,6 +268,9 @@ class EnhancedClipboardManager:
                 "dark_solarized": "themes/dark_solarized.qss",
                 "nord": "themes/nord.qss",
                 "vespera": "themes/vespera.qss",
+                "dracula": "themes/dracula.qss",
+                "onedark_pro": "themes/onedark_pro.qss",
+                "gruvbox": "themes/gruvbox.qss",
             }
 
             theme_name = self.config.get("theme", "dark_win11")

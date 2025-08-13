@@ -42,6 +42,9 @@ class SettingsWindow(QDialog):
         self.setMinimumSize(820, 620)
         self.setWindowTitle("Preferences")
 
+        # Track checkbox selection order for hotkey display
+        self.modifier_order: list[str] = []
+
         self.setup_ui()
         self.load_settings()
 
@@ -133,7 +136,7 @@ class SettingsWindow(QDialog):
 
         # Wire events to update preview
         for cb in (self.chk_ctrl, self.chk_alt, self.chk_shift, self.chk_super):
-            cb.stateChanged.connect(self._update_hotkey_preview)
+            cb.stateChanged.connect(self._on_modifier_changed)
         self.key_combo.currentIndexChanged.connect(self._update_hotkey_preview)
         self.hotkey_clear_btn.clicked.connect(self._clear_hotkey_selection)
 
@@ -164,6 +167,9 @@ class SettingsWindow(QDialog):
             "Dark Win11": "dark_win11",
             "Nord": "nord",
             "Vespera": "vespera",
+            "Dracula": "dracula",
+            "OneDark Pro": "onedark_pro",
+            "Gruvbox": "gruvbox",
         }
         self.theme_combo.addItems(list(self.theme_map.keys()))
         appearance_layout.addRow("Theme:", self.theme_combo)
@@ -352,24 +358,58 @@ class SettingsWindow(QDialog):
         for disp, token in keys:
             self.key_combo.addItem(disp, userData=token)
 
+    def _on_modifier_changed(self):
+        """Handle modifier checkbox state change and track selection order."""
+        sender = self.sender()
+        if not isinstance(sender, QCheckBox):
+            return
+
+        # Map checkbox to modifier name
+        modifier_map = {
+            self.chk_ctrl: "ctrl",
+            self.chk_alt: "alt",
+            self.chk_shift: "shift",
+            self.chk_super: "super"
+        }
+
+        modifier = modifier_map.get(sender)
+        if not modifier:
+            return
+
+        if sender.isChecked():
+            # Add to order if not already present
+            if modifier not in self.modifier_order:
+                self.modifier_order.append(modifier)
+        else:
+            # Remove from order
+            if modifier in self.modifier_order:
+                self.modifier_order.remove(modifier)
+
+        self._update_hotkey_preview()
+
     def _clear_hotkey_selection(self):
         for cb in (self.chk_ctrl, self.chk_alt, self.chk_shift, self.chk_super):
             cb.setChecked(False)
         self.key_combo.setCurrentIndex(-1)
+        self.modifier_order.clear()  # Clear the order tracking
         self._update_hotkey_preview()
 
     def _collect_hotkey_from_ui(self) -> str:
-        """Build normalized hotkey string from UI selections."""
+        """Build normalized hotkey string from UI selections in user-selected order."""
         parts: list[str] = []
-        if self.chk_ctrl.isChecked():
-            parts.append("ctrl")
-        if self.chk_alt.isChecked():
-            parts.append("alt")
-        if self.chk_shift.isChecked():
-            parts.append("shift")
-        if self.chk_super.isChecked():
-            parts.append("super")
 
+        # Add modifiers in the order they were selected
+        for modifier in self.modifier_order:
+            if modifier == "ctrl" and self.chk_ctrl.isChecked():
+                parts.append("ctrl")
+            elif modifier == "alt" and self.chk_alt.isChecked():
+                parts.append("alt")
+            elif modifier == "shift" and self.chk_shift.isChecked():
+                parts.append("shift")
+            elif modifier == "super" and self.chk_super.isChecked():
+                parts.append("super")
+
+        # Key always comes last
         idx = self.key_combo.currentIndex()
         key = self.key_combo.itemData(idx) if idx >= 0 else None
         if key:
@@ -381,15 +421,26 @@ class SettingsWindow(QDialog):
         # Reset first
         self._clear_hotkey_selection()
         tokens = [t.strip().lower() for t in hotkey.split("+") if t.strip()]
+
+        # Apply modifiers in the order they appear in the hotkey string
         for t in tokens:
             if t == "ctrl":
                 self.chk_ctrl.setChecked(True)
+                if "ctrl" not in self.modifier_order:
+                    self.modifier_order.append("ctrl")
             elif t == "alt":
                 self.chk_alt.setChecked(True)
+                if "alt" not in self.modifier_order:
+                    self.modifier_order.append("alt")
             elif t == "shift":
                 self.chk_shift.setChecked(True)
+                if "shift" not in self.modifier_order:
+                    self.modifier_order.append("shift")
             elif t in ("super", "win", "cmd"):
                 self.chk_super.setChecked(True)
+                if "super" not in self.modifier_order:
+                    self.modifier_order.append("super")
+
         # Key selection
         key_token = None
         for t in tokens:
@@ -407,17 +458,22 @@ class SettingsWindow(QDialog):
         self.hotkey_input.setText(self._collect_hotkey_from_ui())
 
     def _update_hotkey_preview(self):
-        """Update preview label with human-readable hotkey."""
+        """Update preview label with human-readable hotkey in user-selected order."""
         tokens = []
-        if self.chk_ctrl.isChecked():
-            tokens.append("Ctrl")
-        if self.chk_alt.isChecked():
-            tokens.append("Alt")
-        if self.chk_shift.isChecked():
-            tokens.append("Shift")
+
+        # Display modifiers in the order they were selected
         import sys as _sys
-        if self.chk_super.isChecked():
-            tokens.append("Win" if _sys.platform.startswith("win") else "Super")
+        for modifier in self.modifier_order:
+            if modifier == "ctrl" and self.chk_ctrl.isChecked():
+                tokens.append("Ctrl")
+            elif modifier == "alt" and self.chk_alt.isChecked():
+                tokens.append("Alt")
+            elif modifier == "shift" and self.chk_shift.isChecked():
+                tokens.append("Shift")
+            elif modifier == "super" and self.chk_super.isChecked():
+                tokens.append("Win" if _sys.platform.startswith("win") else "Super")
+
+        # Key always comes last
         idx = self.key_combo.currentIndex()
         if idx >= 0:
             tokens.append(self.key_combo.itemText(idx))

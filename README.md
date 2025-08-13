@@ -4,20 +4,20 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![PySide6](https://img.shields.io/badge/PySide6-6.9+-green.svg)](https://wiki.qt.io/Qt_for_Python)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey.svg)](https://github.com/clipboard-manager/clipboard-manager)
+[![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)](https://github.com/clipboard-manager/clipboard-manager)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## ✨ Features
 
 - **📝 Rich Clipboard History**: Automatically saves text, HTML, RTF, and image clipboard content
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
-- **🔥 Global Hotkey**: Press `Super+C` (Linux) / `Windows+C` (Windows) / `Cmd+C` (macOS) to show clipboard history
+- **🔥 Global Hotkey**: Press `Super+C` (Linux) to show clipboard history
 - **🎨 Modern UI**: Clean, dark interface with smooth animations and multiple themes
 - **💾 Efficient Storage**: SQLite-based storage with optimized memory usage
 - **🚀 System Integration**: System tray, auto-start, and native platform integration
 - **⚙️ Highly Configurable**: Customize items limit, text length, themes, and performance settings
 - **🔍 Smart Search**: Fast search and filtering through clipboard history
-- **🌍 Cross-Platform**: Works seamlessly on Linux, Windows, and macOS
+- **🌍 Cross-Platform**: Works seamlessly on Linux
 - **🔒 Privacy-First**: All data stored locally, no network connections
 
 ## 🚀 Quick Start
@@ -25,7 +25,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 ### Requirements
 
 - **Python**: 3.9 or higher
-- **Operating System**: Linux, Windows 10+, or macOS 10.14+
+- **Operating System**: Linux
 - **Display Server**: X11 or Wayland (Linux)
 
 ### Installation
@@ -104,15 +104,11 @@ Access via right-click system tray icon → Settings:
 ### Configuration Files
 
 - **Linux**: `~/.local/share/ClipboardManager/`
-- **Windows**: `%APPDATA%\ClipboardManager\`
-- **macOS**: `~/Library/Application Support/ClipboardManager/`
 
 ### Hotkey Customization
 
 Global hotkeys by platform:
 - **Linux**: `Super+C` (configurable in settings)
-- **Windows**: `Windows+C`
-- **macOS**: `Cmd+C`
 
 ## 🛠️ Development
 
@@ -154,11 +150,6 @@ python -m build
 # Create Linux .deb package
 python scripts/create_deb.py
 
-# Create Windows installer (future)
-# python scripts/create_msi.py
-
-# Create macOS app bundle (future)
-# python scripts/create_dmg.py
 ```
 
 ## 🧪 Testing

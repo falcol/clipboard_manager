@@ -22,6 +22,7 @@ QFrame#popupWindow, QFrame#mainContainer {
 QFrame#searchBar {
     background: #2d2d2d;
     border: none;
+    border-radius: 0px;  /* Square border for search bar */
 }
 
 /* Search input - from search_bar.py */
@@ -48,7 +49,6 @@ QPushButton#clearButton:hover {
 
 /* ===============================================
    MODERN CLIPBOARD ITEM STYLE
-   Exact copy of: Styles.get_modern_clipboard_item_style(hovered=False)
    =============================================== */
 
 QFrame#clipboardItem {
@@ -72,13 +72,11 @@ QLabel {
     border: none;
 }
 
-/* Icon label - from clipboard_item.py */
 QLabel#iconLabel {
     color: #0078d4;
     font-size: 14px;
 }
 
-/* Content label - from clipboard_item.py */
 QLabel#contentLabel {
     color: #ffffff;
     background: transparent;
@@ -238,7 +236,6 @@ QPushButton#clearAllButton:pressed {
 
 /* ===============================================
    CLIPBOARD ITEM STYLE (BACKWARD COMPATIBILITY)
-   Exact copy of: Styles.get_clipboard_item_style()
    =============================================== */
 
 /* Alternative clipboard item styling */
@@ -477,7 +474,6 @@ QPushButton#aboutCloseButton:hover {
 
 /* ===============================================
    IMAGE PREVIEW STYLES
-   From clipboard_item.py inline styles
    =============================================== */
 
 /* Image thumbnail container */
@@ -523,7 +519,6 @@ QLabel#emptyStateLabel {
 
 /* ===============================================
    HTML PREVIEW STYLES
-   From clipboard_item.py inline styles
    =============================================== */
 
 QTextEdit#htmlPreview {
@@ -544,6 +539,7 @@ QFrame#searchBar {
     background: #1f1f1f;
     border: none;             /* remove any frame border */
     outline: 0;               /* ensure no outline */
+    border-radius: 0px;       /* Square border for header and search bar */
 }
 
 /* Search input: flat */
@@ -593,6 +589,7 @@ QPushButton#clearButton:pressed {
 QFrame#header {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
         stop:0 #2d2d2d, stop:1 #1f1f1f);
+    border-radius: 0px;       /* Square border for header */
 }
 
 QLabel#dragIcon {
@@ -675,4 +672,65 @@ QFrame#clipboardItem[pressed="true"] {
 QFrame#clipboardItem[selected="true"] {
     background: #2c2c2c;
     border: 1px solid #0078d4;
+}
+
+/* ===============================================
+   FORM CONTROLS - Enhanced hover for theme selection
+   =============================================== */
+
+QComboBox#formControl {
+    background: #2d2d2d;
+    border: 1px solid #404040;
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: #ffffff;
+    min-height: 20px;
+}
+
+QComboBox#formControl:hover {
+    border-color: #0078d4;
+    background: #353535;
+}
+
+QComboBox#formControl:focus {
+    border-color: #0078d4;
+    background: #353535;
+}
+
+QComboBox#formControl::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox#formControl::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #ffffff;
+    margin-right: 5px;
+}
+
+QComboBox#formControl QAbstractItemView {
+    background: #3a3a3a;  /* Lighter background for better visibility */
+    border: 1px solid #0078d4;
+    selection-background-color: #0078d4;
+    selection-color: #ffffff;
+    color: #ffffff;
+    outline: 0;
+}
+
+QComboBox#formControl QAbstractItemView::item {
+    min-height: 25px;
+    padding: 4px 8px;
+    border: none;
+}
+
+QComboBox#formControl QAbstractItemView::item:hover {
+    background: #4a4a4a;  /* Much lighter hover background */
+    color: #ffffff;
+}
+
+QComboBox#formControl QAbstractItemView::item:selected {
+    background-color: #0078d4;
+    color: #ffffff;
 }

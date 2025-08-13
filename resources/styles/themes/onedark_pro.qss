@@ -1,0 +1,73 @@
+/* OneDark Pro Theme - Modern VSCode-like dark theme */
+
+QFrame#popupWindow, QFrame#mainContainer, QFrame#contentFrame {
+    background: #282c34;
+    border: 1px solid #3e4451;
+}
+
+QFrame#header, QFrame#searchBar { background: #21252b; border: none; }
+QLabel#titleLabel { color: #abb2bf; }
+QLabel#titleIcon { color: #61afef; }
+
+QLineEdit#searchInput {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #abb2bf;
+    padding: 4px 6px;
+}
+QLineEdit#searchInput:focus {
+    border: 1px solid #61afef;
+    background: #2c313c;
+}
+
+QPushButton {
+    background: transparent;
+    border: none;
+    color: #abb2bf;
+    border-radius: 6px;
+}
+QPushButton:hover { background: #3e4451; color: #abb2bf; }
+QPushButton:pressed { background: #2c313c; }
+
+QPushButton#clearAllButton { padding: 6px 10px; color: #abb2bf; }
+
+QPushButton#clearButton { color: #abb2bf; }
+QPushButton#clearButton:hover { background: #3e4451; color: #abb2bf; }
+
+QFrame#clipboardItem {
+    background: #2c313c;
+    border: 1px solid #3e4451;
+    border-radius: 6px;
+    margin: 2px;
+    padding: 4px;
+}
+QFrame#clipboardItem:hover { border-color: #61afef; background: #353b45; }
+QLabel#contentLabel { color: #abb2bf; }
+
+/* Ensure cross-platform font fallback */
+QWidget, QDialog, QMenu, QLabel, QPushButton, QLineEdit, QTextEdit, QSpinBox, QCheckBox {
+    font-family: 'Segoe UI', 'Noto Sans', 'Ubuntu', 'DejaVu Sans', 'Arial', sans-serif;
+}
+
+QPushButton#pinButton { color: #828997; }
+QPushButton#pinButton:hover { color: #61afef; background: rgba(97,175,239,0.15); }
+QPushButton#pinButtonActive { color: #61afef; background: rgba(97,175,239,0.15); }
+QPushButton#pinButtonActive:hover { color: #abb2bf; background: rgba(97,175,239,0.25); }
+QPushButton#deleteButton:hover { color: #e06c75; background: rgba(224,108,117,0.15); }
+
+QScrollBar:vertical { background: transparent; width: 6px; }
+QScrollBar::handle:vertical { background: #4b5263; border-radius: 3px; }
+QScrollBar::handle:vertical:hover { background: #5c6370; }
+
+/* Item hover/pressed/selected */
+QFrame#clipboardItem { background: #2c313c; border: 1px solid #3e4451; border-radius: 6px; }
+QFrame#clipboardItem:hover { background: #353b45; border-color: #61afef; }
+QFrame#clipboardItem[pressed="true"] { background: #313640; border-color: #4b5263; }
+QFrame#clipboardItem[selected="true"] { background: #353b45; border-color: #61afef; }
+
+/* Action buttons via objectName */
+QPushButton#pinButton { color: #828997; }
+QPushButton#pinButton:hover { color: #61afef; background: rgba(97,175,239,0.15); }
+QPushButton#pinButtonActive { color: #61afef; background: rgba(97,175,239,0.15); }
+QPushButton#pinButtonActive:hover { color: #abb2bf; background: rgba(97,175,239,0.25); }
+QPushButton#deleteButton:hover { color: #e06c75; background: rgba(224,108,117,0.15); }
