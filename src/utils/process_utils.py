@@ -7,7 +7,7 @@ import sys
 from utils.logging_config import get_logger
 
 
-def setup_process_name(process_name: str = "ClipboardManager") -> bool:
+def setup_process_name(process_name: str = "B1Clip") -> bool:
     """
     Setup process name for system monitors (Task Manager, htop, ps)
 

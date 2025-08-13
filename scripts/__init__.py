@@ -34,7 +34,7 @@ def build_executable():
         "--onefile",
         "--windowed",
         "--name",
-        "ClipboardManager",
+        "B1Clip",
         "--icon",
         (
             str(project_root / "resources" / "icons" / "app.ico")

@@ -103,7 +103,7 @@ Access via right-click system tray icon → Settings:
 
 ### Configuration Files
 
-- **Linux**: `~/.local/share/ClipboardManager/`
+- **Linux**: `~/.local/share/B1Clip/`
 
 ### Hotkey Customization
 
@@ -262,11 +262,11 @@ journalctl --user -xe
 
 ### Data Locations
 
-- **Database**: `~/.local/share/ClipboardManager/clipboard.db`
-- **Images**: `~/.local/share/ClipboardManager/images/`
-- **Thumbnails**: `~/.local/share/ClipboardManager/thumbnails/`
-- **Configuration**: `~/.local/share/ClipboardManager/config.json`
-- **Logs**: `~/.local/share/ClipboardManager/logs/`
+- **Database**: `~/.local/share/B1Clip/clipboard.db`
+- **Images**: `~/.local/share/B1Clip/images/`
+- **Thumbnails**: `~/.local/share/B1Clip/thumbnails/`
+- **Configuration**: `~/.local/share/B1Clip/config.json`
+- **Logs**: `~/.local/share/B1Clip/logs/`
 
 ## 🚀 Performance & Technical Details
 

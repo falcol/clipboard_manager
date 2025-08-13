@@ -15,7 +15,7 @@ class AutostartManager:
 
     def __init__(self):
         self.system = platform.system().lower()
-        self.app_name = "ClipboardManager"
+        self.app_name = "B1Clip"
 
     def enable(self):
         """Enable auto-start"""
