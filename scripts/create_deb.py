@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # clipboard_manager/scripts/create_deb.py
 """
-Modern Debian package builder for Clipboard Manager
+Modern Debian package builder for B1Clip
 Creates .deb package with proper dependencies and metadata
 """
 import shutil
@@ -106,7 +106,7 @@ set -e
 APP_NAME="{self.app_name}"
 INSTALL_DIR="/opt/$APP_NAME"
 
-echo "Setting up Clipboard Manager..."
+echo "Setting up B1Clip..."
 
 # Create virtual environment and install Python dependencies
 cd "$INSTALL_DIR"
@@ -153,11 +153,11 @@ if command -v update-mime-database > /dev/null; then
     update-mime-database /usr/share/mime 2>/dev/null || true
 fi
 
-echo "Clipboard Manager installed successfully!"
+echo "B1Clip installed successfully!"
 echo ""
 echo "Usage:"
 echo "  • Run from terminal: $APP_NAME"
-echo "  • Find in applications menu: Clipboard Manager"
+echo "  • Find in applications menu: B1Clip"
 echo "  • Use global hotkey: Super+C"
 echo ""
 echo "To enable autostart: systemctl --user enable $APP_NAME"
@@ -175,7 +175,7 @@ set -e
 
 APP_NAME="{self.app_name}"
 
-echo "Stopping Clipboard Manager..."
+echo "Stopping B1Clip..."
 
 # Stop user service if running
 systemctl --user stop "$APP_NAME" 2>/dev/null || true
@@ -188,7 +188,7 @@ pkill -f "python.*main.py" 2>/dev/null || true
 # Give processes time to exit gracefully
 sleep 2
 
-echo "Clipboard Manager stopped."
+echo "B1Clip stopped."
 """
 
         prerm_file = debian_dir / "prerm"
@@ -202,7 +202,7 @@ echo "Clipboard Manager stopped."
 set -e
 
 if [ "$1" = "purge" ]; then
-    echo "Cleaning up Clipboard Manager configuration..."
+    echo "Cleaning up B1Clip configuration..."
 
     # Remove user configuration directories
     for user_home in /home/*; do
@@ -221,7 +221,7 @@ if [ "$1" = "purge" ]; then
         gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
     fi
 
-    echo "Clipboard Manager completely removed."
+    echo "B1Clip completely removed."
 fi
 """
 
@@ -262,7 +262,7 @@ fi
         bin_dir.mkdir(parents=True, exist_ok=True)
 
         launcher_content = f"""#!/bin/bash
-# Clipboard Manager launcher script
+# B1Clip launcher script
 # This script activates the virtual environment and runs the application
 
 APP_DIR="/opt/{self.app_name}"
@@ -301,7 +301,7 @@ exec python3 src/main.py "$@"
         desktop_content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
-Name=Clipboard Manager
+Name=B1Clip
 GenericName=Clipboard History Manager
 Comment=Modern clipboard history manager with global hotkey support
 Exec={self.app_name}
@@ -382,7 +382,7 @@ Icon=help-about
         systemd_dir.mkdir(parents=True, exist_ok=True)
 
         service_content = f"""[Unit]
-Description=Clipboard Manager - Modern clipboard history manager
+Description=B1Clip - Modern clipboard history manager
 Documentation=https://github.com/clipboard-manager/clipboard-manager
 After=graphical-session.target
 Wants=graphical-session.target

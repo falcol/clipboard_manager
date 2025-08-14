@@ -5,7 +5,7 @@
 
 #!/usr/bin/env python3
 """
-Test script for enhanced Clipboard Manager components
+Test script for enhanced B1Clip components
 """
 import sys
 import tempfile
@@ -280,7 +280,7 @@ def test_integration():
 
 def main():
     """Run all enhanced component tests"""
-    print("🧪 Testing Enhanced Clipboard Manager - Phase 1...")
+    print("🧪 Testing Enhanced B1Clip - Phase 1...")
     print("=" * 50)
 
     tests = [

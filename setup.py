@@ -1,6 +1,6 @@
 # clipboard_manager/setup.py
 """
-Legacy setup script for Clipboard Manager (for compatibility)
+Legacy setup script for B1Clip (for compatibility)
 Modern packaging should use pyproject.toml
 """
 import sys

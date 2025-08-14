@@ -18,7 +18,7 @@ def check_single_instance():
 
     if not single_instance.acquire_lock():
         logger = get_logger(__name__)
-        logger.error("Another instance of Clipboard Manager is already running")
+        logger.error("Another instance of B1Clip is already running")
         return None
 
     return single_instance
@@ -32,8 +32,8 @@ def create_clipboard_manager():
 
     try:
         manager = ClipboardManager()
-        logger.info("Clipboard Manager created successfully")
+        logger.info("B1Clip created successfully")
         return manager
     except Exception as e:
-        logger.error(f"Failed to create Clipboard Manager: {e}")
+        logger.error(f"Failed to create B1Clip: {e}")
         raise

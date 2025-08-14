@@ -326,39 +326,12 @@ We welcome contributions! Please see our contributing guidelines:
 - **Documentation**: Docstrings for all public APIs
 - **Commits**: Conventional Commits format
 
-### Bug Reports
-
-Please include:
-- Operating system and version
-- Python version
-- Error messages and traceback
-- Steps to reproduce
-- Expected vs actual behavior
-
-### Feature Requests
-
-- Check existing issues first
-- Describe the use case clearly
-- Consider implementation complexity
-- Provide mockups/examples if helpful
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🏆 Acknowledgments
 
 - **Qt/PySide6**: Excellent cross-platform GUI framework
 - **SQLite**: Reliable embedded database
 - **Python**: Amazing ecosystem and community
 - **Contributors**: All the wonderful people who help improve this project
-
-## 📞 Support & Contact
-
-- **Issues**: [GitHub Issues](https://github.com/clipboard-manager/clipboard-manager/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/clipboard-manager/clipboard-manager/discussions)
-- **Email**: contact@clipboardmanager.dev
-- **Documentation**: [ReadTheDocs](https://clipboard-manager.readthedocs.io/)
 
 ---
 

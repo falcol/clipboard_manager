@@ -126,7 +126,7 @@ class AutostartManager:
 Version=1.0
 Type=Application
 Name={self.app_name}
-Comment=Clipboard Manager Application
+Comment=B1Clip Application
 Exec={exe_path}
 Terminal=false
 Categories=Utility;

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # clipboard_manager/src/main.py
 """
-Enhanced main entry point for Clipboard Manager - Modular version
+Enhanced main entry point for B1Clip - Modular version
 """
 import sys
 from pathlib import Path
@@ -28,7 +28,7 @@ def main():
         # Phase 1: Setup process and logging
         setup_process_name()
         logger = setup_enhanced_logging()
-        logger.info("Starting Clipboard Manager application...")
+        logger.info("Starting B1Clip application...")
 
         # Phase 2: Check single instance
         single_instance = check_single_instance()

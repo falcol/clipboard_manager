@@ -302,7 +302,7 @@ create_launcher() {
 
     cat > "$BIN_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
-# Clipboard Manager launcher script
+# B1Clip launcher script
 
 set -e
 
@@ -346,7 +346,7 @@ else
     # Running in background (from desktop/systemd)
     python3 "$MAIN_SCRIPT" "$@" 2>/dev/null || {
         # If fails, try to log error
-        echo "$(date): Clipboard Manager failed to start" >> ~/.local/share/clipboard-manager-errors.log
+        echo "$(date): B1Clip failed to start" >> ~/.local/share/clipboard-manager-errors.log
         exit 1
     }
 fi
@@ -363,7 +363,7 @@ create_desktop_entry() {
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Clipboard Manager
+Name=B1Clip
 GenericName=Clipboard History Manager
 Comment=A modern clipboard history manager with global hotkey support
 Exec=$APP_NAME
@@ -430,8 +430,8 @@ create_systemd_service() {
 
     cat > "$SYSTEMD_DIR/$APP_NAME.service" << EOF
 [Unit]
-Description=Clipboard Manager - Modern clipboard history manager
-Documentation=https://github.com/clipboard-manager/clipboard-manager
+Description=B1Clip - Modern clipboard history manager
+Documentation=https://github.com/falcol/clipboard_manager
 After=graphical-session.target
 Wants=graphical-session.target
 
@@ -492,9 +492,9 @@ create_uninstall_script() {
 
     cat > "$BIN_DIR/${APP_NAME}-uninstall" << EOF
 #!/bin/bash
-# Clipboard Manager uninstall script
+# B1Clip uninstall script
 
-echo "🗑️  Uninstalling Clipboard Manager..."
+echo "🗑️  Uninstalling B1Clip..."
 
 # Stop service if running
 systemctl --user stop $APP_NAME 2>/dev/null || true
@@ -518,7 +518,7 @@ if command -v gtk-update-icon-cache > /dev/null; then
     gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
 fi
 
-echo "✅ Clipboard Manager uninstalled successfully!"
+echo "✅ B1Clip uninstalled successfully!"
 EOF
 
     chmod +x "$BIN_DIR/${APP_NAME}-uninstall"
@@ -526,7 +526,7 @@ EOF
 
 # main installation function with comprehensive validation
 main() {
-    echo "🚀 Installing Clipboard Manager v$APP_VERSION..."
+    echo "🚀 Installing B1Clip v$APP_VERSION..."
     echo "📦 installation with comprehensive validation"
     echo ""
 
@@ -574,7 +574,7 @@ main() {
     echo ""
     echo "📋 You can now:"
     echo "   • Run from terminal: $APP_NAME"
-    echo "   • Find in applications menu: Clipboard Manager"
+    echo "   • Find in applications menu: B1Clip"
     echo "   • Use global hotkey: Super+C"
     echo "   • Enable autostart: systemctl --user enable $APP_NAME"
     echo "   • Start service now: systemctl --user start $APP_NAME"

@@ -1,4 +1,4 @@
-# 📋 Clipboard Manager
+# 📋 B1Clip
 
 A modern, cross-platform clipboard history manager built with Python and PySide6/Qt6.
 

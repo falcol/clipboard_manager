@@ -21,8 +21,8 @@ class Config:
 
     DEFAULT_CONFIG = {
         # Basic settings
-        "max_items": 25,  # Like Windows clipboard manager (25 items max)
-        "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
+        "max_items": 25,
+        "max_text_length": 1000000,  # 1MB text limit
         "autostart": False,
         "theme": "dark_win11",
         "show_notifications": False,

@@ -1,6 +1,6 @@
 # clipboard_manager/src/core/application.py
 """
-Clipboard Manager main application class
+B1Clip main application class
 """
 
 import contextlib
@@ -28,9 +28,11 @@ from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
 from utils.single_instance import CrossPlatformSingleInstance
 
+logger = get_logger(__name__)
+
 
 class ClipboardManager:
-    """Clipboard Manager with modern UI and auto-hide focus"""
+    """B1Clip with modern UI and auto-hide focus"""
 
     def __init__(self):
         # Setup Qt environment
@@ -49,7 +51,7 @@ class ClipboardManager:
             self.app.setQuitOnLastWindowClosed(False)
 
             # Set application properties
-            self.app.setApplicationName("Clipboard Manager")
+            self.app.setApplicationName("B1Clip")
             self.app.setApplicationVersion("1.0")
             self.app.setOrganizationName("Falcol")
 
@@ -60,7 +62,6 @@ class ClipboardManager:
             self.app.setFont(self._choose_system_ui_font())
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Failed to create QApplication: {e}")
             self._handle_qt_error(e)
 
@@ -123,11 +124,10 @@ class ClipboardManager:
             try:
                 self.app = QApplication(sys.argv)
                 self.app.setQuitOnLastWindowClosed(False)
-                logger = get_logger(__name__)
+
                 logger.warning(f"Using {platform} platform as fallback")
                 return
             except Exception as e2:
-                logger = get_logger(__name__)
                 logger.error(f"Failed to create QApplication with {platform}: {e2}")
                 continue
 
@@ -165,7 +165,6 @@ class ClipboardManager:
         )  # Convert to ms
         self.cleanup_timer.start(cleanup_interval)
 
-        logger = get_logger(__name__)
         logger.info(
             f"Performance monitoring enabled, cleanup every {cleanup_interval // 3600000} hours"
         )
@@ -173,7 +172,6 @@ class ClipboardManager:
     def perform_maintenance(self):
         """Perform periodic maintenance tasks with memory optimization"""
         try:
-            logger = get_logger(__name__)
             logger.info("Performing scheduled maintenance...")
 
             # ✅ OPTIMIZATION: Monitor memory usage before maintenance
@@ -211,12 +209,10 @@ class ClipboardManager:
             )
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Error during maintenance: {e}")
 
     def on_content_changed(self, content_type: str, item_data: dict):
         """Handle new clipboard content with features and notifications"""
-        logger = get_logger(__name__)
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
 
         # Show notification for new content (if enabled)
@@ -239,10 +235,8 @@ class ClipboardManager:
         """Show the clipboard popup window"""
         try:
             self.popup_window.show_at_cursor()
-            logger = get_logger(__name__)
             logger.debug("Clipboard popup shown")
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Error showing popup: {e}")
             # Fallback notification
             self.system_tray.show_notification(
@@ -251,7 +245,6 @@ class ClipboardManager:
 
     def on_settings_changed(self):
         """Handle settings changes with updates"""
-        logger = get_logger(__name__)
         logger.info("Settings changed, updating components...")
 
         try:
@@ -304,11 +297,9 @@ class ClipboardManager:
                     self.system_tray.menu.ensurePolished()
                 except Exception:
                     pass
-
-            logger = get_logger(__name__)
             logger.info(f"Applied global theme: {theme_name}")
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error applying global QSS: {e}")
 
     def start(self):
@@ -336,14 +327,13 @@ class ClipboardManager:
                 QTimer.singleShot(
                     1000,
                     lambda: self.system_tray.show_notification(
-                        "Clipboard Manager Started",
+                        "B1Clip Started",
                         f"Press {hotkey_display} to open clipboard history",
                         3000,
                     ),
                 )
 
-            logger = get_logger(__name__)
-            logger.info("Clipboard Manager started successfully")
+            logger.info("B1Clip started successfully")
 
             # Setup graceful shutdown
             signal.signal(signal.SIGINT, self.signal_handler)
@@ -353,24 +343,21 @@ class ClipboardManager:
             return self.app.exec()
 
         except KeyboardInterrupt:
-            logger = get_logger(__name__)
             logger.info("Application interrupted by user")
             return 0
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Failed to start application: {e}")
             return 1
 
     def signal_handler(self, signum, frame):
         """Handle system signals for graceful shutdown"""
-        logger = get_logger(__name__)
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         QTimer.singleShot(0, self.quit_application)
 
     def quit_application(self):
         """Quit the application gracefully with cleanup"""
         try:
-            logger = get_logger(__name__)
             logger.info("Starting graceful shutdown...")
 
             # Stop timers
@@ -415,7 +402,6 @@ class ClipboardManager:
             self.app.quit()
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Error during shutdown: {e}")
             # Force quit if graceful shutdown fails
             self.app.quit()
@@ -495,6 +481,5 @@ class ClipboardManager:
             return status
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Error getting status info: {e}")
             return {"error": str(e)}

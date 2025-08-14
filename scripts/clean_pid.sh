@@ -4,4 +4,4 @@
 pkill -f "python.*main.py" 2>/dev/null
 sleep 1
 rm ~/.clipboard_manager.lock 2>/dev/null
-echo "Clipboard Manager stopped and cleaned up"
+echo "B1Clip stopped and cleaned up"
