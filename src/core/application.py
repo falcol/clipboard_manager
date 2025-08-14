@@ -1,6 +1,6 @@
 # clipboard_manager/src/core/application.py
 """
-Enhanced Clipboard Manager main application class
+Clipboard Manager main application class
 """
 
 import contextlib
@@ -13,9 +13,9 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory, QSystemTrayIcon
 
-from core.clipboard_watcher import EnhancedClipboardWatcher
+from core.clipboard_watcher import ClipboardWatcher
 from core.content_manager import ContentManager
-from core.database import EnhancedClipboardDatabase
+from core.database import ClipboardDatabase
 from core.hotkey_manager import HotkeyManager
 from core.search_engine import SearchEngine
 from ui.popup_window import PopupWindow
@@ -23,13 +23,14 @@ from ui.settings_window import SettingsWindow
 from ui.system_tray import SystemTray
 from utils.config import Config
 from utils.logging_config import get_logger
+from utils.memory_optimizer import get_memory_optimizer
 from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
 from utils.single_instance import CrossPlatformSingleInstance
 
 
-class EnhancedClipboardManager:
-    """Enhanced Clipboard Manager with modern UI and auto-hide focus"""
+class ClipboardManager:
+    """Clipboard Manager with modern UI and auto-hide focus"""
 
     def __init__(self):
         # Setup Qt environment
@@ -63,7 +64,7 @@ class EnhancedClipboardManager:
             logger.error(f"Failed to create QApplication: {e}")
             self._handle_qt_error(e)
 
-        # Initialize enhanced configuration
+        # Initialize configuration
         self.config = Config()
         self._single_instance: CrossPlatformSingleInstance | None = None
 
@@ -71,17 +72,17 @@ class EnhancedClipboardManager:
         self.data_dir = Path(self.config.config_path.parent)
         self.db_path = self.data_dir / "clipboard.db"  # Only 1 file
 
-        # Initialize enhanced core components (migration automatically in database)
-        self.database = EnhancedClipboardDatabase(self.db_path)
+        # Initialize core components (migration automatically in database)
+        self.database = ClipboardDatabase(self.db_path)
         self.content_manager = ContentManager(self.data_dir)
         self.search_engine = SearchEngine(self.database)
 
-        # Initialize enhanced clipboard watcher
-        self.clipboard_watcher = EnhancedClipboardWatcher(
+        # Initialize clipboard watcher
+        self.clipboard_watcher = ClipboardWatcher(
             self.database, self.content_manager, self.config
         )
 
-        # Initialize enhanced UI components
+        # Initialize UI components
         self.popup_window = PopupWindow(self.database, self.config)
         self.settings_window = SettingsWindow(self.config)
         self.system_tray = SystemTray(self.popup_window, self.settings_window)
@@ -95,7 +96,10 @@ class EnhancedClipboardManager:
         # Initialize QSS loader
         self.qss_loader = QSSLoader()
 
-        # Setup enhanced connections
+        # ✅ OPTIMIZATION: Initialize memory optimizer
+        self.memory_optimizer = get_memory_optimizer(enable_profiling=True)
+
+        # Setup connections
         self.setup_connections()
 
         # Check system tray availability
@@ -137,14 +141,14 @@ class EnhancedClipboardManager:
         sys.exit(1)
 
     def setup_connections(self):
-        """Setup enhanced signal connections between components"""
+        """Setup signal connections between components"""
         # Settings changes
         self.settings_window.settings_changed.connect(self.on_settings_changed)
 
         # System tray
         self.system_tray.quit_requested.connect(self.quit_application)
 
-        # Enhanced clipboard watcher with notifications
+        # clipboard watcher with notifications
         self.clipboard_watcher.content_changed.connect(self.on_content_changed)
 
         # Apply QSS to all components
@@ -167,10 +171,14 @@ class EnhancedClipboardManager:
         )
 
     def perform_maintenance(self):
-        """Perform periodic maintenance tasks"""
+        """Perform periodic maintenance tasks with memory optimization"""
         try:
             logger = get_logger(__name__)
             logger.info("Performing scheduled maintenance...")
+
+            # ✅ OPTIMIZATION: Monitor memory usage before maintenance
+            memory_before = self.memory_optimizer.monitor_memory_usage()
+            logger.info(f"Memory before maintenance: {memory_before.get('rss_mb', 0):.1f}MB")
 
             # Cleanup orphaned files
             active_file_paths = set()
@@ -183,13 +191,23 @@ class EnhancedClipboardManager:
 
             self.content_manager.cleanup_orphaned_files(active_file_paths)
 
-            # Database cleanup
+            # ✅ OPTIMIZATION: cleanup with memory optimizer
             stats_before = self.database.get_stats()
-            # The database cleanup is handled automatically in the database class
+
+            # Trigger optimized cleanup
+            self.memory_optimizer.trigger_content_manager_cleanup(self.content_manager)
+            self.memory_optimizer.trigger_database_cleanup(self.database)
+            cleanup_stats = self.memory_optimizer.trigger_memory_cleanup()
+
             stats_after = self.database.get_stats()
 
+            # ✅ OPTIMIZATION: Monitor memory usage after maintenance
+            memory_after = self.memory_optimizer.monitor_memory_usage()
+            memory_saved = memory_before.get('rss_mb', 0) - memory_after.get('rss_mb', 0)
+
             logger.info(
-                f"Maintenance complete. Items: {stats_before.get('total_items', 0)} -> {stats_after.get('total_items', 0)}"
+                f"Maintenance complete. Items: {stats_before.get('total_items', 0)} -> {stats_after.get('total_items', 0)}, "
+                f"Memory saved: {memory_saved:.1f}MB, GC collected: {cleanup_stats.get('collected', 0)} objects"
             )
 
         except Exception as e:
@@ -197,7 +215,7 @@ class EnhancedClipboardManager:
             logger.error(f"Error during maintenance: {e}")
 
     def on_content_changed(self, content_type: str, item_data: dict):
-        """Handle new clipboard content with enhanced features and notifications"""
+        """Handle new clipboard content with features and notifications"""
         logger = get_logger(__name__)
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
 
@@ -218,7 +236,7 @@ class EnhancedClipboardManager:
             QTimer.singleShot(100, self.popup_window.load_items)
 
     def show_popup(self):
-        """Show the enhanced clipboard popup window"""
+        """Show the clipboard popup window"""
         try:
             self.popup_window.show_at_cursor()
             logger = get_logger(__name__)
@@ -232,7 +250,7 @@ class EnhancedClipboardManager:
             )
 
     def on_settings_changed(self):
-        """Handle settings changes with enhanced updates"""
+        """Handle settings changes with updates"""
         logger = get_logger(__name__)
         logger.info("Settings changed, updating components...")
 
@@ -294,15 +312,15 @@ class EnhancedClipboardManager:
             logger.error(f"Error applying global QSS: {e}")
 
     def start(self):
-        """Start the enhanced application with error handling"""
+        """Start the application with error handling"""
         try:
-            # Start enhanced clipboard monitoring
+            # Start clipboard monitoring
             self.clipboard_watcher.start()
 
             # Start hotkey listener
             self.hotkey_manager.start()
 
-            # Show enhanced system tray
+            # Show system tray
             if self.system_tray.show():
                 # Show startup notification with platform-specific hotkey
                 hotkey_info = self.hotkey_manager.get_hotkey_info()
@@ -325,7 +343,7 @@ class EnhancedClipboardManager:
                 )
 
             logger = get_logger(__name__)
-            logger.info("Enhanced Clipboard Manager started successfully")
+            logger.info("Clipboard Manager started successfully")
 
             # Setup graceful shutdown
             signal.signal(signal.SIGINT, self.signal_handler)
@@ -340,7 +358,7 @@ class EnhancedClipboardManager:
             return 0
         except Exception as e:
             logger = get_logger(__name__)
-            logger.error(f"Failed to start enhanced application: {e}")
+            logger.error(f"Failed to start application: {e}")
             return 1
 
     def signal_handler(self, signum, frame):
@@ -350,7 +368,7 @@ class EnhancedClipboardManager:
         QTimer.singleShot(0, self.quit_application)
 
     def quit_application(self):
-        """Quit the application gracefully with enhanced cleanup"""
+        """Quit the application gracefully with cleanup"""
         try:
             logger = get_logger(__name__)
             logger.info("Starting graceful shutdown...")
@@ -449,11 +467,13 @@ class EnhancedClipboardManager:
             return QFont("Sans Serif", 10)
 
     def get_status_info(self):
-        """Get current application status for debugging"""
+        """Get current application status for debugging with memory stats"""
         try:
             stats = self.database.get_stats()
-            return {
-                "version": "2.0-enhanced",
+
+            # ✅ OPTIMIZATION: Include memory and cache statistics
+            status = {
+                "version": "2.0-enhanced-optimized",
                 "database_items": stats.get("total_items", 0),
                 "pinned_items": stats.get("pinned_items", 0),
                 "clipboard_watching": self.clipboard_watcher.running,
@@ -461,6 +481,19 @@ class EnhancedClipboardManager:
                 "popup_visible": self.popup_window.isVisible(),
                 "settings_visible": self.settings_window.isVisible(),
             }
+
+            # Add memory optimization stats
+            if hasattr(self, 'memory_optimizer'):
+                memory_stats = self.memory_optimizer.monitor_memory_usage()
+                status["memory"] = memory_stats
+
+            # Add content manager cache stats
+            if hasattr(self.content_manager, 'get_cache_stats'):
+                cache_stats = self.content_manager.get_cache_stats()
+                status["cache"] = cache_stats
+
+            return status
+
         except Exception as e:
             logger = get_logger(__name__)
             logger.error(f"Error getting status info: {e}")

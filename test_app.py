@@ -18,13 +18,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 def test_enhanced_database():
     """Test enhanced database functionality"""
     try:
-        from src.core.database import EnhancedClipboardDatabase
+        from src.core.database import ClipboardDatabase
 
         # Use temporary database for testing
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = Path(tmp.name)
 
-        db = EnhancedClipboardDatabase(db_path)
+        db = ClipboardDatabase(db_path)
 
         # Test text item
         text_id = db.add_text_item(
@@ -111,14 +111,14 @@ def test_content_manager():
 def test_search_engine():
     """Test search engine functionality"""
     try:
-        from src.core.database import EnhancedClipboardDatabase
+        from src.core.database import ClipboardDatabase
         from src.core.search_engine import SearchEngine
 
         # Use temporary database
         with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
             db_path = Path(tmp.name)
 
-        db = EnhancedClipboardDatabase(db_path)
+        db = ClipboardDatabase(db_path)
         search_engine = SearchEngine(db)
 
         # Add test data
@@ -229,9 +229,9 @@ def test_migration_manager():
 def test_integration():
     """Test integration between components"""
     try:
-        from src.core.clipboard_watcher import EnhancedClipboardWatcher
+        from src.core.clipboard_watcher import ClipboardWatcher
         from src.core.content_manager import ContentManager
-        from src.core.database import EnhancedClipboardDatabase
+        from src.core.database import ClipboardDatabase
         from src.utils.config import Config
 
         # Use temporary directory
@@ -240,11 +240,11 @@ def test_integration():
 
             # Initialize components
             config = Config()
-            db = EnhancedClipboardDatabase(data_dir / "test.db")
+            db = ClipboardDatabase(data_dir / "test.db")
             content_manager = ContentManager(data_dir)
 
             # Test clipboard watcher initialization
-            watcher = EnhancedClipboardWatcher(db, content_manager, config)
+            watcher = ClipboardWatcher(db, content_manager, config)
 
             if watcher.database and watcher.content_manager:
                 print("✅ Component integration test passed")

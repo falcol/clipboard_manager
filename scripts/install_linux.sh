@@ -1,6 +1,6 @@
 #!/bin/bash
 # clipboard_manager/scripts/install_linux.sh
-# Enhanced Linux installation script with comprehensive validation and error handling
+# Linux installation script with comprehensive validation and error handling
 
 set -e
 
@@ -38,7 +38,7 @@ log_error() {
     exit 1
 }
 
-# Enhanced validation functions
+# validation functions
 check_python_version() {
     log_info "Checking Python version..."
     if command -v python3 >/dev/null 2>&1; then
@@ -117,7 +117,7 @@ detect_distro() {
     fi
 }
 
-# Enhanced system dependencies installation
+# system dependencies installation
 install_system_deps() {
     local distro=$(detect_distro)
     log_info "Detected distribution: $distro"
@@ -207,7 +207,7 @@ create_directories() {
     mkdir -p "$SYSTEMD_DIR" || log_error "Failed to create $SYSTEMD_DIR"
 }
 
-# Enhanced file copying with validation
+# file copying with validation
 copy_files() {
     log_info "Copying application files..."
 
@@ -253,7 +253,7 @@ copy_files() {
     [ -f "$PROJECT_ROOT/LICENSE" ] && cp "$PROJECT_ROOT/LICENSE" "$INSTALL_DIR/"
 }
 
-# Enhanced Python dependencies installation
+# Python dependencies installation
 install_python_deps() {
     log_info "Installing Python dependencies..."
 
@@ -296,13 +296,13 @@ install_python_deps() {
     deactivate
 }
 
-# Enhanced launcher script with robust error handling
+# launcher script with robust error handling
 create_launcher() {
     log_info "Creating launcher script..."
 
     cat > "$BIN_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
-# Enhanced Clipboard Manager launcher script
+# Clipboard Manager launcher script
 
 set -e
 
@@ -355,7 +355,7 @@ EOF
     chmod +x "$BIN_DIR/$APP_NAME" || log_error "Failed to make launcher executable"
 }
 
-# Enhanced desktop entry
+# desktop entry
 create_desktop_entry() {
     log_info "Creating desktop entry..."
 
@@ -424,7 +424,7 @@ EOF
     fi
 }
 
-# Enhanced systemd service with better configuration
+# systemd service with better configuration
 create_systemd_service() {
     log_info "Creating systemd user service..."
 
@@ -524,10 +524,10 @@ EOF
     chmod +x "$BIN_DIR/${APP_NAME}-uninstall"
 }
 
-# Enhanced main installation function with comprehensive validation
+# main installation function with comprehensive validation
 main() {
     echo "🚀 Installing Clipboard Manager v$APP_VERSION..."
-    echo "📦 Enhanced installation with comprehensive validation"
+    echo "📦 installation with comprehensive validation"
     echo ""
 
     # Pre-installation checks

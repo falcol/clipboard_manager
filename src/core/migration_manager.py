@@ -41,10 +41,10 @@ class MigrationManager:
 
             # Import required classes
             from core.content_manager import ContentManager
-            from core.database import EnhancedClipboardDatabase
+            from core.database import ClipboardDatabase
 
             # Initialize new database and content manager
-            new_db = EnhancedClipboardDatabase(self.new_db_path)
+            new_db = ClipboardDatabase(self.new_db_path)
             content_manager = ContentManager(self.data_dir)
 
             # Get old data
