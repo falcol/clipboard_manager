@@ -1,10 +1,10 @@
 # ===============================================
-# FILE: src/utils/enhanced_config.py
-# configuration with Phase 1 features
+# FILE: src/utils/_config.py
+#  configuration with Phase 1 features
 # ===============================================
 
 """
-configuration management with Phase 1 features
+ configuration management with Phase 1 features
 """
 import json
 import logging
@@ -17,16 +17,16 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    """configuration manager with Phase 1 features"""
+    """ configuration manager with Phase 1 features"""
 
     DEFAULT_CONFIG = {
         # Basic settings
-        "max_items": 25,
-        "max_text_length": 1000000,  # 1MB text limit
+        "max_items": 25,  # Like Windows clipboard manager (25 items max)
+        "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
         "theme": "dark_win11",
         "show_notifications": False,
-        # Phase 1 settings
+        #  Phase 1 settings
         "hotkey": "super+c",  # Changed from super+c to match Windows 11
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
@@ -80,7 +80,7 @@ class Config:
         self.load()
 
     def load(self):
-        """Load configuration from file"""
+        """Load  configuration from file"""
         try:
             if self.config_path.exists():
                 with open(self.config_path, "r") as f:
@@ -94,13 +94,13 @@ class Config:
 
                 logger.info(f"configuration loaded from {self.config_path}")
             else:
-                logger.info("No config file found, using defaults")
+                logger.info("No config file found, using  defaults")
                 self.save()  # Create config file with defaults
         except Exception as e:
-            logger.error(f"Failed to load config: {e}")
+            logger.error(f"Failed to load  config: {e}")
 
     def save(self):
-        """Save configuration to file"""
+        """Save  configuration to file"""
         try:
             # Add metadata with real timestamp
             from datetime import datetime
@@ -116,29 +116,25 @@ class Config:
 
             with open(self.config_path, "w") as f:
                 json.dump(config_with_metadata, f, indent=2)
-            logger.info(f"configuration saved to {self.config_path}")
+            logger.info(f" configuration saved to {self.config_path}")
         except Exception as e:
-            logger.error(f"Failed to save config: {e}")
+            logger.error(f"Failed to save  config: {e}")
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value with features"""
+        """Get configuration value with  features"""
         return self.config.get(key, default)
 
     def set(self, key: str, value: Any):
-        """Set configuration value with RAM-optimized validation"""
-        # ✅ OPTIMIZATION: Stricter limits for RAM optimization
+        """Set configuration value with validation"""
+        # Validate certain settings
         if key == "max_items" and (value < 10 or value > 1000):
-            raise ValueError("max_items must be between 10 and 1000 (RAM optimized)")
+            raise ValueError("max_items must be between 10 and 1000")
         elif key == "max_text_length" and (value < 1000 or value > 2000000):
-            raise ValueError("max_text_length must be between 1000 and 2000000 (RAM optimized)")
+            raise ValueError("max_text_length must be between 1000 and 2000000")
         elif key == "cache_size_mb" and (value < 10 or value > 500):
-            raise ValueError("cache_size_mb must be between 10 and 500 (RAM optimized)")
+            raise ValueError("cache_size_mb must be between 10 and 500")
         elif key == "fuzzy_search_threshold" and (value < 0.1 or value > 1.0):
             raise ValueError("fuzzy_search_threshold must be between 0.1 and 1.0")
-        elif key == "thumbnail_size" and (value < 32 or value > 128):
-            raise ValueError("thumbnail_size must be between 32 and 128 pixels (RAM optimized)")
-        elif key == "image_quality" and (value < 50 or value > 95):
-            raise ValueError("image_quality must be between 50 and 95% (storage optimized)")
 
         self.config[key] = value
 
@@ -188,7 +184,7 @@ class Config:
                 logger.info(f"Added missing config key: {key}")
 
     def reset_to_defaults(self):
-        """Reset configuration to defaults"""
+        """Reset configuration to  defaults"""
         self.config = self.DEFAULT_CONFIG.copy()
         self.save()
 

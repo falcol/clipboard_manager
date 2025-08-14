@@ -197,7 +197,7 @@ echo "B1Clip stopped."
         prerm_file.chmod(0o755)
 
     def _create_postrm_script(self, debian_dir: Path) -> None:
-        """Create post-removal script with enhanced cleanup"""
+        """Create post-removal script with cleanup"""
         postrm_content = f"""#!/bin/bash
 set -e
 

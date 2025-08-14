@@ -667,42 +667,41 @@ class ClipboardDatabase:
             with self._lock:
                 cursor = self.connection.cursor()
 
-                # ✅ FIX: Move all cursor operations inside the lock
-                # Basic counts
-                cursor.execute("SELECT COUNT(*) as total FROM clipboard_items")
-                total = cursor.fetchone()["total"]
+            # Basic counts
+            cursor.execute("SELECT COUNT(*) as total FROM clipboard_items")
+            total = cursor.fetchone()["total"]
 
-                cursor.execute(
-                    "SELECT COUNT(*) as pinned FROM clipboard_items WHERE is_pinned = TRUE"
-                )
-                pinned = cursor.fetchone()["pinned"]
+            cursor.execute(
+                "SELECT COUNT(*) as pinned FROM clipboard_items WHERE is_pinned = TRUE"
+            )
+            pinned = cursor.fetchone()["pinned"]
 
-                # Content type breakdown
-                cursor.execute(
-                    """
-                    SELECT content_type, COUNT(*) as count
-                    FROM clipboard_items
-                    GROUP BY content_type
+            # Content type breakdown
+            cursor.execute(
                 """
-                )
-                content_types = {
-                    row["content_type"]: row["count"] for row in cursor.fetchall()
-                }
+                SELECT content_type, COUNT(*) as count
+                FROM clipboard_items
+                GROUP BY content_type
+            """
+            )
+            content_types = {
+                row["content_type"]: row["count"] for row in cursor.fetchall()
+            }
 
-                # Storage usage
-                cursor.execute("SELECT SUM(file_size) as total_size FROM image_content")
-                image_size = cursor.fetchone()["total_size"] or 0
+            # Storage usage
+            cursor.execute("SELECT SUM(file_size) as total_size FROM image_content")
+            image_size = cursor.fetchone()["total_size"] or 0
 
-                return {
-                    "total_items": total,
-                    "pinned_items": pinned,
-                    "regular_items": total - pinned,
-                    "content_types": content_types,
-                    "image_storage_bytes": image_size,
-                    "database_size_bytes": (
-                        self.db_path.stat().st_size if self.db_path.exists() else 0
-                    ),
-                }
+            return {
+                "total_items": total,
+                "pinned_items": pinned,
+                "regular_items": total - pinned,
+                "content_types": content_types,
+                "image_storage_bytes": image_size,
+                "database_size_bytes": (
+                    self.db_path.stat().st_size if self.db_path.exists() else 0
+                ),
+            }
 
         except Exception as e:
             logger.error(f"Failed to get stats: {e}")

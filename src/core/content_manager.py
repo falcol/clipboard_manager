@@ -9,12 +9,11 @@ Intelligent content management for clipboard items
 import hashlib
 import json
 import logging
-import weakref
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Optional, Tuple
 
-from PySide6.QtCore import QBuffer, QByteArray, QIODevice, Qt
+from PySide6.QtCore import QBuffer, QByteArray, QIODevice
 from PySide6.QtGui import QPixmap
 
 logger = logging.getLogger(__name__)
@@ -33,19 +32,12 @@ class ContentManager:
         for directory in [self.images_dir, self.thumbnails_dir, self.cache_dir]:
             directory.mkdir(parents=True, exist_ok=True)
 
-        # ✅ OPTIMIZATION: WeakValueDictionary for auto memory cleanup
-        self.memory_cache = weakref.WeakValueDictionary()
-        # ✅ OPTIMIZATION: Separate LRU tracking for thumbnails only
-        self._thumbnail_lru: OrderedDict[str, bool] = OrderedDict()
-
-        # Configure cache size (bytes) - reduced default
-        limit_mb = 15 if cache_size_mb is None else max(5, min(cache_size_mb, 100))
+        # In-memory LRU cache for frequently accessed pixmaps
+        self.memory_cache: OrderedDict[str, QPixmap] = OrderedDict()
+        # Configure cache size (bytes)
+        limit_mb = 50 if cache_size_mb is None else max(10, min(cache_size_mb, 500))
         self.cache_size_limit = limit_mb * 1024 * 1024
         self.current_cache_size = 0
-
-        # ✅ OPTIMIZATION: Cache statistics for monitoring
-        self.cache_stats = {"hits": 0, "misses": 0, "evictions": 0}
-        self.max_cached_thumbnails = 30  # Limit thumbnail count in memory
 
     def store_image(
         self, pixmap: QPixmap, format: str = "PNG", quality: int = 95
@@ -86,27 +78,25 @@ class ContentManager:
             return "", "", b"", b""
 
     def load_image(self, image_path: str) -> Optional[QPixmap]:
-        """Load image with optimized caching"""
+        """Load image with caching"""
         try:
             path = Path(image_path)
             if not path.exists():
                 return None
 
-            # Check weak reference cache first
+            # Check memory cache first
             cache_key = str(path)
             if cache_key in self.memory_cache:
-                # ✅ OPTIMIZATION: Update LRU and stats
-                if cache_key in self._thumbnail_lru:
-                    self._thumbnail_lru.move_to_end(cache_key)
-                self.cache_stats["hits"] += 1
-                return self.memory_cache[cache_key]
+                # Promote to most-recently used
+                pix = self.memory_cache.pop(cache_key)
+                self.memory_cache[cache_key] = pix
+                return pix
 
-            # Load from disk with size optimization
+            # Load from disk
             pixmap = QPixmap()
             if pixmap.load(str(path)):
-                # ✅ OPTIMIZATION: Add to cache with LRU eviction
-                self._add_to_cache_optimized(cache_key, pixmap)
-                self.cache_stats["misses"] += 1
+                # Add to cache if there's space
+                self._add_to_cache(cache_key, pixmap)
                 return pixmap
 
             return None
@@ -116,42 +106,8 @@ class ContentManager:
             return None
 
     def load_thumbnail(self, thumbnail_path: str) -> Optional[QPixmap]:
-        """Load thumbnail with optimized lazy loading"""
-        try:
-            path = Path(thumbnail_path)
-            if not path.exists():
-                return None
-
-            # ✅ OPTIMIZATION: Separate thumbnail cache with size limits
-            cache_key = f"thumb_{thumbnail_path}"
-
-            # Check weak reference cache
-            if cache_key in self.memory_cache:
-                if cache_key in self._thumbnail_lru:
-                    self._thumbnail_lru.move_to_end(cache_key)
-                self.cache_stats["hits"] += 1
-                return self.memory_cache[cache_key]
-
-            # ✅ OPTIMIZATION: LRU eviction for thumbnails
-            if len(self._thumbnail_lru) >= self.max_cached_thumbnails:
-                # Remove oldest thumbnail from tracking
-                oldest_key = next(iter(self._thumbnail_lru))
-                del self._thumbnail_lru[oldest_key]
-                self.cache_stats["evictions"] += 1
-
-            # Load and optimize thumbnail
-            pixmap = self._load_thumbnail_optimized(thumbnail_path)
-            if pixmap and not pixmap.isNull():
-                self.memory_cache[cache_key] = pixmap
-                self._thumbnail_lru[cache_key] = True
-                self.cache_stats["misses"] += 1
-                return pixmap
-
-            return None
-
-        except Exception as e:
-            logger.error(f"Error loading thumbnail {thumbnail_path}: {e}")
-            return None
+        """Load thumbnail with caching"""
+        return self.load_image(thumbnail_path)  # Same logic for now
 
     def optimize_text_content(self, content: str, content_type: str = "text") -> dict:
         """Optimize text content với format detection"""
@@ -318,7 +274,7 @@ class ContentManager:
 
     def _extract_keywords(self, content: str) -> list:
         """Extract searchable keywords from content"""
-        # Simple keyword extraction - can be enhanced with NLP
+        # Simple keyword extraction - can be with NLP
         words = content.lower().split()
 
         # Filter out common words and short words
@@ -349,70 +305,32 @@ class ContentManager:
         # Return unique keywords (first 10)
         return list(dict.fromkeys(keywords))[:10]
 
-    def _add_to_cache_optimized(self, key: str, pixmap: QPixmap):
-        """Add pixmap to memory cache with optimized size management"""
-        # ✅ OPTIMIZATION: More accurate size estimation
+    def _add_to_cache(self, key: str, pixmap: QPixmap):
+        """Add pixmap to memory cache with size management (LRU)."""
+        # Estimate size (approx RGBA)
         estimated_size = max(0, pixmap.width() * pixmap.height() * 4)
 
-        # WeakValueDictionary handles automatic cleanup when object is garbage collected
+        # If key exists, remove old before re-insert to update order and size
+        if key in self.memory_cache:
+            old = self.memory_cache.pop(key)
+            self.current_cache_size -= max(0, old.width() * old.height() * 4)
+
+        # Evict least-recently used until there is space
+        while self.current_cache_size + estimated_size > self.cache_size_limit and self.memory_cache:
+            evicted_key, evicted_pix = self.memory_cache.popitem(last=False)
+            self.current_cache_size -= max(0, evicted_pix.width() * evicted_pix.height() * 4)
+            logger.debug(f"LRU evicted from cache: {evicted_key}")
+
+        # Insert as most-recently used
         self.memory_cache[key] = pixmap
         self.current_cache_size += estimated_size
-
-        # ✅ OPTIMIZATION: Trigger cleanup if cache too large
-        if self.current_cache_size > self.cache_size_limit:
-            self._cleanup_cache_optimized()
-
-    def _load_thumbnail_optimized(self, image_path: str) -> Optional[QPixmap]:
-        """Load thumbnail with memory-efficient options"""
-        try:
-            pixmap = QPixmap()
-            success = pixmap.load(image_path)
-
-            if success and not pixmap.isNull():
-                # ✅ OPTIMIZATION: Use FastTransformation for better performance
-                return pixmap.scaled(
-                    64, 64,  # Reduced from original sizes
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.FastTransformation  # Faster than SmoothTransformation
-                )
-        except Exception as e:
-            logger.error(f"Error loading thumbnail {image_path}: {e}")
-
-        return None
-
-    def _cleanup_cache_optimized(self):
-        """Optimized cache cleanup with better memory management"""
-        # ✅ OPTIMIZATION: Use weak references for automatic cleanup
-        # Clear LRU tracking for items that may have been garbage collected
-        valid_keys = set(self.memory_cache.keys())
-        self._thumbnail_lru = OrderedDict(
-            (k, v) for k, v in self._thumbnail_lru.items()
-            if k in valid_keys
-        )
-
-        # Force garbage collection to clean up weak references
-        import gc
-        collected = gc.collect()
-
-        # Update current cache size estimate
-        self.current_cache_size = sum(
-            max(0, pix.width() * pix.height() * 4)
-            for pix in self.memory_cache.values()
-        )
-
-        if collected > 0:
-            logger.debug(f"Cache cleanup: collected {collected} objects, size: {self.current_cache_size} bytes")
-
-    def _add_to_cache(self, key: str, pixmap: QPixmap):
-        """Legacy method - redirect to optimized version"""
-        self._add_to_cache_optimized(key, pixmap)
 
     def _cleanup_cache(self):
         """Evict items until usage is under 80% of limit."""
         target = int(self.cache_size_limit * 0.8)
         removed = 0
         while self.current_cache_size > target and self.memory_cache:
-            _, pix = self.memory_cache.popitem()
+            _, pix = self.memory_cache.popitem(last=False)
             self.current_cache_size -= max(0, pix.width() * pix.height() * 4)
             removed += 1
         if removed:
@@ -450,17 +368,3 @@ class ContentManager:
 
         text = re.sub(r"\\[a-z0-9]+\b|[{}]", "", rtf)
         return re.sub(r"\s+", " ", text).strip()
-
-    def get_cache_stats(self) -> Dict:
-        """Get cache performance statistics"""
-        return {
-            "hits": self.cache_stats["hits"],
-            "misses": self.cache_stats["misses"],
-            "evictions": self.cache_stats["evictions"],
-            "cache_size_bytes": self.current_cache_size,
-            "cache_items": len(self.memory_cache),
-            "thumbnail_items": len(self._thumbnail_lru),
-            "hit_rate": (
-                self.cache_stats["hits"] / max(1, self.cache_stats["hits"] + self.cache_stats["misses"])
-            ) * 100
-        }

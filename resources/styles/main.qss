@@ -675,7 +675,7 @@ QFrame#clipboardItem[selected="true"] {
 }
 
 /* ===============================================
-   FORM CONTROLS - Enhanced hover for theme selection
+   FORM CONTROLS - hover for theme selection
    =============================================== */
 
 QComboBox#formControl {

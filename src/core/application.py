@@ -23,13 +23,11 @@ from ui.settings_window import SettingsWindow
 from ui.system_tray import SystemTray
 from utils.config import Config
 from utils.logging_config import get_logger
-from utils.memory_optimizer import get_memory_optimizer
 from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
 from utils.single_instance import CrossPlatformSingleInstance
 
 logger = get_logger(__name__)
-
 
 class ClipboardManager:
     """B1Clip with modern UI and auto-hide focus"""
@@ -62,6 +60,7 @@ class ClipboardManager:
             self.app.setFont(self._choose_system_ui_font())
 
         except Exception as e:
+
             logger.error(f"Failed to create QApplication: {e}")
             self._handle_qt_error(e)
 
@@ -97,9 +96,6 @@ class ClipboardManager:
         # Initialize QSS loader
         self.qss_loader = QSSLoader()
 
-        # ✅ OPTIMIZATION: Initialize memory optimizer
-        self.memory_optimizer = get_memory_optimizer(enable_profiling=True)
-
         # Setup connections
         self.setup_connections()
 
@@ -128,6 +124,7 @@ class ClipboardManager:
                 logger.warning(f"Using {platform} platform as fallback")
                 return
             except Exception as e2:
+
                 logger.error(f"Failed to create QApplication with {platform}: {e2}")
                 continue
 
@@ -165,18 +162,16 @@ class ClipboardManager:
         )  # Convert to ms
         self.cleanup_timer.start(cleanup_interval)
 
+
         logger.info(
             f"Performance monitoring enabled, cleanup every {cleanup_interval // 3600000} hours"
         )
 
     def perform_maintenance(self):
-        """Perform periodic maintenance tasks with memory optimization"""
+        """Perform periodic maintenance tasks"""
         try:
-            logger.info("Performing scheduled maintenance...")
 
-            # ✅ OPTIMIZATION: Monitor memory usage before maintenance
-            memory_before = self.memory_optimizer.monitor_memory_usage()
-            logger.info(f"Memory before maintenance: {memory_before.get('rss_mb', 0):.1f}MB")
+            logger.info("Performing scheduled maintenance...")
 
             # Cleanup orphaned files
             active_file_paths = set()
@@ -189,30 +184,22 @@ class ClipboardManager:
 
             self.content_manager.cleanup_orphaned_files(active_file_paths)
 
-            # ✅ OPTIMIZATION: cleanup with memory optimizer
+            # Database cleanup
             stats_before = self.database.get_stats()
-
-            # Trigger optimized cleanup
-            self.memory_optimizer.trigger_content_manager_cleanup(self.content_manager)
-            self.memory_optimizer.trigger_database_cleanup(self.database)
-            cleanup_stats = self.memory_optimizer.trigger_memory_cleanup()
-
+            # The database cleanup is handled automatically in the database class
             stats_after = self.database.get_stats()
 
-            # ✅ OPTIMIZATION: Monitor memory usage after maintenance
-            memory_after = self.memory_optimizer.monitor_memory_usage()
-            memory_saved = memory_before.get('rss_mb', 0) - memory_after.get('rss_mb', 0)
-
             logger.info(
-                f"Maintenance complete. Items: {stats_before.get('total_items', 0)} -> {stats_after.get('total_items', 0)}, "
-                f"Memory saved: {memory_saved:.1f}MB, GC collected: {cleanup_stats.get('collected', 0)} objects"
+                f"Maintenance complete. Items: {stats_before.get('total_items', 0)} -> {stats_after.get('total_items', 0)}"
             )
 
         except Exception as e:
+
             logger.error(f"Error during maintenance: {e}")
 
     def on_content_changed(self, content_type: str, item_data: dict):
         """Handle new clipboard content with features and notifications"""
+
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
 
         # Show notification for new content (if enabled)
@@ -235,8 +222,10 @@ class ClipboardManager:
         """Show the clipboard popup window"""
         try:
             self.popup_window.show_at_cursor()
+
             logger.debug("Clipboard popup shown")
         except Exception as e:
+
             logger.error(f"Error showing popup: {e}")
             # Fallback notification
             self.system_tray.show_notification(
@@ -245,6 +234,7 @@ class ClipboardManager:
 
     def on_settings_changed(self):
         """Handle settings changes with updates"""
+
         logger.info("Settings changed, updating components...")
 
         try:
@@ -297,6 +287,8 @@ class ClipboardManager:
                     self.system_tray.menu.ensurePolished()
                 except Exception:
                     pass
+
+
             logger.info(f"Applied global theme: {theme_name}")
         except Exception as e:
 
@@ -333,6 +325,7 @@ class ClipboardManager:
                     ),
                 )
 
+
             logger.info("B1Clip started successfully")
 
             # Setup graceful shutdown
@@ -343,6 +336,7 @@ class ClipboardManager:
             return self.app.exec()
 
         except KeyboardInterrupt:
+
             logger.info("Application interrupted by user")
             return 0
         except Exception as e:
@@ -352,12 +346,14 @@ class ClipboardManager:
 
     def signal_handler(self, signum, frame):
         """Handle system signals for graceful shutdown"""
+
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         QTimer.singleShot(0, self.quit_application)
 
     def quit_application(self):
         """Quit the application gracefully with cleanup"""
         try:
+
             logger.info("Starting graceful shutdown...")
 
             # Stop timers
@@ -402,6 +398,7 @@ class ClipboardManager:
             self.app.quit()
 
         except Exception as e:
+
             logger.error(f"Error during shutdown: {e}")
             # Force quit if graceful shutdown fails
             self.app.quit()
@@ -453,13 +450,11 @@ class ClipboardManager:
             return QFont("Sans Serif", 10)
 
     def get_status_info(self):
-        """Get current application status for debugging with memory stats"""
+        """Get current application status for debugging"""
         try:
             stats = self.database.get_stats()
-
-            # ✅ OPTIMIZATION: Include memory and cache statistics
-            status = {
-                "version": "2.0-enhanced-optimized",
+            return {
+                "version": "2.0-enhanced",
                 "database_items": stats.get("total_items", 0),
                 "pinned_items": stats.get("pinned_items", 0),
                 "clipboard_watching": self.clipboard_watcher.running,
@@ -467,19 +462,7 @@ class ClipboardManager:
                 "popup_visible": self.popup_window.isVisible(),
                 "settings_visible": self.settings_window.isVisible(),
             }
-
-            # Add memory optimization stats
-            if hasattr(self, 'memory_optimizer'):
-                memory_stats = self.memory_optimizer.monitor_memory_usage()
-                status["memory"] = memory_stats
-
-            # Add content manager cache stats
-            if hasattr(self.content_manager, 'get_cache_stats'):
-                cache_stats = self.content_manager.get_cache_stats()
-                status["cache"] = cache_stats
-
-            return status
-
         except Exception as e:
+
             logger.error(f"Error getting status info: {e}")
             return {"error": str(e)}

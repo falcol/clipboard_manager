@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.database import ClipboardDatabase as ClipboardDatabase
+from core.database import ClipboardDatabase
 from ui.popup_window.clipboard_item import ClipboardItem
 from ui.popup_window.search_bar import SearchBar
 from utils.config import Config
@@ -49,11 +49,6 @@ class PopupWindow(QWidget):
         self.all_items = []
         self.current_search = ""
         self.last_content_type = "text"  # Track last content type
-
-        # ✅ OPTIMIZATION: Object pooling for ClipboardItem widgets
-        self._item_widget_pool = []
-        self._max_pool_size = 30  # Limit pool size to prevent memory bloat
-        self._pool_stats = {"created": 0, "reused": 0, "released": 0}
 
         # Drag support variables
         self.dragging = False
@@ -267,42 +262,56 @@ class PopupWindow(QWidget):
         super().mouseReleaseEvent(event)
 
     def load_items(self):
-        """Load clipboard items from database with object pooling optimization"""
-        self._release_all_item_widgets()
+        """Load clipboard items from database"""
+        # Clear ALL existing widgets in scroll layout (including "No results" labels)
+        while self.scroll_layout.count() > 1:  # Keep the stretch widget at the end
+            child = self.scroll_layout.itemAt(0).widget()
+            if child:
+                child.deleteLater()
+            self.scroll_layout.removeItem(self.scroll_layout.itemAt(0))
+
+        # Clear clipboard items list
         self.clipboard_items.clear()
 
         # Load items from database
-        max_items = self.config.get("max_items", 25)
-        self.all_items = self.database.get_items(limit=max_items)
-
-        # ✅ REMOVED: Excessive debug logging
-        # logger.info(f"Database returned {len(self.all_items)} items (limit: {max_items})")
+        self.all_items = self.database.get_items(limit=self.config.get("max_items", 25))
 
         # Apply search filter
         if self.current_search.strip():
-            items_to_show = self.filter_items(self.all_items, self.current_search.strip())
+            items_to_show = self.filter_items(
+                self.all_items, self.current_search.strip()
+            )
         else:
             items_to_show = self.all_items
 
         if items_to_show:
             for item_data in items_to_show:
-                clipboard_item = self._create_or_reuse_item_widget(item_data)
+                clipboard_item = ClipboardItem(item_data)
+                clipboard_item.item_selected.connect(self.on_item_selected)
+                clipboard_item.pin_toggled.connect(self.on_pin_toggled)
+                clipboard_item.delete_requested.connect(self.on_delete_requested)
+
                 self.clipboard_items.append(clipboard_item)
                 self.scroll_layout.insertWidget(
                     self.scroll_layout.count() - 1, clipboard_item
                 )
-            # ✅ REMOVED: Excessive logging
-            # logger.info(f"Successfully added {len(items_to_show)} widgets to layout")
         else:
-            # Show empty state
+            # Show empty state (only one message)
             if self.current_search.strip():
                 empty_label = QLabel(f"🔍 No results found for '{self.current_search}'")
+                empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                empty_label.setObjectName(
+                    "emptyStateLabel"
+                )  # Use QSS instead of inline style
             else:
                 empty_label = QLabel("📋 No clipboard history yet")
-            empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            empty_label.setObjectName("emptyStateLabel")
+                empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                empty_label.setObjectName(
+                    "emptyStateLabel"
+                )  # Use QSS instead of inline style
             self.scroll_layout.insertWidget(0, empty_label)
 
+        # Update stats
         self.update_stats()
 
     def filter_items(self, items, search_query):
@@ -904,75 +913,6 @@ class PopupWindow(QWidget):
             self.search_bar.focus_search()
         else:
             super().keyPressEvent(event)
-
-    def _create_or_reuse_item_widget(self, item_data: Dict) -> ClipboardItem:
-        """Create or reuse ClipboardItem widget from pool - FAST"""
-        # ✅ FAST PATH: Reuse from pool if available
-        if self._item_widget_pool:
-            widget = self._item_widget_pool.pop()
-            # ✅ OPTIMIZATION: Direct assignment - no expensive rebuilding
-            widget.item_data = item_data
-            widget.setParent(self.scroll_widget)
-            widget.show()
-            self._pool_stats["reused"] += 1
-            return widget
-
-        # Create new widget only if pool is empty
-        widget = ClipboardItem(item_data, parent=self.scroll_widget)
-        widget.item_selected.connect(self.on_item_selected)
-        widget.pin_toggled.connect(self.on_pin_toggled)
-        widget.delete_requested.connect(self.on_delete_requested)
-
-        self._pool_stats["created"] += 1
-        return widget
-
-    def _release_item_widget(self, widget: ClipboardItem):
-        """Release widget back to pool - FAST"""
-        try:
-            if len(self._item_widget_pool) < self._max_pool_size:
-                # ✅ OPTIMIZATION: Minimal operations
-                widget.hide()
-                widget.setParent(None)
-                self._item_widget_pool.append(widget)
-                self._pool_stats["released"] += 1
-            else:
-                widget.deleteLater()
-        except Exception:
-            widget.deleteLater()
-
-    def _release_all_item_widgets(self):
-        """Release all current item widgets back to pool - FIXED"""
-        # ✅ FIX: Safer widget removal - collect first, then remove
-        items_to_remove = []
-
-        # Collect all items except stretch (last item)
-        for i in range(self.scroll_layout.count() - 1):  # Skip stretch widget at end
-            item = self.scroll_layout.itemAt(i)
-            if item:
-                items_to_remove.append(item)
-
-        # Remove items safely
-        for item in items_to_remove:
-            widget = item.widget()
-            if widget:
-                if isinstance(widget, ClipboardItem):
-                    # Release to pool instead of deleting
-                    self._release_item_widget(widget)
-                else:
-                    # For non-ClipboardItem widgets (like empty labels), just delete
-                    widget.deleteLater()
-            self.scroll_layout.removeItem(item)
-
-    def get_pool_stats(self) -> Dict:
-        """Get object pool statistics"""
-        return {
-            **self._pool_stats,
-            "pool_size": len(self._item_widget_pool),
-            "max_pool_size": self._max_pool_size,
-            "efficiency": (
-                self._pool_stats["reused"] / max(1, self._pool_stats["created"] + self._pool_stats["reused"])
-            ) * 100
-        }
 
     def hideEvent(self, event):
         """Handle hide event with proper cleanup"""

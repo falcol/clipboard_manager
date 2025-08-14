@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # clipboard_manager/src/main.py
 """
-Enhanced main entry point for B1Clip - Modular version
+main entry point for B1Clip - Modular version
 """
 import sys
 from pathlib import Path
@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 
 def main():
-    """Enhanced main function with refactored modular approach"""
+    """main function with refactored modular approach"""
     single_instance = None
     logger = None
 
