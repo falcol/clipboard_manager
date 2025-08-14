@@ -93,7 +93,7 @@ class EnhancedLoggingConfig:
             return config_dir / "logs"
         else:
             # Fallback to default location
-            return Path.home() / ".config" / "ClipboardManager" / "logs"
+            return Path.home() / ".config" / "B1Clip" / "logs"
 
     def setup_logging(
         self,

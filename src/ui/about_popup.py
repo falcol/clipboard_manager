@@ -46,7 +46,6 @@ class AboutPopup(QDialog):
         # Content
         content = QLabel(
             "A modern clipboard history manager with:\n\n"
-            "• macOS-like interface\n"
             "• Smart content detection\n"
             "• Search and filtering\n"
             "• Pin important items\n"

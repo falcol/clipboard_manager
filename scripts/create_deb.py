@@ -76,7 +76,7 @@ Architecture: {self.architecture}
 Depends: {dependencies}
 Recommends: git
 Suggests: imagemagick, librsvg2-bin
-Maintainer: ClipboardManager Team <contact@clipboardmanager.dev>
+Maintainer: B1Clip Team <contact@clipboardmanager.dev>
 Homepage: https://github.com/clipboard-manager/clipboard-manager
 Description: Modern cross-platform clipboard history manager
  A modern clipboard history manager built with PySide6/Qt6 that provides:
@@ -206,8 +206,8 @@ if [ "$1" = "purge" ]; then
 
     # Remove user configuration directories
     for user_home in /home/*; do
-        if [ -d "$user_home/.local/share/ClipboardManager" ]; then
-            rm -rf "$user_home/.local/share/ClipboardManager"
+        if [ -d "$user_home/.local/share/B1Clip" ]; then
+            rm -rf "$user_home/.local/share/B1Clip"
             echo "Removed configuration for user: $(basename "$user_home")"
         fi
     done
@@ -402,7 +402,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/ClipboardManager
+ReadWritePaths=%h/.local/share/B1Clip
 
 [Install]
 WantedBy=default.target

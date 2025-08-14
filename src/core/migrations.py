@@ -22,7 +22,7 @@ class DatabaseMigrations:
 
     def __init__(self, db_path: Optional[Path] = None):
         if db_path is None:
-            data_dir = Path(user_data_dir("ClipboardManager", "B1Corp"))
+            data_dir = Path(user_data_dir("B1Clip", ""))
             data_dir.mkdir(parents=True, exist_ok=True)
             db_path = data_dir / "clipboard.db"
 

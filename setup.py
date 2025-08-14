@@ -60,7 +60,7 @@ def get_platform_requirements():
 setup(
     name="clipboard-manager",
     version="1.0.0",
-    author="ClipboardManager Team",
+    author="B1Clip Team",
     author_email="contact@clipboardmanager.dev",
     description="A modern cross-platform clipboard history manager",
     long_description=long_description,
