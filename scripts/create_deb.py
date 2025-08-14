@@ -16,7 +16,7 @@ class DebianPackageBuilder:
 
     def __init__(self):
         self.project_root = Path(__file__).parent.parent
-        self.app_name = "clipboard-manager"
+        self.app_name = "B1Clip"
         self.version = self._get_version()
         self.architecture = "all"
 
@@ -77,7 +77,7 @@ Depends: {dependencies}
 Recommends: git
 Suggests: imagemagick, librsvg2-bin
 Maintainer: B1Clip Team <contact@clipboardmanager.dev>
-Homepage: https://github.com/clipboard-manager/clipboard-manager
+Homepage: https://github.com/falcol/clipboard_manager
 Description: Modern cross-platform clipboard history manager
  A modern clipboard history manager built with PySide6/Qt6 that provides:
  .
@@ -197,22 +197,48 @@ echo "B1Clip stopped."
         prerm_file.chmod(0o755)
 
     def _create_postrm_script(self, debian_dir: Path) -> None:
-        """Create post-removal script"""
-        postrm_content = """#!/bin/bash
+        """Create post-removal script with enhanced cleanup"""
+        postrm_content = f"""#!/bin/bash
 set -e
 
-if [ "$1" = "purge" ]; then
-    echo "Cleaning up B1Clip configuration..."
+APP_NAME="{self.app_name}"
 
-    # Remove user configuration directories
+if [ "$1" = "purge" ]; then
+    echo "🧹 Cleaning up B1Clip configuration and user data..."
+
+    # Stop and disable user services for all users
     for user_home in /home/*; do
-        if [ -d "$user_home/.local/share/B1Clip" ]; then
-            rm -rf "$user_home/.local/share/B1Clip"
-            echo "Removed configuration for user: $(basename "$user_home")"
+        if [ -d "$user_home" ]; then
+            user=$(basename "$user_home")
+
+            # Skip non-user directories
+            [ "$user" = "lost+found" ] && continue
+
+            echo "Cleaning up for user: $user"
+
+            # Stop and disable systemd user service
+            sudo -u "$user" systemctl --user stop "$APP_NAME" 2>/dev/null || true
+            sudo -u "$user" systemctl --user disable "$APP_NAME" 2>/dev/null || true
+
+            # Remove user configuration directories
+            [ -d "$user_home/.local/share/B1Clip" ] && rm -rf "$user_home/.local/share/B1Clip"
+            [ -d "$user_home/.config/B1Clip" ] && rm -rf "$user_home/.config/B1Clip"
+
+            # Remove autostart entries
+            [ -f "$user_home/.config/autostart/B1Clip.desktop" ] && rm -f "$user_home/.config/autostart/B1Clip.desktop"
+
+            echo "✅ Cleaned up for user: $user"
         fi
     done
 
-    # Update databases
+    # Remove system-wide configuration remnants
+    [ -f "/etc/xdg/autostart/B1Clip.desktop" ] && rm -f "/etc/xdg/autostart/B1Clip.desktop"
+
+    # Clean up any remaining processes
+    pkill -f "B1Clip" 2>/dev/null || true
+    pkill -f "clipboard.*manager" 2>/dev/null || true
+
+    # Update system databases
     if command -v update-desktop-database > /dev/null; then
         update-desktop-database /usr/share/applications 2>/dev/null || true
     fi
@@ -221,7 +247,20 @@ if [ "$1" = "purge" ]; then
         gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
     fi
 
-    echo "B1Clip completely removed."
+    if command -v update-mime-database > /dev/null; then
+        update-mime-database /usr/share/mime 2>/dev/null || true
+    fi
+
+    # Reload systemd user daemon for all users
+    for user_home in /home/*; do
+        if [ -d "$user_home" ]; then
+            user=$(basename "$user_home")
+            [ "$user" = "lost+found" ] && continue
+            sudo -u "$user" systemctl --user daemon-reload 2>/dev/null || true
+        fi
+    done
+
+    echo "✅ B1Clip completely removed and cleaned up."
 fi
 """
 
@@ -309,7 +348,7 @@ Icon={self.app_name}
 Terminal=false
 Categories=Utility;System;Qt;Office;
 Keywords=clipboard;history;manager;copy;paste;hotkey;
-StartupWMClass=clipboard-manager
+StartupWMClass=B1Clip
 StartupNotify=true
 MimeType=text/plain;text/html;image/png;image/jpeg;
 X-GNOME-Autostart-enabled=false
@@ -383,7 +422,7 @@ Icon=help-about
 
         service_content = f"""[Unit]
 Description=B1Clip - Modern clipboard history manager
-Documentation=https://github.com/clipboard-manager/clipboard-manager
+Documentation=https://github.com/falcol/clipboard_manager
 After=graphical-session.target
 Wants=graphical-session.target
 

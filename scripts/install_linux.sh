@@ -5,7 +5,7 @@
 set -e
 
 # Configuration
-APP_NAME="clipboard-manager"
+APP_NAME="B1Clip"
 APP_VERSION="1.0.0"
 INSTALL_DIR="/opt/$APP_NAME"
 BIN_DIR="/usr/local/bin"
@@ -131,6 +131,8 @@ install_system_deps() {
                 python3-pip \
                 python3-venv \
                 python3-dev \
+                python3-tk \
+                build-essential \
                 libxcb-cursor0 \
                 libxcb1 \
                 libxcb-icccm4 \
@@ -143,9 +145,14 @@ install_system_deps() {
                 libxcb-xfixes0 \
                 libxcb-xinerama0 \
                 libxcb-xkb1 \
+                libxcb-xinput0 \
                 libgl1-mesa-glx \
                 libglib2.0-0 \
+                libegl1-mesa \
+                libfontconfig1 \
+                libdbus-1-3 \
                 xdotool \
+                x11-utils \
                 git \
                 || log_error "Failed to install system dependencies"
             ;;
@@ -306,7 +313,7 @@ create_launcher() {
 
 set -e
 
-APP_DIR="/opt/clipboard-manager"
+APP_DIR="/opt/B1Clip"
 VENV_PATH="$APP_DIR/venv"
 MAIN_SCRIPT="$APP_DIR/src/main.py"
 
@@ -318,15 +325,15 @@ log_error() {
 
 # Validate installation
 if [ ! -d "$APP_DIR" ]; then
-    log_error "Application not found. Please reinstall clipboard-manager."
+    log_error "Application not found. Please reinstall B1Clip."
 fi
 
 if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    log_error "Virtual environment not found. Please reinstall clipboard-manager."
+    log_error "Virtual environment not found. Please reinstall B1Clip."
 fi
 
 if [ ! -f "$MAIN_SCRIPT" ]; then
-    log_error "Main script not found. Please reinstall clipboard-manager."
+    log_error "Main script not found. Please reinstall B1Clip."
 fi
 
 # Change to application directory
@@ -371,7 +378,7 @@ Icon=$APP_NAME
 Terminal=false
 Categories=Utility;System;Qt;AccessX;
 Keywords=clipboard;history;manager;copy;paste;productivity;
-StartupWMClass=clipboard-manager
+StartupWMClass=B1Clip
 StartupNotify=true
 MimeType=text/plain;text/html;text/rtf;image/png;image/jpeg;
 X-GNOME-Autostart-enabled=false

@@ -4,7 +4,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![PySide6](https://img.shields.io/badge/PySide6-6.9+-green.svg)](https://wiki.qt.io/Qt_for_Python)
-[![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)](https://github.com/clipboard-manager/clipboard-manager)
+[![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)](https://github.com/falcol/clipboard_manager)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## ✨ Features
@@ -32,8 +32,8 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 ```bash
 # Clone the repository
-git clone https://github.com/clipboard-manager/clipboard-manager.git
-cd clipboard-manager
+git clone https://github.com/falcol/clipboard_manager.git
+cd clipboard_manager
 
 # Create virtual environment
 python3 -m venv venv
@@ -58,16 +58,6 @@ sudo ./scripts/install_linux.sh
 # Or create and install .deb package
 python scripts/create_deb.py
 sudo dpkg -i clipboard-manager_1.0.0_all.deb
-```
-
-#### Option 3: PyPI Installation (Future)
-
-```bash
-# Install from PyPI (coming soon)
-pip install clipboard-manager
-
-# With Linux-specific dependencies
-pip install clipboard-manager[linux]
 ```
 
 ### First Run
