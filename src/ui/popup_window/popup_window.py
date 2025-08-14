@@ -274,7 +274,7 @@ class PopupWindow(QWidget):
         self.clipboard_items.clear()
 
         # Load items from database
-        self.all_items = self.database.get_items(limit=self.config.get("max_items", 50))
+        self.all_items = self.database.get_items(limit=self.config.get("max_items", 25))
 
         # Apply search filter
         if self.current_search.strip():

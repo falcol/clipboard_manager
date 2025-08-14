@@ -26,8 +26,8 @@ def read_requirements():
     """Read requirements from various sources"""
     requirements = []
 
-    # Try to read from requirements/base.txt
-    base_req_path = Path(__file__).parent / "requirements" / "base.txt"
+    # Try to read from requirements/linux.txt
+    base_req_path = Path(__file__).parent / "requirements" / "linux.txt"
     if base_req_path.exists():
         with open(base_req_path, 'r', encoding='utf-8') as f:
             for line in f:

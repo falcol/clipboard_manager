@@ -12,12 +12,10 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 - **📝 Rich Clipboard History**: Automatically saves text, HTML, RTF, and image clipboard content
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
 - **🔥 Global Hotkey**: Press `Super+C` (Linux) to show clipboard history
-- **🎨 Modern UI**: Clean, dark interface with smooth animations and multiple themes
 - **💾 Efficient Storage**: SQLite-based storage with optimized memory usage
 - **🚀 System Integration**: System tray, auto-start, and native platform integration
 - **⚙️ Highly Configurable**: Customize items limit, text length, themes, and performance settings
 - **🔍 Smart Search**: Fast search and filtering through clipboard history
-- **🌍 Cross-Platform**: Works seamlessly on Linux
 - **🔒 Privacy-First**: All data stored locally, no network connections
 
 ## 🚀 Quick Start
@@ -290,50 +288,8 @@ journalctl --user -xe
 ### Supported Formats
 
 - **Text**: Plain text, Rich Text (RTF), HTML
-- **Images**: PNG, JPEG, BMP, TIFF, WebP
-- **Files**: File paths and URLs (metadata only)
+- **Images**: PNG, JPEG, BMP, TIFF, Web
 - **Custom**: Application-specific clipboard formats
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our contributing guidelines:
-
-### Development Workflow
-
-1. **Fork** the repository
-2. **Create** a feature branch: `git checkout -b feature-name`
-3. **Make** your changes with tests
-4. **Run** quality checks: `black`, `flake8`, `mypy`, `pytest`
-5. **Commit** with conventional commit format
-6. **Push** and create a Pull Request
-
-### Code Standards
-
-- **Style**: Black formatting, line length 88
-- **Quality**: Flake8 linting, type hints required
-- **Testing**: Pytest with >80% coverage
-- **Documentation**: Docstrings for all public APIs
-- **Commits**: Conventional Commits format
-
-### Bug Reports
-
-Please include:
-- Operating system and version
-- Python version
-- Error messages and traceback
-- Steps to reproduce
-- Expected vs actual behavior
-
-### Feature Requests
-
-- Check existing issues first
-- Describe the use case clearly
-- Consider implementation complexity
-- Provide mockups/examples if helpful
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🏆 Acknowledgments
 
@@ -342,26 +298,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Python**: Amazing ecosystem and community
 - **Contributors**: All the wonderful people who help improve this project
 
-## 📞 Support & Contact
-
-- **Issues**: [GitHub Issues](https://github.com/clipboard-manager/clipboard-manager/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/clipboard-manager/clipboard-manager/discussions)
-- **Email**: contact@clipboardmanager.dev
-- **Documentation**: [ReadTheDocs](https://clipboard-manager.readthedocs.io/)
-
 ---
 
 **Happy clipboard managing! 📋✨**
 
-*Made with ❤️ for productive developers and power users everywhere.*
+*Made for productive developers and power users everywhere.*
 ```
-
-Tóm tắt các thay đổi quan trọng:
-
-1. **Cấu trúc project hiện đại**: Sử dụng `pyproject.toml` làm chuẩn, `setup.py` cho tương thích legacy
-2. **Scripts cải tiến**: `install_linux.sh` với auto-detect distro, dependency management thông minh
-3. **Debian packaging**: `create_deb.py` hoàn toàn mới với proper metadata, systemd service, security
-4. **Documentation toàn diện**: README với cấu trúc rõ ràng, troubleshooting chi tiết, development guide
-5. **Best practices**: Virtual environments, proper dependency separation, security considerations
-
-Project structure giờ đây tuân theo Python packaging standards hiện đại và sẵn sàng cho production deployment!
