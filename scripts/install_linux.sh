@@ -131,7 +131,6 @@ install_system_deps() {
                 python3-pip \
                 python3-venv \
                 python3-dev \
-                python3-tk \
                 build-essential \
                 libxcb-cursor0 \
                 libxcb1 \
@@ -152,8 +151,6 @@ install_system_deps() {
                 libfontconfig1 \
                 libdbus-1-3 \
                 xdotool \
-                x11-utils \
-                git \
                 || log_error "Failed to install system dependencies"
             ;;
         fedora|centos|rhel)
