@@ -55,35 +55,6 @@ check_python_version() {
     fi
 }
 
-validate_project_structure() {
-    log_info "Validating project structure..."
-
-    # Get script directory (project root)
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
-    # Critical files/directories validation
-    local critical_paths=(
-        "$PROJECT_ROOT/src"
-        "$PROJECT_ROOT/src/main.py"
-        "$PROJECT_ROOT/src/startup"
-        "$PROJECT_ROOT/requirements"
-    )
-
-    for path in "${critical_paths[@]}"; do
-        if [ ! -e "$path" ]; then
-            log_error "Critical path missing: $path"
-        fi
-    done
-
-    # Validate main.py can be imported
-    if ! python3 -c "import sys; sys.path.insert(0, '$PROJECT_ROOT/src'); import main" 2>/dev/null; then
-        log_warning "main.py validation failed - may have import issues"
-    else
-        log_success "Project structure validation passed"
-    fi
-}
-
 check_disk_space() {
     log_info "Checking disk space..."
 
@@ -145,9 +116,7 @@ install_system_deps() {
                 libxcb-xinerama0 \
                 libxcb-xkb1 \
                 libxcb-xinput0 \
-                libgl1-mesa-glx \
-                libglib2.0-0 \
-                libegl1-mesa \
+                libglib2.0-0t64 \
                 libfontconfig1 \
                 libdbus-1-3 \
                 xdotool \
@@ -539,7 +508,6 @@ main() {
     check_root
     check_python_version
     check_disk_space
-    validate_project_structure
 
     # System preparation
     log_info "=== System Preparation ==="
@@ -589,7 +557,7 @@ main() {
     echo "   • Test launcher: $APP_NAME --help"
     echo "   • Check logs: journalctl --user -u $APP_NAME -f"
     echo "   • Manual test: cd $INSTALL_DIR && source venv/bin/activate && python3 src/main.py"
-    echo "   • Config location: ~/.local/share/B1Clip/"
+    echo "   • Config location: ~/.config/B1Clip"
     echo ""
 }
 
