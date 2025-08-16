@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 class CrossPlatformSingleInstance:
     """Cross-platform single instance checker"""
 
-    def __init__(self, lock_name: str = "clipboard_manager.lock"):
+    def __init__(self, lock_name: str = "B1Clip.lock"):
         self.lock_name = lock_name
         self.platform = platform.system().lower()
         self.lock_file = None
@@ -27,7 +27,7 @@ class CrossPlatformSingleInstance:
             self.lock_path = Path(tempfile.gettempdir()) / f"{lock_name}"
         else:
             # Linux/macOS
-            self.lock_path = Path.home() / f".{lock_name}"
+            self.lock_path = Path.home() / ".config" / "B1Clip" / f".{lock_name}"
 
     def acquire_lock(self) -> bool:
         """Acquire lock for single instance check"""

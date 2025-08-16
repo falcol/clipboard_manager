@@ -3,5 +3,5 @@
 # Stop clipboard manager and clean up: Another instance is already running
 pkill -f "python.*main.py" 2>/dev/null
 sleep 1
-rm ~/.clipboard_manager.lock 2>/dev/null
+rm ~/.config/B1Clip/.B1Clip.lock 2>/dev/null
 echo "B1Clip stopped and cleaned up"

@@ -12,6 +12,7 @@ BIN_DIR="/usr/local/bin"
 DESKTOP_DIR="/usr/share/applications"
 ICON_DIR="/usr/share/icons/hicolor/48x48/apps"
 SYSTEMD_DIR="/etc/systemd/user"
+CONFIG_DIR="~/.config/$APP_NAME"
 
 # Colors for output
 RED='\033[0;31m'
@@ -481,6 +482,7 @@ rm -f "$DESKTOP_DIR/$APP_NAME.desktop"
 rm -f "$ICON_DIR/$APP_NAME.png"
 rm -f "$ICON_DIR/$APP_NAME.svg"
 rm -f "$SYSTEMD_DIR/$APP_NAME.service"
+rm -rf "$CONFIG_DIR"
 
 # Update databases
 if command -v update-desktop-database > /dev/null; then
