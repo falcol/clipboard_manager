@@ -69,42 +69,7 @@ sudo dpkg -i clipboard-manager_1.0.0_all.deb
 5. **Pin important items** with 📌 to keep them permanently
 6. **Right-click tray icon** → Settings to configure preferences
 
-## 🔧 Configuration
-
-### Settings Window
-
-Access via right-click system tray icon → Settings:
-
-- **General**:
-  - Maximum clipboard items (10-100, default: 25)
-  - Maximum text length (1KB-2MB, default: 1MB)
-  - Auto-start with system
-
-- **Appearance**:
-  - Theme selection (Dark Win11, AMOLED, Solarized, Nord, Vespera)
-
-- **Performance & RAM**:
-  - Cache size (10-100 MB, default: 25MB)
-  - Thumbnail size (32-128px, default: 64px)
-  - Image quality (50-95%, default: 85%)
-  - Cleanup interval (1-48 hours, default: 12h)
-
-### Configuration Files
-
-- **Linux**: `~/.local/share/B1Clip/`
-
-### Hotkey Customization
-
-Global hotkeys by platform:
-- **Linux**: `Super+C` (configurable in settings)
-
 ## 🛠️ Development
-
-### Setting up Development Environment
-
-```bash
-<code_block_to_apply_changes_from>
-```
 
 ### Project Dependencies
 
@@ -121,14 +86,6 @@ Global hotkeys by platform:
 - **evdev**: Linux input device access
 - **python-xlib**: X11 protocol access
 
-#### Development (dev extra)
-- **pytest**: Testing framework
-- **pytest-qt**: Qt testing support
-- **black**: Code formatting
-- **flake8**: Code linting
-- **mypy**: Type checking
-- **pre-commit**: Git hooks
-
 ### Building Packages
 
 ```bash
@@ -139,24 +96,6 @@ python -m build
 python scripts/create_deb.py
 
 ```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=src
-
-# Run specific test categories
-pytest -m "not slow"      # Skip slow tests
-pytest -m integration     # Only integration tests
-
-# Run Qt-specific tests
-pytest tests/test_ui.py
-```
-
 ## 📦 Packaging & Distribution
 
 ### PyInstaller (Standalone Executable)
@@ -169,21 +108,6 @@ pip install pyinstaller
 pyinstaller --onefile --noconsole --add-data "resources:resources" src/main.py
 
 # The executable will be in dist/
-```
-
-### Docker Deployment
-
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements/base.txt .
-RUN pip install -r base.txt
-
-COPY src/ ./src/
-COPY resources/ ./resources/
-
-CMD ["python", "src/main.py"]
 ```
 
 ## 🐛 Troubleshooting
@@ -232,13 +156,6 @@ journalctl --user -u clipboard-manager -f
 # View logs (systemd journal)
 journalctl --user -xe
 ```
-
-### Performance Optimization
-
-- Reduce cache size in settings for lower RAM usage
-- Decrease thumbnail size for faster loading
-- Increase cleanup interval for less frequent maintenance
-- Disable image preview for text-only workflows
 
 ## 🛡️ Privacy & Security
 
