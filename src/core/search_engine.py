@@ -10,7 +10,7 @@ import logging
 from difflib import SequenceMatcher
 from typing import Dict, List
 
-from core.database import EnhancedClipboardDatabase
+from core.database import ClipboardDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class SearchEngine:
     """Advanced search engine with multiple search strategies"""
 
-    def __init__(self, database: EnhancedClipboardDatabase):
+    def __init__(self, database: ClipboardDatabase):
         self.database = database
 
     def search(self, query: str, limit: int = 25) -> List[Dict]:

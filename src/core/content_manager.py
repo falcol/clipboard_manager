@@ -274,7 +274,7 @@ class ContentManager:
 
     def _extract_keywords(self, content: str) -> list:
         """Extract searchable keywords from content"""
-        # Simple keyword extraction - can be enhanced with NLP
+        # Simple keyword extraction - can be with NLP
         words = content.lower().split()
 
         # Filter out common words and short words

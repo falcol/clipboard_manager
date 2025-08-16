@@ -18,7 +18,7 @@ class AboutPopup(QDialog):
         super().__init__(parent)
 
         # macOS-like lightweight dialog
-        self.setWindowTitle("About Clipboard Manager")
+        self.setWindowTitle("About B1Clip")
         self.setObjectName("aboutPopup")
         self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.WindowStaysOnTopHint)
         self.setMinimumSize(380, 260)
@@ -33,7 +33,7 @@ class AboutPopup(QDialog):
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(0)
 
-        title_label = QLabel("Clipboard Manager")
+        title_label = QLabel("B1Clip")
         title_label.setObjectName("aboutTitle")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 

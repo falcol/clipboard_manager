@@ -2,5 +2,9 @@
 -r base.txt
 
 # Linux-specific input handling
+keyboard==0.13.5
 evdev==1.9.2
 python-xlib==0.33
+
+# Optional: better system tray support
+plyer==2.1.0

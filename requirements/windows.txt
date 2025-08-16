@@ -1,0 +1,9 @@
+# Include base requirements
+-r base.txt
+
+# Windows-specific input handling
+keyboard==0.13.5
+pywin32==306
+
+# Windows-specific system monitoring (optional)
+wmi==1.5.1

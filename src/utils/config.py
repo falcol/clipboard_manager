@@ -1,10 +1,10 @@
 # ===============================================
-# FILE: src/utils/enhanced_config.py
-# Enhanced configuration with Phase 1 features
+# FILE: src/utils/_config.py
+#  configuration with Phase 1 features
 # ===============================================
 
 """
-Enhanced configuration management with Phase 1 features
+ configuration management with Phase 1 features
 """
 import json
 import logging
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    """Enhanced configuration manager with Phase 1 features"""
+    """ configuration manager with Phase 1 features"""
 
     DEFAULT_CONFIG = {
         # Basic settings
@@ -26,7 +26,7 @@ class Config:
         "autostart": False,
         "theme": "dark_win11",
         "show_notifications": False,
-        # Enhanced Phase 1 settings
+        #  Phase 1 settings
         "hotkey": "super+c",  # Changed from super+c to match Windows 11
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
@@ -80,7 +80,7 @@ class Config:
         self.load()
 
     def load(self):
-        """Load enhanced configuration from file"""
+        """Load  configuration from file"""
         try:
             if self.config_path.exists():
                 with open(self.config_path, "r") as f:
@@ -92,15 +92,15 @@ class Config:
                     # Handle version migration
                     self._migrate_config_if_needed()
 
-                logger.info(f"Enhanced configuration loaded from {self.config_path}")
+                logger.info(f"configuration loaded from {self.config_path}")
             else:
-                logger.info("No config file found, using enhanced defaults")
+                logger.info("No config file found, using  defaults")
                 self.save()  # Create config file with defaults
         except Exception as e:
-            logger.error(f"Failed to load enhanced config: {e}")
+            logger.error(f"Failed to load  config: {e}")
 
     def save(self):
-        """Save enhanced configuration to file"""
+        """Save  configuration to file"""
         try:
             # Add metadata with real timestamp
             from datetime import datetime
@@ -116,12 +116,12 @@ class Config:
 
             with open(self.config_path, "w") as f:
                 json.dump(config_with_metadata, f, indent=2)
-            logger.info(f"Enhanced configuration saved to {self.config_path}")
+            logger.info(f" configuration saved to {self.config_path}")
         except Exception as e:
-            logger.error(f"Failed to save enhanced config: {e}")
+            logger.error(f"Failed to save  config: {e}")
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value with enhanced features"""
+        """Get configuration value with  features"""
         return self.config.get(key, default)
 
     def set(self, key: str, value: Any):
@@ -184,7 +184,7 @@ class Config:
                 logger.info(f"Added missing config key: {key}")
 
     def reset_to_defaults(self):
-        """Reset configuration to enhanced defaults"""
+        """Reset configuration to  defaults"""
         self.config = self.DEFAULT_CONFIG.copy()
         self.save()
 

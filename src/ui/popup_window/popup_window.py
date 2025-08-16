@@ -1,6 +1,6 @@
 # clipboard_manager/src/ui/popup_window.py
 """
-Windows 10 Dark Mode Clipboard Manager Popup Window
+Windows 10 Dark Mode B1Clip Popup Window
 """
 import logging
 import sys
@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.database import EnhancedClipboardDatabase as ClipboardDatabase
+from core.database import ClipboardDatabase
 from ui.popup_window.clipboard_item import ClipboardItem
 from ui.popup_window.search_bar import SearchBar
 from utils.config import Config
@@ -124,7 +124,7 @@ class PopupWindow(QWidget):
         title_icon.setFont(QFont(QApplication.font().family(), 14))
         title_layout.addWidget(title_icon)
 
-        title_label = QLabel("Clipboard Manager")
+        title_label = QLabel("B1Clip")
         title_label.setObjectName("titleLabel")  # Use QSS for styling
         title_label.setFont(QFont(QApplication.font().family(), 12, QFont.Weight.Bold))
         title_layout.addWidget(title_label)
@@ -274,7 +274,7 @@ class PopupWindow(QWidget):
         self.clipboard_items.clear()
 
         # Load items from database
-        self.all_items = self.database.get_items(limit=self.config.get("max_items", 50))
+        self.all_items = self.database.get_items(limit=self.config.get("max_items", 25))
 
         # Apply search filter
         if self.current_search.strip():
@@ -528,7 +528,7 @@ class PopupWindow(QWidget):
             return False
 
     def _copy_image_to_clipboard(self, item_data: Dict) -> bool:
-        """Copy image content to clipboard like Windows Clipboard Manager"""
+        """Copy image content to clipboard like Windows B1Clip"""
         try:
             logger.info(f"Copying image item: {item_data['id']}")
 

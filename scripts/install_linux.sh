@@ -1,11 +1,11 @@
 #!/bin/bash
 # clipboard_manager/scripts/install_linux.sh
-# Enhanced Linux installation script with comprehensive validation and error handling
+# Linux installation script with comprehensive validation and error handling
 
 set -e
 
 # Configuration
-APP_NAME="clipboard-manager"
+APP_NAME="B1Clip"
 APP_VERSION="1.0.0"
 INSTALL_DIR="/opt/$APP_NAME"
 BIN_DIR="/usr/local/bin"
@@ -38,7 +38,7 @@ log_error() {
     exit 1
 }
 
-# Enhanced validation functions
+# validation functions
 check_python_version() {
     log_info "Checking Python version..."
     if command -v python3 >/dev/null 2>&1; then
@@ -117,7 +117,7 @@ detect_distro() {
     fi
 }
 
-# Enhanced system dependencies installation
+# system dependencies installation
 install_system_deps() {
     local distro=$(detect_distro)
     log_info "Detected distribution: $distro"
@@ -131,6 +131,7 @@ install_system_deps() {
                 python3-pip \
                 python3-venv \
                 python3-dev \
+                build-essential \
                 libxcb-cursor0 \
                 libxcb1 \
                 libxcb-icccm4 \
@@ -143,10 +144,13 @@ install_system_deps() {
                 libxcb-xfixes0 \
                 libxcb-xinerama0 \
                 libxcb-xkb1 \
+                libxcb-xinput0 \
                 libgl1-mesa-glx \
                 libglib2.0-0 \
+                libegl1-mesa \
+                libfontconfig1 \
+                libdbus-1-3 \
                 xdotool \
-                git \
                 || log_error "Failed to install system dependencies"
             ;;
         fedora|centos|rhel)
@@ -207,7 +211,7 @@ create_directories() {
     mkdir -p "$SYSTEMD_DIR" || log_error "Failed to create $SYSTEMD_DIR"
 }
 
-# Enhanced file copying with validation
+# file copying with validation
 copy_files() {
     log_info "Copying application files..."
 
@@ -253,7 +257,7 @@ copy_files() {
     [ -f "$PROJECT_ROOT/LICENSE" ] && cp "$PROJECT_ROOT/LICENSE" "$INSTALL_DIR/"
 }
 
-# Enhanced Python dependencies installation
+# Python dependencies installation
 install_python_deps() {
     log_info "Installing Python dependencies..."
 
@@ -296,17 +300,17 @@ install_python_deps() {
     deactivate
 }
 
-# Enhanced launcher script with robust error handling
+# launcher script with robust error handling
 create_launcher() {
     log_info "Creating launcher script..."
 
     cat > "$BIN_DIR/$APP_NAME" << 'EOF'
 #!/bin/bash
-# Enhanced Clipboard Manager launcher script
+# B1Clip launcher script
 
 set -e
 
-APP_DIR="/opt/clipboard-manager"
+APP_DIR="/opt/B1Clip"
 VENV_PATH="$APP_DIR/venv"
 MAIN_SCRIPT="$APP_DIR/src/main.py"
 
@@ -318,15 +322,15 @@ log_error() {
 
 # Validate installation
 if [ ! -d "$APP_DIR" ]; then
-    log_error "Application not found. Please reinstall clipboard-manager."
+    log_error "Application not found. Please reinstall B1Clip."
 fi
 
 if [ ! -f "$VENV_PATH/bin/activate" ]; then
-    log_error "Virtual environment not found. Please reinstall clipboard-manager."
+    log_error "Virtual environment not found. Please reinstall B1Clip."
 fi
 
 if [ ! -f "$MAIN_SCRIPT" ]; then
-    log_error "Main script not found. Please reinstall clipboard-manager."
+    log_error "Main script not found. Please reinstall B1Clip."
 fi
 
 # Change to application directory
@@ -346,7 +350,7 @@ else
     # Running in background (from desktop/systemd)
     python3 "$MAIN_SCRIPT" "$@" 2>/dev/null || {
         # If fails, try to log error
-        echo "$(date): Clipboard Manager failed to start" >> ~/.local/share/clipboard-manager-errors.log
+        echo "$(date): B1Clip failed to start" >> ~/.local/share/clipboard-manager-errors.log
         exit 1
     }
 fi
@@ -355,7 +359,7 @@ EOF
     chmod +x "$BIN_DIR/$APP_NAME" || log_error "Failed to make launcher executable"
 }
 
-# Enhanced desktop entry
+# desktop entry
 create_desktop_entry() {
     log_info "Creating desktop entry..."
 
@@ -363,7 +367,7 @@ create_desktop_entry() {
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Clipboard Manager
+Name=B1Clip
 GenericName=Clipboard History Manager
 Comment=A modern clipboard history manager with global hotkey support
 Exec=$APP_NAME
@@ -371,7 +375,7 @@ Icon=$APP_NAME
 Terminal=false
 Categories=Utility;System;Qt;AccessX;
 Keywords=clipboard;history;manager;copy;paste;productivity;
-StartupWMClass=clipboard-manager
+StartupWMClass=B1Clip
 StartupNotify=true
 MimeType=text/plain;text/html;text/rtf;image/png;image/jpeg;
 X-GNOME-Autostart-enabled=false
@@ -424,14 +428,14 @@ EOF
     fi
 }
 
-# Enhanced systemd service with better configuration
+# systemd service with better configuration
 create_systemd_service() {
     log_info "Creating systemd user service..."
 
     cat > "$SYSTEMD_DIR/$APP_NAME.service" << EOF
 [Unit]
-Description=Clipboard Manager - Modern clipboard history manager
-Documentation=https://github.com/clipboard-manager/clipboard-manager
+Description=B1Clip - Modern clipboard history manager
+Documentation=https://github.com/falcol/clipboard_manager
 After=graphical-session.target
 Wants=graphical-session.target
 
@@ -492,9 +496,9 @@ create_uninstall_script() {
 
     cat > "$BIN_DIR/${APP_NAME}-uninstall" << EOF
 #!/bin/bash
-# Clipboard Manager uninstall script
+# B1Clip uninstall script
 
-echo "🗑️  Uninstalling Clipboard Manager..."
+echo "🗑️  Uninstalling B1Clip..."
 
 # Stop service if running
 systemctl --user stop $APP_NAME 2>/dev/null || true
@@ -518,16 +522,16 @@ if command -v gtk-update-icon-cache > /dev/null; then
     gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
 fi
 
-echo "✅ Clipboard Manager uninstalled successfully!"
+echo "✅ B1Clip uninstalled successfully!"
 EOF
 
     chmod +x "$BIN_DIR/${APP_NAME}-uninstall"
 }
 
-# Enhanced main installation function with comprehensive validation
+# main installation function with comprehensive validation
 main() {
-    echo "🚀 Installing Clipboard Manager v$APP_VERSION..."
-    echo "📦 Enhanced installation with comprehensive validation"
+    echo "🚀 Installing B1Clip v$APP_VERSION..."
+    echo "📦 installation with comprehensive validation"
     echo ""
 
     # Pre-installation checks
@@ -574,7 +578,7 @@ main() {
     echo ""
     echo "📋 You can now:"
     echo "   • Run from terminal: $APP_NAME"
-    echo "   • Find in applications menu: Clipboard Manager"
+    echo "   • Find in applications menu: B1Clip"
     echo "   • Use global hotkey: Super+C"
     echo "   • Enable autostart: systemctl --user enable $APP_NAME"
     echo "   • Start service now: systemctl --user start $APP_NAME"

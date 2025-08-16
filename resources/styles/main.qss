@@ -1,5 +1,5 @@
 /* ===============================================
-   Clipboard Manager - Main Stylesheet
+   B1Clip - Main Stylesheet
    EXACT COPY of styles.py + ALL inline styles
    =============================================== */
 
@@ -675,7 +675,7 @@ QFrame#clipboardItem[selected="true"] {
 }
 
 /* ===============================================
-   FORM CONTROLS - Enhanced hover for theme selection
+   FORM CONTROLS - hover for theme selection
    =============================================== */
 
 QComboBox#formControl {

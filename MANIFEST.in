@@ -1,0 +1,28 @@
+# Include resources directory (project root level)
+recursive-include resources *.qss *.png *.ico *.svg *.json
+recursive-include resources/styles *.qss
+recursive-include resources/styles/themes *.qss
+recursive-include resources/icons *.png *.ico *.svg
+
+# Include requirements files
+recursive-include requirements *.txt
+
+# Include documentation
+include README.md
+include LICENSE
+include pyproject.toml
+
+# Include scripts
+recursive-include scripts *.py *.sh
+
+# Exclude development and build files
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.pyd
+global-exclude __pycache__
+global-exclude .git*
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude *.log
+global-exclude .DS_Store
+global-exclude Thumbs.db

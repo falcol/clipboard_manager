@@ -1,6 +1,6 @@
 # clipboard_manager/src/core/hotkey_manager.py
 """
-Global hotkey management using pynput with enhanced cross-platform support.
+Global hotkey management using pynput with cross-platform support.
 
 Reads the hotkey combination from Config (e.g. "super+c", "ctrl+shift+v").
 Falls back to a reasonable per-platform default if parsing fails.
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class HotkeyManager(QObject):
-    """Enhanced global hotkey manager with cross-platform support"""
+    """global hotkey manager with cross-platform support"""
 
     hotkey_triggered = pyqtSignal()
 
@@ -33,7 +33,7 @@ class HotkeyManager(QObject):
         self.current_platform = platform.system().lower()
         self.config = config
 
-        # Enhanced cross-platform hotkey detection
+        # cross-platform hotkey detection
         self.setup_hotkey_combination()
 
         self.pressed_keys = set()
@@ -136,7 +136,7 @@ class HotkeyManager(QObject):
         return "cmd+c"
 
     def start(self):
-        """Start global hotkey listener with enhanced error handling"""
+        """Start global hotkey listener with error handling"""
         if self.running:
             return
 
@@ -202,7 +202,7 @@ class HotkeyManager(QObject):
         logger.info("Hotkey manager stopped")
 
     def on_key_press(self, key):
-        """Enhanced key press handler with detailed logging"""
+        """key press handler with detailed logging"""
         if not self.running:
             return
 
@@ -234,7 +234,7 @@ class HotkeyManager(QObject):
             logger.error(f"Error in key press handler: {e}")
 
     def on_key_release(self, key):
-        """Enhanced key release handler"""
+        """key release handler"""
         if not self.running:
             return
 

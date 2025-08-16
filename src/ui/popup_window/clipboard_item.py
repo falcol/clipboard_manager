@@ -1,6 +1,6 @@
 # clipboard_manager/src/ui/popup_window/clipboard_item.py
 """
-Windows 10 Dark Mode Clipboard Manager Popup Window
+Windows 10 Dark Mode B1Clip Popup Window
 """
 import logging
 from typing import Dict

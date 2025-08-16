@@ -1,10 +1,10 @@
 # ===============================================
 # FILE: src/core/enhanced_clipboard_watcher.py
-# Enhanced clipboard watcher using new content manager
+# clipboard watcher using new content manager
 # ===============================================
 
 """
-Enhanced clipboard watcher with improved content management
+clipboard watcher with improved content management
 """
 import hashlib
 import logging
@@ -17,20 +17,20 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication
 
 from core.content_manager import ContentManager
-from core.database import EnhancedClipboardDatabase
+from core.database import ClipboardDatabase
 from utils.config import Config
 
 logger = logging.getLogger(__name__)
 
 
-class EnhancedClipboardWatcher(QObject):
-    """Enhanced clipboard watcher with intelligent content management"""
+class ClipboardWatcher(QObject):
+    """clipboard watcher with intelligent content management"""
 
     content_changed = pyqtSignal(str, dict)  # content_type, item_data
 
     def __init__(
         self,
-        database: EnhancedClipboardDatabase,
+        database: ClipboardDatabase,
         content_manager: ContentManager,
         config: Config,
     ):
@@ -61,13 +61,13 @@ class EnhancedClipboardWatcher(QObject):
         self._executor = ThreadPoolExecutor(max_workers=2)
 
     def start(self):
-        """Start enhanced clipboard monitoring"""
+        """Start clipboard monitoring"""
         self.running = True
         # Start polling only if signal cannot be used
         if not getattr(self, "_signal_connected", False):
             poll_ms = int(self.config.get("clipboard_poll_ms", 300))
             self.timer.start(poll_ms)  # Fallback polling
-        logger.info("Enhanced clipboard watcher started")
+        logger.info("clipboard watcher started")
 
     def stop(self):
         """Stop clipboard monitoring"""
@@ -81,7 +81,7 @@ class EnhancedClipboardWatcher(QObject):
                 self._executor.shutdown(wait=False, cancel_futures=True)
         except Exception as e:
             logger.error(f"Error shutting down clipboard watcher executor: {e}")
-        logger.info("Enhanced clipboard watcher stopped")
+        logger.info("clipboard watcher stopped")
 
     def _on_clipboard_changed(self):
         """Debounced handler for clipboard dataChanged signal."""
@@ -92,7 +92,7 @@ class EnhancedClipboardWatcher(QObject):
         self._debounce_timer.start(interval_ms)
 
     def check_clipboard(self):
-        """Enhanced clipboard change detection - preserve ALL formats like Windows"""
+        """clipboard change detection - preserve ALL formats like Windows"""
         if not self.running:
             return
 
@@ -184,7 +184,7 @@ class EnhancedClipboardWatcher(QObject):
             logger.warning(f"Text content too large ({len(content)} chars), skipping")
             return
 
-        # Enhanced metadata with MIME type info
+        # metadata with MIME type info
         metadata = {
             "format": content_type,
             "source": "clipboard_watch",
@@ -216,7 +216,7 @@ class EnhancedClipboardWatcher(QObject):
         self._executor.submit(_worker)
 
     def handle_image_content(self, pixmap: QPixmap):
-        """Enhanced image content handling"""
+        """image content handling"""
         if pixmap.isNull():
             return
 
@@ -265,7 +265,7 @@ class EnhancedClipboardWatcher(QObject):
                         }
                         self.content_changed.emit("image", item_data)
                         logger.debug(
-                            f"Added enhanced image item {item_id} ({pixmap.width()}x{pixmap.height()})"
+                            f"Added image item {item_id} ({pixmap.width()}x{pixmap.height()})"
                         )
                 except Exception as e:
                     logger.error(f"DB worker error (image): {e}")
@@ -301,7 +301,7 @@ class EnhancedClipboardWatcher(QObject):
             )
             return
 
-        # Enhanced metadata with ALL formats preserved
+        # metadata with ALL formats preserved
         metadata = {
             "format": primary_format,
             "source": "clipboard_watch",

@@ -1,10 +1,10 @@
 # ===============================================
 # FILE: src/core/enhanced_database.py
-# New enhanced database with optimized schema
+# New database with optimized schema
 # ===============================================
 
 """
-Enhanced SQLite database with optimized schema for clipboard history
+SQLite database with optimized schema for clipboard history
 Replaces the old database.py file
 """
 import hashlib
@@ -20,8 +20,8 @@ from appdirs import user_data_dir
 logger = logging.getLogger(__name__)
 
 
-class EnhancedClipboardDatabase:
-    """Enhanced database with optimized schema and performance"""
+class ClipboardDatabase:
+    """database with optimized schema and performance"""
 
     def __init__(self, db_path: Optional[Path] = None):
         if db_path is None:
@@ -158,7 +158,7 @@ class EnhancedClipboardDatabase:
                 else:
                     preview = self._create_text_preview(content)
 
-                # Enhanced metadata with MIME info
+                # metadata with MIME info
                 enhanced_metadata = metadata or {}
                 enhanced_metadata.update(
                     {
@@ -379,7 +379,7 @@ class EnhancedClipboardDatabase:
         include_pinned: bool = True,
         search_query: Optional[str] = None,
     ) -> List[Dict]:
-        """Get clipboard items with enhanced filtering and search"""
+        """Get clipboard items with filtering and search"""
         if self.connection is None:
             logger.error("Database connection not initialized")
             return []
@@ -451,7 +451,7 @@ class EnhancedClipboardDatabase:
         if not query:
             return self.get_items(limit=limit)
 
-        # Use the enhanced get_items with search
+        # Use the get_items with search
         results = self.get_items(limit=limit, search_query=query)
 
         # TODO: Add fuzzy matching and content-based search here
@@ -612,7 +612,7 @@ class EnhancedClipboardDatabase:
 
     def _generate_search_content(self, content: str) -> str:
         """Generate searchable content (lowercase, cleaned)"""
-        # Simple implementation - can be enhanced with stemming, etc.
+        # Simple implementation - can be with stemming, etc.
         return content.lower().strip()
 
     def _cleanup_old_items(self, max_items: int = 100):
@@ -658,7 +658,7 @@ class EnhancedClipboardDatabase:
             logger.error(f"Failed to cleanup old items: {e}")
 
     def get_stats(self) -> Dict:
-        """Get enhanced database statistics"""
+        """Get database statistics"""
         if self.connection is None:
             logger.error("Database connection not initialized")
             return {}
@@ -722,4 +722,4 @@ class EnhancedClipboardDatabase:
         """Close database connection"""
         if self.connection:
             self.connection.close()
-            logger.info("Enhanced database connection closed")
+            logger.info("database connection closed")

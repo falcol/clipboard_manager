@@ -1,6 +1,6 @@
 # clipboard_manager/src/ui/popup_window/search_bar.py
 """
-Windows 10 Dark Mode Clipboard Manager Popup Window Search Bar
+Windows 10 Dark Mode B1Clip Popup Window Search Bar
 """
 import logging
 
