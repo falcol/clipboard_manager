@@ -375,7 +375,7 @@ Icon=help-about
         icon_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if icon exists in resources
-        resource_icon = self.project_root / "resources" / "icons" / "app.png"
+        resource_icon = self.project_root / "resources" / "icons" / "app_icon.png"
         if resource_icon.exists():
             shutil.copy2(resource_icon, icon_dir / f"{self.app_name}.png")
             return

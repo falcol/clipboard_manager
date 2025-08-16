@@ -106,7 +106,7 @@ class AutostartManager:
         icon_dir = Path(__file__).parent.parent.parent / "resources" / "icons"
 
         # Try specific icon first, then fallback to any available
-        specific_icon = icon_dir / "app.png"
+        specific_icon = icon_dir / "app_icon.png"
         if specific_icon.exists():
             icon_path = str(specific_icon)
         else:

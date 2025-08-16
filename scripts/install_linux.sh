@@ -361,8 +361,8 @@ create_icon() {
     log_info "Creating application icon..."
 
     # Check if icon exists in resources
-    if [ -f "$INSTALL_DIR/resources/icons/app.png" ]; then
-        cp "$INSTALL_DIR/resources/icons/app.png" "$ICON_DIR/$APP_NAME.png"
+    if [ -f "$INSTALL_DIR/resources/icons/app_icon.png" ]; then
+        cp "$INSTALL_DIR/resources/icons/app_icon.png" "$ICON_DIR/$APP_NAME.png"
     else
         # Create a simple SVG icon
         cat > "/tmp/$APP_NAME.svg" << 'EOF'
