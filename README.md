@@ -199,7 +199,7 @@ sudo apt install -y \
     libxcb-cursor0 libxcb1 libxcb-icccm4 libxcb-image0 \
     libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
     libxcb-shape0 libxcb-sync1 libxcb-xfixes0 \
-    libxcb-xinerama0 libxcb-xkb1 libgl1-mesa-glx libglib2.0-0
+    libxcb-xinerama0 libxcb-xkb1 libglib2.0-0t64
 ```
 
 #### Permission Issues (Linux)
@@ -250,11 +250,11 @@ journalctl --user -xe
 
 ### Data Locations
 
-- **Database**: `~/.local/share/B1Clip/clipboard.db`
-- **Images**: `~/.local/share/B1Clip/images/`
-- **Thumbnails**: `~/.local/share/B1Clip/thumbnails/`
-- **Configuration**: `~/.local/share/B1Clip/config.json`
-- **Logs**: `~/.local/share/B1Clip/logs/`
+- **Database**: `~/.config/B1Clip/clipboard.db`
+- **Images**: `~/.config/B1Clip/images/`
+- **Thumbnails**: `~/.config/B1Clip/thumbnails/`
+- **Configuration**: `~/.config/B1Clip/config.json`
+- **Logs**: `~/.config/B1Clip/logs/`
 
 ## 🚀 Performance & Technical Details
 
