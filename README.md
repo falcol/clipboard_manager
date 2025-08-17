@@ -96,19 +96,6 @@ python -m build
 python scripts/create_deb.py
 
 ```
-## 📦 Packaging & Distribution
-
-### PyInstaller (Standalone Executable)
-
-```bash
-# Install PyInstaller
-pip install pyinstaller
-
-# Create standalone executable
-pyinstaller --onefile --noconsole --add-data "resources:resources" src/main.py
-
-# The executable will be in dist/
-```
 
 ## 🐛 Troubleshooting
 
@@ -141,17 +128,17 @@ The application automatically handles high DPI displays. If issues persist:
 ```bash
 # Force DPI scaling
 export QT_SCALE_FACTOR=1.5
-clipboard-manager
+B1Clip
 ```
 
 ### Debugging
 
 ```bash
 # Enable debug logging
-clipboard-manager --debug
+B1Clip --debug
 
 # View logs (Linux)
-journalctl --user -u clipboard-manager -f
+journalctl --user -u B1Clip -f
 
 # View logs (systemd journal)
 journalctl --user -xe
@@ -206,8 +193,3 @@ journalctl --user -xe
 - **Contributors**: All the wonderful people who help improve this project
 
 ---
-
-**Happy clipboard managing! 📋✨**
-
-*Made for productive developers and power users everywhere.*
-```
