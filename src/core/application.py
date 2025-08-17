@@ -29,6 +29,7 @@ from utils.single_instance import CrossPlatformSingleInstance
 
 logger = get_logger(__name__)
 
+
 class ClipboardManager:
     """B1Clip with modern UI and auto-hide focus"""
 
@@ -162,7 +163,6 @@ class ClipboardManager:
         )  # Convert to ms
         self.cleanup_timer.start(cleanup_interval)
 
-
         logger.info(
             f"Performance monitoring enabled, cleanup every {cleanup_interval // 3600000} hours"
         )
@@ -288,7 +288,6 @@ class ClipboardManager:
                 except Exception:
                     pass
 
-
             logger.info(f"Applied global theme: {theme_name}")
         except Exception as e:
 
@@ -325,7 +324,6 @@ class ClipboardManager:
                     ),
                 )
 
-
             logger.info("B1Clip started successfully")
 
             # Setup graceful shutdown
@@ -336,7 +334,6 @@ class ClipboardManager:
             return self.app.exec()
 
         except KeyboardInterrupt:
-
             logger.info("Application interrupted by user")
             return 0
         except Exception as e:
