@@ -1,6 +1,6 @@
 # clipboard_manager/src/ui/system_tray.py
 """
-Enhanced system tray integration with modern menu design
+system tray integration with modern menu design
 """
 import logging
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class SystemTray(QObject):
-    """Enhanced system tray icon and menu with modern design"""
+    """system tray icon and menu with modern design"""
 
     quit_requested = pyqtSignal()
 
@@ -27,7 +27,7 @@ class SystemTray(QObject):
         # Create icon and menu before showing
         self.tray_icon = QSystemTrayIcon()
         self.tray_icon.setIcon(self.create_modern_icon())
-        self.tray_icon.setToolTip("Clipboard Manager - Click to open")
+        self.tray_icon.setToolTip("B1Clip - Click to open")
 
         # Create menu and preload deeply
         self.menu = self.create_modern_menu()
@@ -89,7 +89,7 @@ class SystemTray(QObject):
         return QIcon(pixmap)
 
     def create_modern_menu(self):
-        """Create modern context menu with enhanced styling"""
+        """Create modern context menu with styling"""
         menu = QMenu()
 
         # Styling is applied globally to QApplication; avoid redundant menu-specific QSS
@@ -114,7 +114,7 @@ class SystemTray(QObject):
         menu.addSeparator()
 
         # Quit action
-        quit_action = menu.addAction("❌  Quit Clipboard Manager")
+        quit_action = menu.addAction("❌  Quit B1Clip")
         quit_action.setFont(QFont(QApplication.font().family(), 9))
         # Ensure tray icon hides before quitting to avoid orphan tray entries
         def _on_quit():
@@ -148,13 +148,13 @@ class SystemTray(QObject):
         QApplication.style().polish(self.menu)
 
     def show(self):
-        """Show tray icon with enhanced features"""
+        """Show tray icon with features"""
         if not QSystemTrayIcon.isSystemTrayAvailable():
             logger.error("System tray is not available")
             return False
 
         self.tray_icon.show()
-        logger.info("Enhanced system tray icon shown")
+        logger.info("system tray icon shown")
         return True
 
     def hide(self):
@@ -184,7 +184,7 @@ class SystemTray(QObject):
         )
 
     def show_clipboard(self):
-        """Show clipboard popup with enhanced positioning"""
+        """Show clipboard popup with positioning"""
         # Show active state
         self.tray_icon.setIcon(self.create_modern_icon(active=True))
 
@@ -197,7 +197,7 @@ class SystemTray(QObject):
         )
 
     def show_settings(self):
-        """Show settings window with enhanced presentation"""
+        """Show settings window with presentation"""
         self.settings_window.show()
         self.settings_window.raise_()
         self.settings_window.activateWindow()
@@ -223,8 +223,8 @@ class SystemTray(QObject):
             logger.error(f"Error showing about popup: {e}")
             # Fallback: show as tray message
             self.tray_icon.showMessage(
-                "Clipboard Manager",
-                "🔷 Clipboard Manager v1.0\nA modern clipboard history manager",
+                "B1Clip",
+                "🔷 B1Clip v1.0\nA modern clipboard history manager",
                 QSystemTrayIcon.MessageIcon.Information,
                 3000,
             )

@@ -8,13 +8,14 @@ shiboken6==6.9.1
 appdirs==1.4.4
 setproctitle==1.3.6
 
-# Input handling (cross-platform)
+# Input handling (cross-platform only)
 pynput==1.8.1
-keyboard==0.13.5
-python-xlib==0.33  # Linux only, conditional install
 
 # Image processing
 pillow==11.3.0
+
+# System monitoring
+psutil==7.0.0
 
 # Utility libraries
 click==8.2.1

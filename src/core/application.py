@@ -1,6 +1,6 @@
 # clipboard_manager/src/core/application.py
 """
-Enhanced Clipboard Manager main application class
+B1Clip main application class
 """
 
 import contextlib
@@ -13,9 +13,9 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory, QSystemTrayIcon
 
-from core.clipboard_watcher import EnhancedClipboardWatcher
+from core.clipboard_watcher import ClipboardWatcher
 from core.content_manager import ContentManager
-from core.database import EnhancedClipboardDatabase
+from core.database import ClipboardDatabase
 from core.hotkey_manager import HotkeyManager
 from core.search_engine import SearchEngine
 from ui.popup_window import PopupWindow
@@ -27,9 +27,11 @@ from utils.qss_loader import QSSLoader
 from utils.qt_setup import setup_qt_environment
 from utils.single_instance import CrossPlatformSingleInstance
 
+logger = get_logger(__name__)
 
-class EnhancedClipboardManager:
-    """Enhanced Clipboard Manager with modern UI and auto-hide focus"""
+
+class ClipboardManager:
+    """B1Clip with modern UI and auto-hide focus"""
 
     def __init__(self):
         # Setup Qt environment
@@ -48,7 +50,7 @@ class EnhancedClipboardManager:
             self.app.setQuitOnLastWindowClosed(False)
 
             # Set application properties
-            self.app.setApplicationName("Clipboard Manager")
+            self.app.setApplicationName("B1Clip")
             self.app.setApplicationVersion("1.0")
             self.app.setOrganizationName("Falcol")
 
@@ -59,11 +61,11 @@ class EnhancedClipboardManager:
             self.app.setFont(self._choose_system_ui_font())
 
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Failed to create QApplication: {e}")
             self._handle_qt_error(e)
 
-        # Initialize enhanced configuration
+        # Initialize configuration
         self.config = Config()
         self._single_instance: CrossPlatformSingleInstance | None = None
 
@@ -71,17 +73,17 @@ class EnhancedClipboardManager:
         self.data_dir = Path(self.config.config_path.parent)
         self.db_path = self.data_dir / "clipboard.db"  # Only 1 file
 
-        # Initialize enhanced core components (migration automatically in database)
-        self.database = EnhancedClipboardDatabase(self.db_path)
+        # Initialize core components (migration automatically in database)
+        self.database = ClipboardDatabase(self.db_path)
         self.content_manager = ContentManager(self.data_dir)
         self.search_engine = SearchEngine(self.database)
 
-        # Initialize enhanced clipboard watcher
-        self.clipboard_watcher = EnhancedClipboardWatcher(
+        # Initialize clipboard watcher
+        self.clipboard_watcher = ClipboardWatcher(
             self.database, self.content_manager, self.config
         )
 
-        # Initialize enhanced UI components
+        # Initialize UI components
         self.popup_window = PopupWindow(self.database, self.config)
         self.settings_window = SettingsWindow(self.config)
         self.system_tray = SystemTray(self.popup_window, self.settings_window)
@@ -95,7 +97,7 @@ class EnhancedClipboardManager:
         # Initialize QSS loader
         self.qss_loader = QSSLoader()
 
-        # Setup enhanced connections
+        # Setup connections
         self.setup_connections()
 
         # Check system tray availability
@@ -119,11 +121,11 @@ class EnhancedClipboardManager:
             try:
                 self.app = QApplication(sys.argv)
                 self.app.setQuitOnLastWindowClosed(False)
-                logger = get_logger(__name__)
+
                 logger.warning(f"Using {platform} platform as fallback")
                 return
             except Exception as e2:
-                logger = get_logger(__name__)
+
                 logger.error(f"Failed to create QApplication with {platform}: {e2}")
                 continue
 
@@ -137,14 +139,14 @@ class EnhancedClipboardManager:
         sys.exit(1)
 
     def setup_connections(self):
-        """Setup enhanced signal connections between components"""
+        """Setup signal connections between components"""
         # Settings changes
         self.settings_window.settings_changed.connect(self.on_settings_changed)
 
         # System tray
         self.system_tray.quit_requested.connect(self.quit_application)
 
-        # Enhanced clipboard watcher with notifications
+        # clipboard watcher with notifications
         self.clipboard_watcher.content_changed.connect(self.on_content_changed)
 
         # Apply QSS to all components
@@ -161,7 +163,6 @@ class EnhancedClipboardManager:
         )  # Convert to ms
         self.cleanup_timer.start(cleanup_interval)
 
-        logger = get_logger(__name__)
         logger.info(
             f"Performance monitoring enabled, cleanup every {cleanup_interval // 3600000} hours"
         )
@@ -169,7 +170,7 @@ class EnhancedClipboardManager:
     def perform_maintenance(self):
         """Perform periodic maintenance tasks"""
         try:
-            logger = get_logger(__name__)
+
             logger.info("Performing scheduled maintenance...")
 
             # Cleanup orphaned files
@@ -193,12 +194,12 @@ class EnhancedClipboardManager:
             )
 
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error during maintenance: {e}")
 
     def on_content_changed(self, content_type: str, item_data: dict):
-        """Handle new clipboard content with enhanced features and notifications"""
-        logger = get_logger(__name__)
+        """Handle new clipboard content with features and notifications"""
+
         logger.info(f"New {content_type} content detected: {item_data.get('id')}")
 
         # Show notification for new content (if enabled)
@@ -218,13 +219,13 @@ class EnhancedClipboardManager:
             QTimer.singleShot(100, self.popup_window.load_items)
 
     def show_popup(self):
-        """Show the enhanced clipboard popup window"""
+        """Show the clipboard popup window"""
         try:
             self.popup_window.show_at_cursor()
-            logger = get_logger(__name__)
+
             logger.debug("Clipboard popup shown")
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error showing popup: {e}")
             # Fallback notification
             self.system_tray.show_notification(
@@ -232,8 +233,8 @@ class EnhancedClipboardManager:
             )
 
     def on_settings_changed(self):
-        """Handle settings changes with enhanced updates"""
-        logger = get_logger(__name__)
+        """Handle settings changes with updates"""
+
         logger.info("Settings changed, updating components...")
 
         try:
@@ -287,22 +288,21 @@ class EnhancedClipboardManager:
                 except Exception:
                     pass
 
-            logger = get_logger(__name__)
             logger.info(f"Applied global theme: {theme_name}")
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error applying global QSS: {e}")
 
     def start(self):
-        """Start the enhanced application with error handling"""
+        """Start the application with error handling"""
         try:
-            # Start enhanced clipboard monitoring
+            # Start clipboard monitoring
             self.clipboard_watcher.start()
 
             # Start hotkey listener
             self.hotkey_manager.start()
 
-            # Show enhanced system tray
+            # Show system tray
             if self.system_tray.show():
                 # Show startup notification with platform-specific hotkey
                 hotkey_info = self.hotkey_manager.get_hotkey_info()
@@ -318,14 +318,13 @@ class EnhancedClipboardManager:
                 QTimer.singleShot(
                     1000,
                     lambda: self.system_tray.show_notification(
-                        "Clipboard Manager Started",
+                        "B1Clip Started",
                         f"Press {hotkey_display} to open clipboard history",
                         3000,
                     ),
                 )
 
-            logger = get_logger(__name__)
-            logger.info("Enhanced Clipboard Manager started successfully")
+            logger.info("B1Clip started successfully")
 
             # Setup graceful shutdown
             signal.signal(signal.SIGINT, self.signal_handler)
@@ -335,24 +334,23 @@ class EnhancedClipboardManager:
             return self.app.exec()
 
         except KeyboardInterrupt:
-            logger = get_logger(__name__)
             logger.info("Application interrupted by user")
             return 0
         except Exception as e:
-            logger = get_logger(__name__)
-            logger.error(f"Failed to start enhanced application: {e}")
+
+            logger.error(f"Failed to start application: {e}")
             return 1
 
     def signal_handler(self, signum, frame):
         """Handle system signals for graceful shutdown"""
-        logger = get_logger(__name__)
+
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         QTimer.singleShot(0, self.quit_application)
 
     def quit_application(self):
-        """Quit the application gracefully with enhanced cleanup"""
+        """Quit the application gracefully with cleanup"""
         try:
-            logger = get_logger(__name__)
+
             logger.info("Starting graceful shutdown...")
 
             # Stop timers
@@ -397,7 +395,7 @@ class EnhancedClipboardManager:
             self.app.quit()
 
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error during shutdown: {e}")
             # Force quit if graceful shutdown fails
             self.app.quit()
@@ -462,6 +460,6 @@ class EnhancedClipboardManager:
                 "settings_visible": self.settings_window.isVisible(),
             }
         except Exception as e:
-            logger = get_logger(__name__)
+
             logger.error(f"Error getting status info: {e}")
             return {"error": str(e)}

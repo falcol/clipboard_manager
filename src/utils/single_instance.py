@@ -10,11 +10,12 @@ from pathlib import Path
 
 from utils.logging_config import get_logger
 
+logger = get_logger(__name__)
 
 class CrossPlatformSingleInstance:
     """Cross-platform single instance checker"""
 
-    def __init__(self, lock_name: str = "clipboard_manager.lock"):
+    def __init__(self, lock_name: str = "B1Clip.lock"):
         self.lock_name = lock_name
         self.platform = platform.system().lower()
         self.lock_file = None
@@ -26,7 +27,7 @@ class CrossPlatformSingleInstance:
             self.lock_path = Path(tempfile.gettempdir()) / f"{lock_name}"
         else:
             # Linux/macOS
-            self.lock_path = Path.home() / f".{lock_name}"
+            self.lock_path = Path.home() / ".config" / "B1Clip" / f".{lock_name}"
 
     def acquire_lock(self) -> bool:
         """Acquire lock for single instance check"""
@@ -36,7 +37,6 @@ class CrossPlatformSingleInstance:
             else:
                 return self._acquire_lock_unix()
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Failed to acquire lock: {e}")
             return False
 
@@ -56,13 +56,12 @@ class CrossPlatformSingleInstance:
             self.lock_file.flush()
 
             self.is_locked = True
-            logger = get_logger(__name__)
+
             logger.info(f"Windows lock acquired: {self.lock_path}")
             return True
 
         except (IOError, OSError) as e:
             # Another instance is running
-            logger = get_logger(__name__)
             logger.warning(f"Windows lock failed: {e}")
             if self.lock_file:
                 self.lock_file.close()
@@ -94,18 +93,15 @@ class CrossPlatformSingleInstance:
             self.lock_file.flush()
 
             self.is_locked = True
-            logger = get_logger(__name__)
             logger.info(f"Unix lock acquired: {self.lock_path}")
             return True
 
         except ImportError:
             # Fallback for systems without fcntl
-            logger = get_logger(__name__)
             logger.warning("fcntl not available, using fallback method")
             return self._acquire_lock_fallback()
         except (IOError, OSError) as e:
             # Another instance is running
-            logger = get_logger(__name__)
             logger.warning(f"Unix lock failed: {e}")
             if self.lock_file:
                 self.lock_file.close()
@@ -120,12 +116,10 @@ class CrossPlatformSingleInstance:
                 lock_age = time.time() - self.lock_path.stat().st_mtime
                 if lock_age < 30:
                     # Lock file is recent, another instance is running
-                    logger = get_logger(__name__)
                     logger.warning(f"Lock file exists and recent: {self.lock_path}")
                     return False
                 else:
                     # Stale lock file, remove it
-                    logger = get_logger(__name__)
                     logger.info(f"Removing stale lock file: {self.lock_path}")
                     self.lock_path.unlink()
 
@@ -135,12 +129,11 @@ class CrossPlatformSingleInstance:
             self.lock_file.flush()
 
             self.is_locked = True
-            logger = get_logger(__name__)
+
             logger.info(f"Fallback lock acquired: {self.lock_path}")
             return True
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Fallback lock failed: {e}")
             return False
 
@@ -152,9 +145,7 @@ class CrossPlatformSingleInstance:
 
             if self.is_locked and self.lock_path.exists():
                 self.lock_path.unlink()
-                logger = get_logger(__name__)
                 logger.info(f"Lock released: {self.lock_path}")
 
         except Exception as e:
-            logger = get_logger(__name__)
             logger.error(f"Error releasing lock: {e}")

@@ -1,10 +1,10 @@
 # ===============================================
 # FILE: src/utils/logging_config.py
-# Enhanced logging configuration with file paths and line numbers
+# logging configuration with file paths and line numbers
 # ===============================================
 
 """
-Enhanced logging configuration with file paths and line numbers
+logging configuration with file paths and line numbers
 """
 import logging
 import logging.handlers
@@ -15,8 +15,8 @@ from typing import Optional
 from .config import Config
 
 
-class EnhancedLogFormatter(logging.Formatter):
-    """Enhanced formatter with file path and line number.
+class LogFormatter(logging.Formatter):
+    """formatter with file path and line number.
 
     Color output is optional to keep file logs clean on all platforms.
     """
@@ -50,7 +50,7 @@ class EnhancedLogFormatter(logging.Formatter):
         else:
             location = filepath
 
-        # Enhanced format with optional colors and structure
+        # format with optional colors and structure
         if self.colorize:
             if record.levelno >= logging.ERROR:
                 color = "\033[91m"  # Red for errors
@@ -78,8 +78,8 @@ class EnhancedLogFormatter(logging.Formatter):
         return formatted
 
 
-class EnhancedLoggingConfig:
-    """Enhanced logging configuration manager"""
+class LoggingConfig:
+    """logging configuration manager"""
 
     def __init__(self, config: Optional[Config] = None):
         self.config = config or Config()
@@ -103,7 +103,7 @@ class EnhancedLoggingConfig:
         max_file_size: int = 5 * 1024 * 1024,  # 5MB
         backup_count: int = 3,
     ):
-        """Setup enhanced logging configuration"""
+        """Setup logging configuration"""
 
         # Convert string level to logging level
         log_level = getattr(logging, level.upper(), logging.INFO)
@@ -116,11 +116,11 @@ class EnhancedLoggingConfig:
         root_logger.handlers.clear()
 
         # Create formatters
-        detailed_formatter = EnhancedLogFormatter(
+        detailed_formatter = LogFormatter(
             include_path=True, include_line=True, colorize=True
         )
         # File formatter should avoid ANSI color codes for better log readability
-        file_formatter = EnhancedLogFormatter(
+        file_formatter = LogFormatter(
             include_path=True, include_line=True, colorize=False
         )
 
@@ -172,14 +172,14 @@ class EnhancedLoggingConfig:
 
         # Log startup message
         logger = logging.getLogger(__name__)
-        logger.info("Enhanced logging system initialized")
+        logger.info("logging system initialized")
         logger.info(f"Log directory: {self.log_dir}")
         logger.info(f"Log level: {level}")
         logger.info(f"File logging: {log_to_file}")
         logger.info(f"Console logging: {log_to_console}")
 
     def get_logger(self, name: str) -> logging.Logger:
-        """Get logger with enhanced configuration"""
+        """Get logger with configuration"""
         return logging.getLogger(name)
 
     def cleanup_old_logs(self, days_to_keep: int = 30):
@@ -206,21 +206,21 @@ class EnhancedLoggingConfig:
 _logging_config = None
 
 
-def get_logging_config() -> EnhancedLoggingConfig:
+def get_logging_config() -> LoggingConfig:
     """Get global logging configuration instance"""
     global _logging_config
     if _logging_config is None:
-        _logging_config = EnhancedLoggingConfig()
+        _logging_config = LoggingConfig()
     return _logging_config
 
 
 def setup_logging(level: str = "INFO", **kwargs):
-    """Setup enhanced logging (convenience function)"""
+    """Setup logging (convenience function)"""
     config = get_logging_config()
     config.setup_logging(level=level, **kwargs)
 
 
 def get_logger(name: str) -> logging.Logger:
-    """Get logger with enhanced configuration (convenience function)"""
+    """Get logger with configuration (convenience function)"""
     config = get_logging_config()
     return config.get_logger(name)

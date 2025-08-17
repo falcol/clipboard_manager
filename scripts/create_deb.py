@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # clipboard_manager/scripts/create_deb.py
 """
-Modern Debian package builder for Clipboard Manager
+Modern Debian package builder for B1Clip
 Creates .deb package with proper dependencies and metadata
 """
 import shutil
@@ -16,7 +16,7 @@ class DebianPackageBuilder:
 
     def __init__(self):
         self.project_root = Path(__file__).parent.parent
-        self.app_name = "clipboard-manager"
+        self.app_name = "B1Clip"
         self.version = self._get_version()
         self.architecture = "all"
 
@@ -77,7 +77,7 @@ Depends: {dependencies}
 Recommends: git
 Suggests: imagemagick, librsvg2-bin
 Maintainer: B1Clip Team <contact@clipboardmanager.dev>
-Homepage: https://github.com/clipboard-manager/clipboard-manager
+Homepage: https://github.com/falcol/clipboard_manager
 Description: Modern cross-platform clipboard history manager
  A modern clipboard history manager built with PySide6/Qt6 that provides:
  .
@@ -106,7 +106,7 @@ set -e
 APP_NAME="{self.app_name}"
 INSTALL_DIR="/opt/$APP_NAME"
 
-echo "Setting up Clipboard Manager..."
+echo "Setting up B1Clip..."
 
 # Create virtual environment and install Python dependencies
 cd "$INSTALL_DIR"
@@ -153,11 +153,11 @@ if command -v update-mime-database > /dev/null; then
     update-mime-database /usr/share/mime 2>/dev/null || true
 fi
 
-echo "Clipboard Manager installed successfully!"
+echo "B1Clip installed successfully!"
 echo ""
 echo "Usage:"
 echo "  • Run from terminal: $APP_NAME"
-echo "  • Find in applications menu: Clipboard Manager"
+echo "  • Find in applications menu: B1Clip"
 echo "  • Use global hotkey: Super+C"
 echo ""
 echo "To enable autostart: systemctl --user enable $APP_NAME"
@@ -175,7 +175,7 @@ set -e
 
 APP_NAME="{self.app_name}"
 
-echo "Stopping Clipboard Manager..."
+echo "Stopping B1Clip..."
 
 # Stop user service if running
 systemctl --user stop "$APP_NAME" 2>/dev/null || true
@@ -188,7 +188,7 @@ pkill -f "python.*main.py" 2>/dev/null || true
 # Give processes time to exit gracefully
 sleep 2
 
-echo "Clipboard Manager stopped."
+echo "B1Clip stopped."
 """
 
         prerm_file = debian_dir / "prerm"
@@ -197,22 +197,48 @@ echo "Clipboard Manager stopped."
         prerm_file.chmod(0o755)
 
     def _create_postrm_script(self, debian_dir: Path) -> None:
-        """Create post-removal script"""
-        postrm_content = """#!/bin/bash
+        """Create post-removal script with cleanup"""
+        postrm_content = f"""#!/bin/bash
 set -e
 
-if [ "$1" = "purge" ]; then
-    echo "Cleaning up Clipboard Manager configuration..."
+APP_NAME="{self.app_name}"
 
-    # Remove user configuration directories
+if [ "$1" = "purge" ]; then
+    echo "🧹 Cleaning up B1Clip configuration and user data..."
+
+    # Stop and disable user services for all users
     for user_home in /home/*; do
-        if [ -d "$user_home/.local/share/B1Clip" ]; then
-            rm -rf "$user_home/.local/share/B1Clip"
-            echo "Removed configuration for user: $(basename "$user_home")"
+        if [ -d "$user_home" ]; then
+            user=$(basename "$user_home")
+
+            # Skip non-user directories
+            [ "$user" = "lost+found" ] && continue
+
+            echo "Cleaning up for user: $user"
+
+            # Stop and disable systemd user service
+            sudo -u "$user" systemctl --user stop "$APP_NAME" 2>/dev/null || true
+            sudo -u "$user" systemctl --user disable "$APP_NAME" 2>/dev/null || true
+
+            # Remove user configuration directories
+            [ -d "$user_home/.local/share/B1Clip" ] && rm -rf "$user_home/.local/share/B1Clip"
+            [ -d "$user_home/.config/B1Clip" ] && rm -rf "$user_home/.config/B1Clip"
+
+            # Remove autostart entries
+            [ -f "$user_home/.config/autostart/B1Clip.desktop" ] && rm -f "$user_home/.config/autostart/B1Clip.desktop"
+
+            echo "✅ Cleaned up for user: $user"
         fi
     done
 
-    # Update databases
+    # Remove system-wide configuration remnants
+    [ -f "/etc/xdg/autostart/B1Clip.desktop" ] && rm -f "/etc/xdg/autostart/B1Clip.desktop"
+
+    # Clean up any remaining processes
+    pkill -f "B1Clip" 2>/dev/null || true
+    pkill -f "clipboard.*manager" 2>/dev/null || true
+
+    # Update system databases
     if command -v update-desktop-database > /dev/null; then
         update-desktop-database /usr/share/applications 2>/dev/null || true
     fi
@@ -221,7 +247,20 @@ if [ "$1" = "purge" ]; then
         gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
     fi
 
-    echo "Clipboard Manager completely removed."
+    if command -v update-mime-database > /dev/null; then
+        update-mime-database /usr/share/mime 2>/dev/null || true
+    fi
+
+    # Reload systemd user daemon for all users
+    for user_home in /home/*; do
+        if [ -d "$user_home" ]; then
+            user=$(basename "$user_home")
+            [ "$user" = "lost+found" ] && continue
+            sudo -u "$user" systemctl --user daemon-reload 2>/dev/null || true
+        fi
+    done
+
+    echo "✅ B1Clip completely removed and cleaned up."
 fi
 """
 
@@ -262,7 +301,7 @@ fi
         bin_dir.mkdir(parents=True, exist_ok=True)
 
         launcher_content = f"""#!/bin/bash
-# Clipboard Manager launcher script
+# B1Clip launcher script
 # This script activates the virtual environment and runs the application
 
 APP_DIR="/opt/{self.app_name}"
@@ -301,7 +340,7 @@ exec python3 src/main.py "$@"
         desktop_content = f"""[Desktop Entry]
 Version=1.0
 Type=Application
-Name=Clipboard Manager
+Name=B1Clip
 GenericName=Clipboard History Manager
 Comment=Modern clipboard history manager with global hotkey support
 Exec={self.app_name}
@@ -309,7 +348,7 @@ Icon={self.app_name}
 Terminal=false
 Categories=Utility;System;Qt;Office;
 Keywords=clipboard;history;manager;copy;paste;hotkey;
-StartupWMClass=clipboard-manager
+StartupWMClass=B1Clip
 StartupNotify=true
 MimeType=text/plain;text/html;image/png;image/jpeg;
 X-GNOME-Autostart-enabled=false
@@ -336,7 +375,7 @@ Icon=help-about
         icon_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if icon exists in resources
-        resource_icon = self.project_root / "resources" / "icons" / "app.png"
+        resource_icon = self.project_root / "resources" / "icons" / "app_icon.png"
         if resource_icon.exists():
             shutil.copy2(resource_icon, icon_dir / f"{self.app_name}.png")
             return
@@ -382,8 +421,8 @@ Icon=help-about
         systemd_dir.mkdir(parents=True, exist_ok=True)
 
         service_content = f"""[Unit]
-Description=Clipboard Manager - Modern clipboard history manager
-Documentation=https://github.com/clipboard-manager/clipboard-manager
+Description=B1Clip - Modern clipboard history manager
+Documentation=https://github.com/falcol/clipboard_manager
 After=graphical-session.target
 Wants=graphical-session.target
 
