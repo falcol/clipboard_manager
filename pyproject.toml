@@ -38,7 +38,7 @@ sudo ./scripts/install_linux.sh
 
 # Or create and install .deb package
 python scripts/create_deb.py
-sudo dpkg -i clipboard-manager_1.0.0_all.deb
+sudo dpkg -i B1Clip_1.0.0_all.deb
 ```
 
 ### First Run
