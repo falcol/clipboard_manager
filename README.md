@@ -9,7 +9,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 ## ✨ Features
 
-- **📝 Rich Clipboard History**: Automatically saves text, HTML, RTF, and image clipboard content
+- **📝 Rich Clipboard History**: Automatically saves text, image
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
 - **🔥 Global Hotkey**: Press `Super+C` (Linux) to show clipboard history
 - **💾 Efficient Storage**: SQLite-based storage with optimized memory usage
@@ -80,7 +80,6 @@ sudo dpkg -i clipboard-manager_1.0.0_all.deb
 - **pynput**: Cross-platform input handling
 - **keyboard**: Global hotkey support
 - **pillow**: Image processing
-- **click**: CLI interface (future)
 
 #### Linux-specific (requirements/linux.txt)
 - **evdev**: Linux input device access
@@ -165,8 +164,8 @@ journalctl --user -xe
 
 ### Architecture
 
-- **GUI Framework**: PySide6 (Qt6) for native, modern interface
-- **Database**: SQLite with WAL mode for concurrent access
+- **GUI Framework**: PySide6 (Qt6)
+- **Database**: SQLite
 - **Storage**: Optimized BLOB storage for images with compression
 - **Hotkeys**: Cross-platform global hotkey handling with pynput
 - **Threading**: Async clipboard monitoring with thread-safe operations
@@ -179,18 +178,5 @@ journalctl --user -xe
 - **Storage**: 10-500MB depending on clipboard history size
 - **CPU**: Minimal impact, background monitoring only
 - **Graphics**: Hardware acceleration supported, fallback available
-
-### Supported Formats
-
-- **Text**: Plain text, Rich Text (RTF), HTML
-- **Images**: PNG, JPEG, BMP, TIFF, Web
-- **Custom**: Application-specific clipboard formats
-
-## 🏆 Acknowledgments
-
-- **Qt/PySide6**: Excellent cross-platform GUI framework
-- **SQLite**: Reliable embedded database
-- **Python**: Amazing ecosystem and community
-- **Contributors**: All the wonderful people who help improve this project
 
 ---
