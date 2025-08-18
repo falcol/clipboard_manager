@@ -564,7 +564,7 @@ main() {
     echo "   • Test launcher: $APP_NAME --help"
     echo "   • Check logs: journalctl --user -u $APP_NAME -f"
     echo "   • Manual test: cd $INSTALL_DIR && source venv/bin/activate && python3 src/main.py"
-    echo "   • Config location: ~/.config/B1Clip"
+    echo "   • Config location: ~/.config/$APP_NAME"
     echo ""
 }
 
