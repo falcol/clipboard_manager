@@ -74,7 +74,7 @@ class SettingsWindow(QDialog):
         self.max_items_spin.setSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
-        general_layout.addRow("Max clipboard items:", self.max_items_spin)
+        general_layout.addRow("Max items shown:", self.max_items_spin)
 
         # Max text length
         self.max_text_spin = QSpinBox()
