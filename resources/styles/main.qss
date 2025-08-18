@@ -11,7 +11,7 @@
 QFrame#popupWindow, QFrame#mainContainer {
     background: #1f1f1f;
     border-radius: none;
-    border: 1px solid #3d3d3d;
+    border: none;
 }
 
 /* ===============================================
@@ -628,6 +628,7 @@ QLabel#statsLabel {
 /* Content frame */
 QFrame#contentFrame {
     background: #1f1f1f;
+    border: none;
 }
 
 /* Settings action buttons - default base; theme có thể override */

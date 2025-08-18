@@ -2,7 +2,7 @@
 
 QFrame#popupWindow, QFrame#mainContainer, QFrame#contentFrame {
     background: #002b36;
-    border: 1px solid #073642;
+    border: none;
 }
 QFrame#header, QFrame#searchBar { background: #073642; border: none; }
 

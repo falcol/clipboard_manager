@@ -1,4 +1,4 @@
-QFrame#popupWindow, QFrame#mainContainer, QFrame#contentFrame { background: #1d1f2a; border: 1px solid #2c2f3f; }
+QFrame#popupWindow, QFrame#mainContainer, QFrame#contentFrame { background: #1d1f2a; border: none; }
 QFrame#header, QFrame#searchBar { background: #262a3b; border: none; }
 QLabel#titleLabel { color: #e8e9ff; }
 QLabel#titleIcon { color: #7c4dff; }
