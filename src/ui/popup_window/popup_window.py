@@ -713,6 +713,8 @@ class PopupWindow(QWidget):
             # Try xdotool first (most reliable on Linux)
             import subprocess
 
+            # Ensure the target window is focused (if possible)
+            subprocess.run(["xdotool", "windowactivate", "--sync"], capture_output=True, timeout=2)
             result = subprocess.run(
                 ["xdotool", "key", "ctrl+v"], capture_output=True, timeout=5
             )

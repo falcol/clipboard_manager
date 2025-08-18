@@ -544,6 +544,11 @@ main() {
         log_warning "Desktop entry creation failed"
     fi
 
+    # Enable autostart
+    log_info "=== Autostart ==="
+    systemctl --user enable $APP_NAME
+    systemctl --user start $APP_NAME
+
     log_success "Installation completed successfully!"
     echo ""
     echo "📋 You can now:"

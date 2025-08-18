@@ -10,7 +10,7 @@
 
 QFrame#popupWindow, QFrame#mainContainer {
     background: #1f1f1f;
-    border-radius: 6px;
+    border-radius: none;
     border: 1px solid #3d3d3d;
 }
 

@@ -141,9 +141,9 @@ class SettingsWindow(QDialog):
         self.hotkey_clear_btn.clicked.connect(self._clear_hotkey_selection)
 
         # Autostart
-        self.autostart_check = QCheckBox("Start with system")
-        self.autostart_check.setObjectName("formCheck")
-        general_layout.addRow(QWidget(), self.autostart_check)  # align like macOS
+        # self.autostart_check = QCheckBox("Start with system")
+        # self.autostart_check.setObjectName("formCheck")
+        # general_layout.addRow(QWidget(), self.autostart_check)  # align like macOS
         root.addWidget(general_group)
 
         # Appearance
@@ -244,7 +244,7 @@ class SettingsWindow(QDialog):
         """Load settings from original config"""
         self.max_items_spin.setValue(self.config.get("max_items", 25))
         self.max_text_spin.setValue(self.config.get("max_text_length", 1_000_000))
-        self.autostart_check.setChecked(self.config.get("autostart", False))
+        # self.autostart_check.setChecked(self.config.get("autostart", False))
 
         # Hotkey → parse to UI
         self._apply_hotkey_to_ui(str(self.config.get("hotkey", "super+c")))
@@ -293,7 +293,7 @@ class SettingsWindow(QDialog):
 
             self.config.set("max_items", self.max_items_spin.value())
             self.config.set("max_text_length", self.max_text_spin.value())
-            self.config.set("autostart", self.autostart_check.isChecked())
+            # self.config.set("autostart", self.autostart_check.isChecked())
 
             # Save hotkey
             if hotkey_value:
@@ -314,13 +314,13 @@ class SettingsWindow(QDialog):
             self.settings_changed.emit()
 
             # Handle autostart
-            from utils.autostart import AutostartManager
+            # from utils.autostart import AutostartManager
 
-            autostart_manager = AutostartManager()
-            if self.autostart_check.isChecked():
-                autostart_manager.enable()
-            else:
-                autostart_manager.disable()
+            # autostart_manager = AutostartManager()
+            # if self.autostart_check.isChecked():
+            #     autostart_manager.enable()
+            # else:
+            #     autostart_manager.disable()
 
             self.accept()
 
