@@ -56,7 +56,7 @@ class ClipboardItem(QFrame):
         #     self.qss_loader.apply_stylesheet(self, "themes/dark_win11.qss")
 
     def setup_ui(self):
-        """Setup Windows 10 dark mode UI for clipboard item - EXACTLY like styles.py"""
+        """Setup Windows 10 dark mode UI for clipboard item"""
         # Increase height to fit 3 lines of text with font 13px
         self.setFixedHeight(90)  # Increase from 80 to 90
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -65,7 +65,7 @@ class ClipboardItem(QFrame):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)  # Reduced spacing
 
-        # Content type icon - INLINE STYLE like original (styles.py doesn't define icon styling)
+        # Content type icon
         content_icon = self.get_content_icon()
         icon_label = QLabel(content_icon)
         icon_label.setFixedSize(20, 20)
@@ -159,7 +159,7 @@ class ClipboardItem(QFrame):
             return "📝"
 
     def update_pin_button(self):
-        """Update pin button appearance using EXACTLY styles.py methods"""
+        """Update pin button appearance"""
         if self.item_data.get("is_pinned"):
             # Prefer system icon if available; fallback to emoji
             pin_icon = QIcon.fromTheme("flag-red")
@@ -327,7 +327,7 @@ class ClipboardItem(QFrame):
         """Apply consistent styling to text labels - EXACTLY like original"""
         label.setWordWrap(True)
         label.setFont(QFont(QApplication.font().family(), 13))
-        # NO setStyleSheet - styles.py doesn't define font styling inline
+        # NO setStyleSheet
         label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # Calculate height EXACTLY for 3 lines with font 13px
