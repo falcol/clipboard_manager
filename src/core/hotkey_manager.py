@@ -152,7 +152,7 @@ class HotkeyManager(QObject):
             logger.info(f"Listening for: {self.hotkey_combination}")
 
             # Test key detection
-            self.test_key_detection()
+            # self.test_key_detection()
 
         except Exception as e:
             logger.error(f"Failed to start hotkey manager: {e}")
