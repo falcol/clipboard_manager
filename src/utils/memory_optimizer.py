@@ -45,7 +45,7 @@ class MemoryOptimizer:
         """Setup optimized garbage collection settings"""
         try:
             # More aggressive GC tuning for memory-constrained environments
-            gc.set_threshold(500, 8, 8)  # Reduced from default (700, 10, 10)
+            gc.set_threshold(300, 5, 5)  # Adjusted for more aggressive collection
 
             # Enable automatic garbage collection
             gc.enable()

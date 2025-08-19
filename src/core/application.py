@@ -221,13 +221,11 @@ class ClipboardManager:
     def show_popup(self):
         """Show the clipboard popup window"""
         try:
-            self.popup_window.show_at_cursor()
-
+            # Delay loading items to improve UI responsiveness
+            QTimer.singleShot(50, self.popup_window.show_at_cursor)
             logger.debug("Clipboard popup shown")
         except Exception as e:
-
             logger.error(f"Error showing popup: {e}")
-            # Fallback notification
             self.system_tray.show_notification(
                 "Error", "Failed to show clipboard popup. Check logs for details.", 3000
             )
