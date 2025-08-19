@@ -2,6 +2,8 @@
 """
 Windows 10 Dark Mode B1Clip Popup Window
 """
+
+import contextlib
 import logging
 import sys
 from typing import Dict, Optional
@@ -675,15 +677,14 @@ class PopupWindow(QWidget):
                 # Wayland: skip key simulation; rely on clipboard being set
                 if os.environ.get("WAYLAND_DISPLAY"):
                     self._simulate_ctrl_v_fallback()
+                elif platform.startswith("win"):
+                    self._simulate_ctrl_v_windows()
+                elif platform.startswith("linux"):
+                    self._simulate_ctrl_v_linux()
+                elif platform.startswith("darwin"):
+                    self._simulate_ctrl_v_macos()
                 else:
-                    if platform.startswith("win"):
-                        self._simulate_ctrl_v_windows()
-                    elif platform.startswith("linux"):
-                        self._simulate_ctrl_v_linux()
-                    elif platform.startswith("darwin"):
-                        self._simulate_ctrl_v_macos()
-                    else:
-                        self._simulate_ctrl_v_fallback()
+                    self._simulate_ctrl_v_fallback()
             else:
                 logger.warning("No content in clipboard to paste")
                 logger.debug(
@@ -709,29 +710,19 @@ class PopupWindow(QWidget):
 
     def _simulate_ctrl_v_linux(self):
         """Linux Ctrl+V simulation using xdotool or pynput"""
-        try:
+        import subprocess
+        with contextlib.suppress(subprocess.TimeoutExpired, FileNotFoundError):
             # Try xdotool first (most reliable on Linux)
-            import subprocess
 
+            # Ensure the target window is focused (if possible)
             result = subprocess.run(
                 ["xdotool", "key", "ctrl+v"], capture_output=True, timeout=5
             )
             if result.returncode == 0:
                 logger.info("Simulated Ctrl+V on Linux using xdotool successfully")
                 return
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            pass
-
         try:
-            # Fallback to pynput
-            from pynput import keyboard
-
-            controller = keyboard.Controller()
-            controller.press(keyboard.Key.ctrl)
-            controller.press("v")
-            controller.release("v")
-            controller.release(keyboard.Key.ctrl)
-            logger.info("Simulated Ctrl+V on Linux using pynput successfully")
+            self._simulate_ctrl_v_linux_pynut()
         except ImportError:
             logger.warning(
                 "Neither xdotool nor pynput available on Linux, using fallback"
@@ -740,6 +731,17 @@ class PopupWindow(QWidget):
         except Exception as e:
             logger.error(f"Error simulating Ctrl+V on Linux: {e}")
             self._simulate_ctrl_v_fallback()
+
+    def _simulate_ctrl_v_linux_pynut(self):
+        # Fallback to pynput
+        from pynput import keyboard
+
+        controller = keyboard.Controller()
+        controller.press(keyboard.Key.ctrl)
+        controller.press("v")
+        controller.release("v")
+        controller.release(keyboard.Key.ctrl)
+        logger.info("Simulated Ctrl+V on Linux using pynput successfully")
 
     def _simulate_ctrl_v_macos(self):
         """macOS Cmd+V simulation using pynput"""

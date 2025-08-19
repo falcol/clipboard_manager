@@ -38,6 +38,10 @@ class DebianPackageBuilder:
                         return data.get("project", {}).get("version", "1.0.0")
                 except ImportError:
                     pass
+            except Exception as e:
+                # Handle any TOML parsing errors
+                print(f"Warning: Could not parse pyproject.toml: {e}")
+                print("Using default version 1.0.0")
         return "1.0.0"
 
     def _get_dependencies(self) -> List[str]:
@@ -59,8 +63,11 @@ class DebianPackageBuilder:
             "libxcb-xfixes0",
             "libxcb-xinerama0",
             "libxcb-xkb1",
+            "libxcb-xinput0",
             "libgl1-mesa-glx",
             "libglib2.0-0",
+            "libfontconfig1",
+            "libdbus-1-3",
             "xdotool"
         ]
 

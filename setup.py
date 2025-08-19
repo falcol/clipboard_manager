@@ -15,6 +15,17 @@ def _assert_min_py():
 
 _assert_min_py()
 
+# Read version dynamically
+def get_version():
+    """Get version from __init__.py or fallback"""
+    version_file = Path(__file__).parent / "src" / "__init__.py"
+    if version_file.exists():
+        with open(version_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.startswith('__version__'):
+                    return line.split('=')[1].strip().strip('"\'')
+    return "1.0.0"
+
 # Read README
 readme_path = Path(__file__).parent / "README.md"
 long_description = (
@@ -29,20 +40,24 @@ def read_requirements():
     # Read from requirements/base.txt (cross-platform)
     base_req_path = Path(__file__).parent / "requirements" / "base.txt"
     if base_req_path.exists():
-        with open(base_req_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith('#') and not line.startswith('-r'):
-                    requirements.append(line)
-    else:
+        try:
+            with open(base_req_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and not line.startswith('-r'):
+                        requirements.append(line)
+        except Exception as e:
+            print(f"Warning: Could not read requirements file: {e}")
+
+    if not requirements:
         # Fallback to minimal requirements if base.txt not found
         requirements = [
-            "PySide6>=6.9.0",
+            "PySide6>=6.5.0",
             "appdirs>=1.4.0",
             "setproctitle>=1.3.0",
-            "pynput>=1.8.0",
-            "pillow>=11.0.0",
-            "psutil>=7.0.0"
+            "pynput>=1.7.0",
+            "pillow>=9.5.0",
+            "psutil>=5.9.0"
         ]
 
     return requirements
@@ -55,7 +70,7 @@ def get_platform_requirements():
     # Linux-specific requirements (from requirements/linux.txt)
     extras['linux'] = [
         'keyboard>=0.13.5',
-        'evdev>=1.9.2',
+        'evdev>=1.6.0',
         'python-xlib>=0.33',
         'plyer>=2.1.0'
     ]
@@ -69,27 +84,27 @@ def get_platform_requirements():
 
     # Development requirements (sync with requirements/test.txt)
     extras['dev'] = [
-        'pytest>=8.4.1',
-        'pytest-qt>=4.5.0',
+        'pytest>=7.4.0',
+        'pytest-qt>=4.2.0',
         'black>=23.0.0',
         'flake8>=6.0.0',
-        'mypy>=1.0.0',
-        'pre-commit>=3.0.0',
+        'mypy>=1.5.0',
+        'pre-commit>=3.4.0',
     ]
 
     # Test requirements (match requirements/test.txt)
     extras['test'] = [
-        'pytest>=8.4.1',
-        'pytest-qt>=4.5.0',
-        'iniconfig>=2.1.0',
-        'pluggy>=1.6.0'
+        'pytest>=7.4.0',
+        'pytest-qt>=4.2.0',
+        'iniconfig>=2.0.0',
+        'pluggy>=1.3.0'
     ]
 
     return extras
 
 setup(
     name="B1Clip",
-    version="1.0.0",
+    version=get_version(),  # Dynamic version
     author="Falcol",
     author_email="contact@clipboardmanager.dev",
     description="A modern cross-platform clipboard history manager",
@@ -98,6 +113,8 @@ setup(
     url="https://github.com/falcol/clipboard_manager",
     project_urls={
         "Source Code": "https://github.com/falcol/clipboard_manager",
+        "Bug Tracker": "https://github.com/falcol/clipboard_manager/issues",
+        "Documentation": "https://github.com/falcol/clipboard_manager/wiki",
     },
     packages=find_packages(where="src"),
     package_dir={"": "src"},
@@ -123,19 +140,16 @@ setup(
     extras_require=get_platform_requirements(),
     entry_points={
         "console_scripts": [
-            "b1clip=src.main:main",
-            "clipboard-manager=src.main:main",  # Legacy alias
+            "b1clip=main:main",  # Fixed: removed src.
+            "clipboard-manager=main:main",  # Fixed: removed src.
         ],
         "gui_scripts": [
-            "b1clip-gui=src.main:main",
-            "clipboard-manager-gui=src.main:main",  # Legacy alias
+            "b1clip-gui=main:main",  # Fixed: removed src.
+            "clipboard-manager-gui=main:main",  # Fixed: removed src.
         ],
     },
     include_package_data=True,
-    package_data={
-        "": ["*.qss", "*.json"],
-        # Resources handled by MANIFEST.in since they're in project root
-    },
+    # Removed package_data since resources are in project root, not src/
     zip_safe=False,
     keywords="clipboard history manager cross-platform desktop qt pyside6",
     platforms=["any"],
