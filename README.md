@@ -85,17 +85,6 @@ sudo dpkg -i B1Clip_1.0.0_all.deb
 - **evdev**: Linux input device access
 - **python-xlib**: X11 protocol access
 
-### Building Packages
-
-```bash
-# Build wheel package
-python -m build
-
-# Create Linux .deb package
-python scripts/create_deb.py
-
-```
-
 ## 🐛 Troubleshooting
 
 ### Common Issues
