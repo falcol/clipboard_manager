@@ -88,7 +88,9 @@ class ClipboardWatcher(QObject):
         if not self.running:
             return
         # Debounce bursts (apps may emit multiple changes rapidly)
-        interval_ms = max(50, min(250, int(self.config.get("clipboard_signal_debounce_ms", 120))))
+        interval_ms = max(
+            50, min(250, int(self.config.get("clipboard_signal_debounce_ms", 120)))
+        )
         self._debounce_timer.start(interval_ms)
 
     def check_clipboard(self):
@@ -196,7 +198,9 @@ class ClipboardWatcher(QObject):
         # Offload DB write to background thread
         def _worker():
             try:
-                item_id = self.database.add_text_item(content=content, metadata=metadata)
+                item_id = self.database.add_text_item(
+                    content=content, metadata=metadata
+                )
                 if item_id > 0:
                     # Update last hash and emit signal back to UI (queued)
                     self.last_content_hash = content_hash
@@ -206,10 +210,14 @@ class ClipboardWatcher(QObject):
                         "content": content,
                         "format": content_type,
                         "original_mime_types": mime_types,
-                        "preview": content[:150] + "..." if len(content) > 150 else content,
+                        "preview": (
+                            content[:150] + "..." if len(content) > 150 else content
+                        ),
                     }
                     self.content_changed.emit("text", item_data)
-                    logger.debug(f"Added text item {item_id} with format {content_type}")
+                    logger.debug(
+                        f"Added text item {item_id} with format {content_type}"
+                    )
             except Exception as e:
                 logger.error(f"DB worker error (text): {e}")
 

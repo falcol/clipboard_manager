@@ -12,6 +12,7 @@ from utils.logging_config import get_logger
 
 logger = get_logger(__name__)
 
+
 class CrossPlatformSingleInstance:
     """Cross-platform single instance checker"""
 

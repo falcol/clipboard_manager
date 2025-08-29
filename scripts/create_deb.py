@@ -26,6 +26,7 @@ class DebianPackageBuilder:
         if pyproject_path.exists():
             try:
                 import tomllib
+
                 with open(pyproject_path, "rb") as f:
                     data = tomllib.load(f)
                     return data.get("project", {}).get("version", "1.0.0")
@@ -33,6 +34,7 @@ class DebianPackageBuilder:
                 # Python < 3.11 fallback
                 try:
                     import tomli
+
                     with open(pyproject_path, "rb") as f:
                         data = tomli.load(f)
                         return data.get("project", {}).get("version", "1.0.0")
@@ -68,7 +70,7 @@ class DebianPackageBuilder:
             "libglib2.0-0",
             "libfontconfig1",
             "libdbus-1-3",
-            "xdotool"
+            "xdotool",
         ]
 
     def _create_control_file(self, debian_dir: Path) -> None:
@@ -292,7 +294,9 @@ fi
 
         # Copy requirements
         if (self.project_root / "requirements").exists():
-            shutil.copytree(self.project_root / "requirements", opt_dir / "requirements")
+            shutil.copytree(
+                self.project_root / "requirements", opt_dir / "requirements"
+            )
         elif (self.project_root / "requirements.txt").exists():
             shutil.copy2(self.project_root / "requirements.txt", opt_dir)
 
@@ -378,7 +382,9 @@ Icon=help-about
 
     def _create_icon(self, package_dir: Path) -> None:
         """Create application icon"""
-        icon_dir = package_dir / "usr" / "share" / "icons" / "hicolor" / "48x48" / "apps"
+        icon_dir = (
+            package_dir / "usr" / "share" / "icons" / "hicolor" / "48x48" / "apps"
+        )
         icon_dir.mkdir(parents=True, exist_ok=True)
 
         # Check if icon exists in resources
@@ -388,7 +394,7 @@ Icon=help-about
             return
 
         # Create SVG icon as fallback
-        icon_svg_content = '''<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
+        icon_svg_content = """<svg width="48" height="48" xmlns="http://www.w3.org/2000/svg">
     <defs>
         <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
@@ -417,7 +423,7 @@ Icon=help-about
     <!-- Action indicator -->
     <circle cx="36" cy="36" r="6" fill="#FF6B6B" stroke="#E74C3C" stroke-width="1"/>
     <text x="36" y="39" text-anchor="middle" font-family="Arial" font-size="8" fill="white" font-weight="bold">∞</text>
-</svg>'''
+</svg>"""
 
         with open(icon_dir / f"{self.app_name}.svg", "w", encoding="utf-8") as f:
             f.write(icon_svg_content)
@@ -492,7 +498,7 @@ WantedBy=default.target
                     cwd=temp_path,
                     check=True,
                     capture_output=True,
-                    text=True
+                    text=True,
                 )
 
                 if result.returncode == 0:
@@ -500,11 +506,15 @@ WantedBy=default.target
 
                 # Move package to project root
                 package_file = temp_path / f"{self.app_name}_{self.version}.deb"
-                output_file = self.project_root / f"{self.app_name}_{self.version}_all.deb"
+                output_file = (
+                    self.project_root / f"{self.app_name}_{self.version}_all.deb"
+                )
                 shutil.move(str(package_file), str(output_file))
 
                 print(f"✅ Package created successfully: {output_file.name}")
-                print(f"📏 Package size: {output_file.stat().st_size / 1024 / 1024:.1f} MB")
+                print(
+                    f"📏 Package size: {output_file.stat().st_size / 1024 / 1024:.1f} MB"
+                )
                 print("")
                 print("📥 Installation commands:")
                 print(f"   sudo dpkg -i {output_file.name}")
@@ -535,4 +545,5 @@ def main():
 
 if __name__ == "__main__":
     import sys
+
     sys.exit(main())

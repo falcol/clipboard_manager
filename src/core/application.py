@@ -273,7 +273,9 @@ class ClipboardManager:
             }
 
             theme_name = self.config.get("theme", "dark_win11")
-            theme_file = available_themes.get(theme_name, available_themes["dark_win11"])
+            theme_file = available_themes.get(
+                theme_name, available_themes["dark_win11"]
+            )
 
             # Apply globally: main + theme
             self.qss_loader.apply_app_stylesheet(["main.qss", theme_file])
