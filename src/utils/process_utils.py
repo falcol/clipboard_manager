@@ -28,9 +28,7 @@ def setup_process_name(process_name: str = "B1Clip") -> bool:
         # Fallback: modify sys.argv[0] for basic process name change
         try:
             sys.argv[0] = process_name
-            get_logger(__name__).info(
-                f"Process name fallback applied: {process_name}"
-            )
+            get_logger(__name__).info(f"Process name fallback applied: {process_name}")
             return True
         except Exception as e:
             get_logger(__name__).error(f"Failed to set process name: {e}")

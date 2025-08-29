@@ -13,24 +13,28 @@ def _assert_min_py():
     if sys.version_info < (3, 9):
         raise SystemExit("B1Clip requires Python 3.9 or higher")
 
+
 _assert_min_py()
+
 
 # Read version dynamically
 def get_version():
     """Get version from __init__.py or fallback"""
     version_file = Path(__file__).parent / "src" / "__init__.py"
     if version_file.exists():
-        with open(version_file, 'r', encoding='utf-8') as f:
+        with open(version_file, "r", encoding="utf-8") as f:
             for line in f:
-                if line.startswith('__version__'):
-                    return line.split('=')[1].strip().strip('"\'')
+                if line.startswith("__version__"):
+                    return line.split("=")[1].strip().strip("\"'")
     return "1.0.0"
+
 
 # Read README
 readme_path = Path(__file__).parent / "README.md"
 long_description = (
     readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 )
+
 
 # Read requirements from pyproject.toml or fallback to requirements files
 def read_requirements():
@@ -41,10 +45,10 @@ def read_requirements():
     base_req_path = Path(__file__).parent / "requirements" / "base.txt"
     if base_req_path.exists():
         try:
-            with open(base_req_path, 'r', encoding='utf-8') as f:
+            with open(base_req_path, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line and not line.startswith('#') and not line.startswith('-r'):
+                    if line and not line.startswith("#") and not line.startswith("-r"):
                         requirements.append(line)
         except Exception as e:
             print(f"Warning: Could not read requirements file: {e}")
@@ -57,10 +61,11 @@ def read_requirements():
             "setproctitle>=1.3.0",
             "pynput>=1.7.0",
             "pillow>=9.5.0",
-            "psutil>=5.9.0"
+            "psutil>=5.9.0",
         ]
 
     return requirements
+
 
 # Platform-specific requirements
 def get_platform_requirements():
@@ -68,39 +73,36 @@ def get_platform_requirements():
     extras = {}
 
     # Linux-specific requirements (from requirements/linux.txt)
-    extras['linux'] = [
-        'keyboard>=0.13.5',
-        'evdev>=1.6.0',
-        'python-xlib>=0.33',
-        'plyer>=2.1.0'
+    extras["linux"] = [
+        "keyboard>=0.13.5",
+        "evdev>=1.6.0",
+        "python-xlib>=0.33",
+        "plyer>=2.1.0",
     ]
 
     # Windows-specific requirements (from requirements/windows.txt)
-    extras['windows'] = [
-        'keyboard>=0.13.5',
-        'pywin32>=306',
-        'wmi>=1.5.1'
-    ]
+    extras["windows"] = ["keyboard>=0.13.5", "pywin32>=306", "wmi>=1.5.1"]
 
     # Development requirements (sync with requirements/test.txt)
-    extras['dev'] = [
-        'pytest>=7.4.0',
-        'pytest-qt>=4.2.0',
-        'black>=23.0.0',
-        'flake8>=6.0.0',
-        'mypy>=1.5.0',
-        'pre-commit>=3.4.0',
+    extras["dev"] = [
+        "pytest>=7.4.0",
+        "pytest-qt>=4.2.0",
+        "black>=23.0.0",
+        "flake8>=6.0.0",
+        "mypy>=1.5.0",
+        "pre-commit>=3.4.0",
     ]
 
     # Test requirements (match requirements/test.txt)
-    extras['test'] = [
-        'pytest>=7.4.0',
-        'pytest-qt>=4.2.0',
-        'iniconfig>=2.0.0',
-        'pluggy>=1.3.0'
+    extras["test"] = [
+        "pytest>=7.4.0",
+        "pytest-qt>=4.2.0",
+        "iniconfig>=2.0.0",
+        "pluggy>=1.3.0",
     ]
 
     return extras
+
 
 setup(
     name="B1Clip",

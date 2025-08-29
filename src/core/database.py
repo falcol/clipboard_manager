@@ -153,7 +153,9 @@ class ClipboardDatabase:
 
                     plain_text = re.sub(r"<[^>]+>", "", content)
                     preview = (
-                        plain_text[:150] + "..." if len(plain_text) > 150 else plain_text
+                        plain_text[:150] + "..."
+                        if len(plain_text) > 150
+                        else plain_text
                     )
                 else:
                     preview = self._create_text_preview(content)
@@ -506,7 +508,10 @@ class ClipboardDatabase:
 
                 # Delete associated files
                 if image_row:
-                    for file_path in [image_row["file_path"], image_row["thumbnail_path"]]:
+                    for file_path in [
+                        image_row["file_path"],
+                        image_row["thumbnail_path"],
+                    ]:
                         if file_path and Path(file_path).exists():
                             Path(file_path).unlink()
                 return cursor.rowcount > 0
@@ -534,13 +539,17 @@ class ClipboardDatabase:
                     """
                     )
                 else:
-                    cursor.execute("SELECT file_path, thumbnail_path FROM image_content")
+                    cursor.execute(
+                        "SELECT file_path, thumbnail_path FROM image_content"
+                    )
 
                 file_paths = cursor.fetchall()
 
                 # Delete from database
                 if keep_pinned:
-                    cursor.execute("DELETE FROM clipboard_items WHERE is_pinned = FALSE")
+                    cursor.execute(
+                        "DELETE FROM clipboard_items WHERE is_pinned = FALSE"
+                    )
                 else:
                     cursor.execute("DELETE FROM clipboard_items")
 

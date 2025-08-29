@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import psutil
+
     HAS_PSUTIL = True
 except ImportError:
     HAS_PSUTIL = False
@@ -67,7 +68,9 @@ class MemoryOptimizer:
                 stats["rss_mb"] = memory_info.rss / 1024 / 1024
                 stats["vms_mb"] = memory_info.vms / 1024 / 1024
                 stats["percent"] = int(process.memory_percent())
-                stats["available_mb"] = int(psutil.virtual_memory().available / 1024 / 1024)
+                stats["available_mb"] = int(
+                    psutil.virtual_memory().available / 1024 / 1024
+                )
 
                 # ✅ OPTIMIZATION: Trigger cleanup if memory usage is high
                 if stats["rss_mb"] > 80:  # 80MB threshold for clipboard manager
@@ -88,10 +91,13 @@ class MemoryOptimizer:
     def _schedule_memory_cleanup(self, current_mb: float):
         """Schedule memory cleanup if needed"""
         import time
+
         current_time = time.time()
 
         # ✅ OPTIMIZATION: Rate limit cleanup to avoid performance impact
-        if current_time - self._last_cleanup_time > 30:  # 30 seconds minimum between cleanups
+        if (
+            current_time - self._last_cleanup_time > 30
+        ):  # 30 seconds minimum between cleanups
             self._last_cleanup_time = current_time
             self.trigger_memory_cleanup()
 
@@ -99,7 +105,7 @@ class MemoryOptimizer:
             alert = {
                 "timestamp": current_time,
                 "memory_mb": current_mb,
-                "action": "cleanup_triggered"
+                "action": "cleanup_triggered",
             }
             self._memory_alerts.append(alert)
 
@@ -136,11 +142,11 @@ class MemoryOptimizer:
     def trigger_content_manager_cleanup(self, content_manager):
         """Trigger cleanup on ContentManager"""
         try:
-            if hasattr(content_manager, '_cleanup_cache_optimized'):
+            if hasattr(content_manager, "_cleanup_cache_optimized"):
                 content_manager._cleanup_cache_optimized()
 
             # Get cache stats after cleanup
-            if hasattr(content_manager, 'get_cache_stats'):
+            if hasattr(content_manager, "get_cache_stats"):
                 cache_stats = content_manager.get_cache_stats()
                 logger.info(f"Content manager cache cleaned: {cache_stats}")
 
@@ -151,11 +157,13 @@ class MemoryOptimizer:
         """Trigger database optimization"""
         try:
             # ✅ OPTIMIZATION: Database vacuum and analyze
-            if hasattr(database, 'connection') and database.connection:
+            if hasattr(database, "connection") and database.connection:
                 cursor = database.connection.cursor()
 
                 # VACUUM to reclaim space (only if database not too large)
-                cursor.execute("SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()")
+                cursor.execute(
+                    "SELECT page_count * page_size as size FROM pragma_page_count(), pragma_page_size()"
+                )
                 db_size = cursor.fetchone()[0]
 
                 if db_size < 50 * 1024 * 1024:  # Only vacuum if < 50MB
@@ -177,7 +185,7 @@ class MemoryOptimizer:
                 "gc_stats": {
                     "counts": gc.get_count(),
                     "threshold": gc.get_threshold(),
-                    "objects": len(gc.get_objects())
+                    "objects": len(gc.get_objects()),
                 },
                 "recent_alerts": self._memory_alerts[-5:],  # Last 5 alerts
             }
@@ -185,13 +193,15 @@ class MemoryOptimizer:
             # Add tracemalloc top stats if available
             if tracemalloc.is_tracing():
                 snapshot = tracemalloc.take_snapshot()
-                top_stats = snapshot.statistics('lineno')[:10]  # Top 10 memory consumers
+                top_stats = snapshot.statistics("lineno")[
+                    :10
+                ]  # Top 10 memory consumers
 
                 report["top_memory_consumers"] = [
                     {
                         "file": stat.traceback.format()[0],
                         "size_mb": stat.size / 1024 / 1024,
-                        "count": stat.count
+                        "count": stat.count,
                     }
                     for stat in top_stats
                 ]
@@ -218,7 +228,9 @@ class MemoryOptimizer:
                 tracemalloc.stop()
                 logger.info("Memory tracing disabled to save memory")
 
-            logger.info(f"Low-memory optimization complete: collected {collected} objects")
+            logger.info(
+                f"Low-memory optimization complete: collected {collected} objects"
+            )
             return True
 
         except Exception as e:

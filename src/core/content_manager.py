@@ -316,9 +316,14 @@ class ContentManager:
             self.current_cache_size -= max(0, old.width() * old.height() * 4)
 
         # Evict least-recently used until there is space
-        while self.current_cache_size + estimated_size > self.cache_size_limit and self.memory_cache:
+        while (
+            self.current_cache_size + estimated_size > self.cache_size_limit
+            and self.memory_cache
+        ):
             evicted_key, evicted_pix = self.memory_cache.popitem(last=False)
-            self.current_cache_size -= max(0, evicted_pix.width() * evicted_pix.height() * 4)
+            self.current_cache_size -= max(
+                0, evicted_pix.width() * evicted_pix.height() * 4
+            )
             logger.debug(f"LRU evicted from cache: {evicted_key}")
 
         # Insert as most-recently used
@@ -334,7 +339,9 @@ class ContentManager:
             self.current_cache_size -= max(0, pix.width() * pix.height() * 4)
             removed += 1
         if removed:
-            logger.info(f"Cache cleaned up, removed {removed} items, size={self.current_cache_size} bytes")
+            logger.info(
+                f"Cache cleaned up, removed {removed} items, size={self.current_cache_size} bytes"
+            )
 
     def _create_html_preview(self, html: str) -> str:
         """Create safe HTML preview"""

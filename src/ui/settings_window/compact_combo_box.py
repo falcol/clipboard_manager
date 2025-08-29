@@ -36,11 +36,15 @@ class CompactComboBox(QComboBox):
                     below_left = self.mapToGlobal(self.rect().bottomLeft())
                     above_left = self.mapToGlobal(self.rect().topLeft())
 
-                    screen = (self.window().screen().availableGeometry()
-                              if self.window() and self.window().screen()
-                              else QApplication.primaryScreen().availableGeometry())
+                    screen = (
+                        self.window().screen().availableGeometry()
+                        if self.window() and self.window().screen()
+                        else QApplication.primaryScreen().availableGeometry()
+                    )
 
-                    x = max(screen.left(), min(below_left.x(), screen.right() - popup_width))
+                    x = max(
+                        screen.left(), min(below_left.x(), screen.right() - popup_width)
+                    )
                     y = below_left.y()
 
                     # If there is not enough space below, show above the combobox

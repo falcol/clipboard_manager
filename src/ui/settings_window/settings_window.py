@@ -93,6 +93,7 @@ class SettingsWindow(QDialog):
         self.chk_shift = QCheckBox("Shift")
         # Cross-platform label for Super/Win
         import sys as _sys
+
         super_label = "Win" if _sys.platform.startswith("win") else "Super"
         self.chk_super = QCheckBox(super_label)
 
@@ -333,7 +334,7 @@ class SettingsWindow(QDialog):
         """Populate key combo with A-Z, 0-9, F1-12 and common special keys."""
         keys: list[tuple[str, str]] = []
         # Letters
-        for code in range(ord('A'), ord('Z') + 1):
+        for code in range(ord("A"), ord("Z") + 1):
             ch = chr(code)
             keys.append((ch, ch.lower()))
         # Digits
@@ -345,12 +346,21 @@ class SettingsWindow(QDialog):
             keys.append((disp, disp.lower()))
         # Specials
         specials = [
-            ("Esc", "esc"), ("Tab", "tab"), ("Space", "space"),
-            ("Enter", "enter"), ("Backspace", "backspace"),
-            ("Insert", "insert"), ("Delete", "delete"),
-            ("Home", "home"), ("End", "end"),
-            ("PageUp", "pageup"), ("PageDown", "pagedown"),
-            ("Up", "up"), ("Down", "down"), ("Left", "left"), ("Right", "right"),
+            ("Esc", "esc"),
+            ("Tab", "tab"),
+            ("Space", "space"),
+            ("Enter", "enter"),
+            ("Backspace", "backspace"),
+            ("Insert", "insert"),
+            ("Delete", "delete"),
+            ("Home", "home"),
+            ("End", "end"),
+            ("PageUp", "pageup"),
+            ("PageDown", "pagedown"),
+            ("Up", "up"),
+            ("Down", "down"),
+            ("Left", "left"),
+            ("Right", "right"),
         ]
         keys.extend(specials)
 
@@ -369,7 +379,7 @@ class SettingsWindow(QDialog):
             self.chk_ctrl: "ctrl",
             self.chk_alt: "alt",
             self.chk_shift: "shift",
-            self.chk_super: "super"
+            self.chk_super: "super",
         }
 
         modifier = modifier_map.get(sender)
@@ -463,6 +473,7 @@ class SettingsWindow(QDialog):
 
         # Display modifiers in the order they were selected
         import sys as _sys
+
         for modifier in self.modifier_order:
             if modifier == "ctrl" and self.chk_ctrl.isChecked():
                 tokens.append("Ctrl")
@@ -527,7 +538,9 @@ class SettingsWindow(QDialog):
                 if len(token) == 1:
                     # alpha-numeric allowed
                     continue
-                if token in named_keys or (token.startswith("f") and token[1:].isdigit()):
+                if token in named_keys or (
+                    token.startswith("f") and token[1:].isdigit()
+                ):
                     continue
                 valid = False
                 break

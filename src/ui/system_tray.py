@@ -96,7 +96,9 @@ class SystemTray(QObject):
 
         # Show clipboard action with icon
         show_action = menu.addAction("📋  Show Clipboard History")
-        show_action.setFont(QFont(QApplication.font().family(), 10, QFont.Weight.Medium))
+        show_action.setFont(
+            QFont(QApplication.font().family(), 10, QFont.Weight.Medium)
+        )
         show_action.triggered.connect(self.show_clipboard)
 
         menu.addSeparator()
@@ -116,6 +118,7 @@ class SystemTray(QObject):
         # Quit action
         quit_action = menu.addAction("❌  Quit B1Clip")
         quit_action.setFont(QFont(QApplication.font().family(), 9))
+
         # Ensure tray icon hides before quitting to avoid orphan tray entries
         def _on_quit():
             try:
@@ -123,6 +126,7 @@ class SystemTray(QObject):
             except Exception:
                 pass
             self.quit_requested.emit()
+
         quit_action.triggered.connect(_on_quit)
 
         # Preload each action

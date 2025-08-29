@@ -362,7 +362,9 @@ class PopupWindow(QWidget):
         # Update storage usage under Clear All
         try:
             stats = self.database.get_stats()
-            total_bytes = (stats.get("database_size_bytes", 0) or 0) + (stats.get("image_storage_bytes", 0) or 0)
+            total_bytes = (stats.get("database_size_bytes", 0) or 0) + (
+                stats.get("image_storage_bytes", 0) or 0
+            )
             self.storage_label.setText(f"Storage: {self._format_bytes(total_bytes)}")
         except Exception:
             self.storage_label.setText("")
@@ -500,7 +502,9 @@ class PopupWindow(QWidget):
             # Set HTML if available (Windows preserves both)
             if html_content and html_content.strip():
                 mime_data.setHtml(html_content)
-                logger.debug("Set HTML content to clipboard (Windows-like multi-format)")
+                logger.debug(
+                    "Set HTML content to clipboard (Windows-like multi-format)"
+                )
             elif format_type == "html" and content.strip().startswith("<"):
                 # Fallback: if no separate HTML but content looks like HTML
                 mime_data.setHtml(content)
@@ -711,6 +715,7 @@ class PopupWindow(QWidget):
     def _simulate_ctrl_v_linux(self):
         """Linux Ctrl+V simulation using xdotool or pynput"""
         import subprocess
+
         with contextlib.suppress(subprocess.TimeoutExpired, FileNotFoundError):
             # Try xdotool first (most reliable on Linux)
 

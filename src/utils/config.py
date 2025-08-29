@@ -4,7 +4,7 @@
 # ===============================================
 
 """
- configuration management with Phase 1 features
+configuration management with Phase 1 features
 """
 import json
 import logging
@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    """ configuration manager with Phase 1 features"""
+    """configuration manager with Phase 1 features"""
 
     DEFAULT_CONFIG = {
         # Basic settings
         "max_items": 25,  # Like Windows clipboard manager (25 items max)
-        "max_text_length": 1000000,  # 1MB text limit like Windows clipboard manager
+        "max_text_length": 2000000,  # 1MB text limit like Windows clipboard manager
         "autostart": False,
         "theme": "dark_win11",
         "show_notifications": False,

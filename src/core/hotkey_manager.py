@@ -77,7 +77,9 @@ class HotkeyManager(QObject):
                 }
 
         self.hotkey_combination = combination
-        logger.info(f"Hotkey combination: {self._display_hotkey()} -> {self.hotkey_combination}")
+        logger.info(
+            f"Hotkey combination: {self._display_hotkey()} -> {self.hotkey_combination}"
+        )
 
     def _parse_hotkey(self, hotkey: str) -> Optional[Set[object]]:
         """Parse a hotkey string like 'ctrl+alt+h' to a set of pynput keys.
