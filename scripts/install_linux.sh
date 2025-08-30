@@ -499,6 +499,28 @@ EOF
     chmod +x "$BIN_DIR/${APP_NAME}-uninstall"
 }
 
+enable_autostart() {
+    log_info "=== Autostart ==="
+
+    REAL_USER="${SUDO_USER:-$USER}"
+
+    if loginctl show-user "$REAL_USER" >/dev/null 2>&1; then
+        log_info "Detected active systemd session for user: $REAL_USER"
+
+        sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/$(id -u $REAL_USER)" \
+            systemctl --user enable $APP_NAME || log_warning "Failed to enable autostart"
+
+        sudo -u "$REAL_USER" XDG_RUNTIME_DIR="/run/user/$(id -u $REAL_USER)" \
+            systemctl --user start $APP_NAME || log_warning "Failed to start user service"
+    else
+        log_warning "No active systemd user session found for $REAL_USER"
+        log_warning "Skipping autostart. You can enable it manually:"
+        echo "   systemctl --user enable $APP_NAME"
+        echo "   systemctl --user start $APP_NAME"
+    fi
+}
+
+
 # main installation function with comprehensive validation
 main() {
     echo "🚀 Installing B1Clip v$APP_VERSION..."
@@ -546,8 +568,7 @@ main() {
 
     # Enable autostart
     log_info "=== Autostart ==="
-    systemctl --user enable $APP_NAME
-    systemctl --user start $APP_NAME
+    enable_autostart
 
     log_success "Installation completed successfully!"
     echo ""
