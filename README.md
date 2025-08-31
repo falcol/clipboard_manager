@@ -2,10 +2,12 @@
 
 A modern, cross-platform clipboard history manager built with Python and PySide6/Qt6.
 
+[![Python](https://img.shields.io/badge/Ubuntu-24-orange)](https://ubuntu.com/download/desktop)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![PySide6](https://img.shields.io/badge/PySide6-6.9+-green.svg)](https://wiki.qt.io/Qt_for_Python)
 [![Platform](https://img.shields.io/badge/Platform-Linux-lightgrey.svg)](https://github.com/falcol/clipboard_manager)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 
 ## ✨ Features
 
@@ -23,7 +25,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 ### Requirements
 
 - **Python**: 3.9 or higher
-- **Operating System**: Linux
+- **Operating System**: Ubuntu 24 for best
 - **Display Server**: X11 or Wayland (Linux)
 
 ### Installation
@@ -53,6 +55,7 @@ python src/main.py
 
 ```bash
 # Download and install system-wide
+chmod -u+x scripts/install_linux.sh
 sudo ./scripts/install_linux.sh
 
 # Or create and install .deb package
@@ -68,22 +71,6 @@ sudo dpkg -i B1Clip_1.0.0_all.deb
 4. **Click any item** to paste it into the active application
 5. **Pin important items** with 📌 to keep them permanently
 6. **Right-click tray icon** → Settings to configure preferences
-
-## 🛠️ Development
-
-### Project Dependencies
-
-#### Core Dependencies (requirements/base.txt)
-- **PySide6**: Qt6 GUI framework
-- **appdirs**: Cross-platform app directories
-- **setproctitle**: Process name setting
-- **pynput**: Cross-platform input handling
-- **keyboard**: Global hotkey support
-- **pillow**: Image processing
-
-#### Linux-specific (requirements/linux.txt)
-- **evdev**: Linux input device access
-- **python-xlib**: X11 protocol access
 
 ## 🐛 Troubleshooting
 
