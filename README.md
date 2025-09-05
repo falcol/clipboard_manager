@@ -13,7 +13,7 @@ A modern, cross-platform clipboard history manager built with Python and PySide6
 
 - **📝 Rich Clipboard History**: Automatically saves text, image
 - **📌 Pin Important Items**: Pin frequently used items to prevent deletion
-- **🔥 Global Hotkey**: Press `Super+C` (Linux) to show clipboard history
+- **🔥 Global Hotkey**: Press `Super+Alt` (Linux) to show clipboard history
 - **💾 Efficient Storage**: SQLite-based storage with optimized memory usage
 - **🚀 System Integration**: System tray, auto-start, and native platform integration
 - **⚙️ Highly Configurable**: Customize items limit, text length, themes, and performance settings
@@ -67,7 +67,7 @@ sudo dpkg -i B1Clip_1.0.0_all.deb
 
 1. **Start the application** - it will appear in your system tray
 2. **Copy something** - text or images will be automatically saved
-3. **Press `Super+C`** (or `Windows+C` on Windows) to show clipboard history
+3. **Press `Super+Alt`** (or `Windows+Alt` on Windows) to show clipboard history
 4. **Click any item** to paste it into the active application
 5. **Pin important items** with 📌 to keep them permanently
 6. **Right-click tray icon** → Settings to configure preferences

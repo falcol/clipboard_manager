@@ -575,7 +575,7 @@ main() {
     echo "📋 You can now:"
     echo "   • Run from terminal: $APP_NAME"
     echo "   • Find in applications menu: B1Clip"
-    echo "   • Use global hotkey: Super+C"
+    echo "   • Use global hotkey: Super+Alt"
     echo "   • Enable autostart: systemctl --user enable $APP_NAME"
     echo "   • Start service now: systemctl --user start $APP_NAME"
     echo ""

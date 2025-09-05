@@ -248,7 +248,7 @@ class SettingsWindow(QDialog):
         # self.autostart_check.setChecked(self.config.get("autostart", False))
 
         # Hotkey → parse to UI
-        self._apply_hotkey_to_ui(str(self.config.get("hotkey", "super+c")))
+        self._apply_hotkey_to_ui(str(self.config.get("hotkey", "super+alt")))
         self._update_hotkey_preview()
 
         self.cache_size_spin.setValue(self.config.get("cache_size_mb", 25))
@@ -277,7 +277,7 @@ class SettingsWindow(QDialog):
                 QMessageBox.warning(
                     self,
                     "Invalid Hotkey",
-                    "Hotkey format is invalid. Use patterns like 'super+c' or 'ctrl+shift+v'.",
+                    "Hotkey format is invalid. Use patterns like 'super+alt' or 'ctrl+shift+v'.",
                 )
                 return
 
