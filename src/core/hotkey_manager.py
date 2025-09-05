@@ -2,7 +2,7 @@
 """
 Global hotkey management using pynput with cross-platform support.
 
-Reads the hotkey combination from Config (e.g. "super+c", "ctrl+shift+v").
+Reads the hotkey combination from Config (e.g. "super+alt", "ctrl+shift+v").
 Falls back to a reasonable per-platform default if parsing fails.
 """
 import logging
@@ -59,21 +59,20 @@ class HotkeyManager(QObject):
         # Fallback per platform
         if not combination:
             if self.current_platform == "windows":
-                # Avoid default Windows+C conflict by using Windows+Shift+V
-                combination = self._parse_hotkey("win+shift+v") or {
+                # Use Windows+Alt instead of Windows+Shift+V
+                combination = self._parse_hotkey("win+alt") or {
                     keyboard.Key.cmd,
-                    keyboard.Key.shift,
-                    keyboard.KeyCode.from_char("v"),
+                    keyboard.Key.alt,
                 }
             elif self.current_platform == "linux":
-                combination = self._parse_hotkey("super+c") or {
+                combination = self._parse_hotkey("super+alt") or {
                     getattr(keyboard.Key, "super_l", keyboard.Key.cmd),
-                    keyboard.KeyCode.from_char("c"),
+                    keyboard.Key.alt,
                 }
             else:
-                combination = self._parse_hotkey("cmd+c") or {
+                combination = self._parse_hotkey("cmd+alt") or {
                     keyboard.Key.cmd,
-                    keyboard.KeyCode.from_char("c"),
+                    keyboard.Key.alt,
                 }
 
         self.hotkey_combination = combination
@@ -132,10 +131,10 @@ class HotkeyManager(QObject):
                 pass
         # Fallback
         if self.current_platform == "windows":
-            return "win+shift+v"
+            return "win+alt"
         if self.current_platform == "linux":
-            return "super+c"
-        return "cmd+c"
+            return "super+alt"
+        return "cmd+alt"
 
     def start(self):
         """Start global hotkey listener with error handling"""

@@ -91,7 +91,7 @@ Description: Modern cross-platform clipboard history manager
  A modern clipboard history manager built with PySide6/Qt6 that provides:
  .
  • Automatic clipboard history with text and image support
- • Global hotkey activation (Super+C)
+ • Global hotkey activation (Super+Alt)
  • Pin functionality for important items
  • Modern dark theme with smooth animations
  • System tray integration and auto-start
@@ -167,7 +167,7 @@ echo ""
 echo "Usage:"
 echo "  • Run from terminal: $APP_NAME"
 echo "  • Find in applications menu: B1Clip"
-echo "  • Use global hotkey: Super+C"
+echo "  • Use global hotkey: Super+Alt"
 echo ""
 echo "To enable autostart: systemctl --user enable $APP_NAME"
 """

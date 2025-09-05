@@ -27,7 +27,7 @@ class Config:
         "theme": "dark_win11",
         "show_notifications": False,
         #  Phase 1 settings
-        "hotkey": "super+c",  # Changed from super+c to match Windows 11
+        "hotkey": "super+alt",  # Changed from super+c to super+alt
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
         "max_search_results": 25,
@@ -174,8 +174,11 @@ class Config:
         """Migrate old configuration format to new format"""
         # Check if we need to migrate from old hotkey setting
         if self.config.get("hotkey") == "super+v":
-            self.config["hotkey"] = "super+c"
-            logger.info("Migrated hotkey from Super+V to Super+C")
+            self.config["hotkey"] = "super+alt"
+            logger.info("Migrated hotkey from Super+V to Super+Alt")
+        elif self.config.get("hotkey") == "super+c":
+            self.config["hotkey"] = "super+alt"
+            logger.info("Migrated hotkey from Super+C to Super+Alt")
 
         # Add any missing default values
         for key, value in self.DEFAULT_CONFIG.items():

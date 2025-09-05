@@ -84,8 +84,8 @@ def show_about_popup(parent=None):
         import platform
 
         current_platform = platform.system().lower()
-        hotkey_display = {"windows": "Windows+C", "linux": "Super+C"}.get(
-            current_platform, "Cmd+C"
+        hotkey_display = {"windows": "Windows+Alt", "linux": "Super+Alt"}.get(
+            current_platform, "Cmd+Alt"
         )
 
         popup = AboutPopup(hotkey_display, parent)

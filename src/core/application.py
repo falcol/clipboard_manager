@@ -309,11 +309,11 @@ class ClipboardManager:
                 platform_name = hotkey_info["platform"]
 
                 if platform_name == "windows":
-                    hotkey_display = "Windows+C"
+                    hotkey_display = "Windows+Alt"
                 elif platform_name == "linux":
-                    hotkey_display = "Super+C"
+                    hotkey_display = "Super+Alt"
                 else:
-                    hotkey_display = "Cmd+C"
+                    hotkey_display = "Cmd+Alt"
 
                 QTimer.singleShot(
                     1000,
