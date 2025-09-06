@@ -33,7 +33,7 @@ dependencies = [
     "pynput>=1.7.0",
     "keyboard>=0.13.5",
     "pillow>=9.5.0",
-    "psutil>=5.9.0",
+    "psutil>=7.0.0",
 ]
 
 [project.optional-dependencies]

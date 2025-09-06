@@ -37,6 +37,8 @@ class ClipboardItem(QFrame):
         super().__init__(parent)
         self.item_data = item_data
         self.is_hovered = False
+        self._image_loaded = False  # Track if image is loaded
+        self._cached_pixmap = None  # Cache loaded pixmap
 
         # Set object name for QSS targeting
         self.setObjectName("clipboardItem")
@@ -341,7 +343,7 @@ class ClipboardItem(QFrame):
         return label
 
     def _create_image_preview(self):
-        """Create image preview with proper thumbnail like Windows Clipboard"""
+        """Create image preview with lazy loading for RAM optimization"""
         preview_container = QWidget()
         preview_container.setFixedHeight(64)  # Larger for better image display (64px)
         preview_container.setObjectName("imagePreviewContainer")  # Use QSS
@@ -350,86 +352,18 @@ class ClipboardItem(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        # Image thumbnail
+        # Image thumbnail with lazy loading
         thumbnail_label = QLabel()
         thumbnail_label.setFixedSize(56, 56)  # Square thumbnail (56px)
         # Remove inline style, use QSS
 
-        # Load and display thumbnail
-        thumbnail_loaded = False
+        # Show placeholder initially - load image on demand
+        thumbnail_label.setText("🖼️")
+        thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Method 1: Try thumbnail_path first (optimized)
-        if self.item_data.get("thumbnail_path"):
-            try:
-                pixmap = QPixmap(self.item_data["thumbnail_path"])
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(
-                        54,
-                        54,  # Slightly smaller than label for border
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                    thumbnail_label.setPixmap(scaled_pixmap)
-                    thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    thumbnail_loaded = True
-                    logger.debug(
-                        f"Loaded thumbnail from {self.item_data['thumbnail_path']}"
-                    )
-            except Exception as e:
-                logger.warning(f"Failed to load thumbnail: {e}")
-
-        # Method 2: Try file_path (full image)
-        if not thumbnail_loaded and self.item_data.get("file_path"):
-            try:
-                pixmap = QPixmap(self.item_data["file_path"])
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(
-                        54,
-                        54,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                    thumbnail_label.setPixmap(scaled_pixmap)
-                    thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    thumbnail_loaded = True
-                    logger.debug(f"Loaded image from {self.item_data['file_path']}")
-            except Exception as e:
-                logger.warning(f"Failed to load image: {e}")
-
-        # Method 3: Try base64 content
-        if not thumbnail_loaded and self.item_data.get("content"):
-            try:
-                import base64
-
-                from utils.image_utils import ImageUtils
-
-                content = self.item_data["content"]
-                if content.startswith("data:image"):
-                    base64_data = content.split(",")[1] if "," in content else content
-                    image_data = base64.b64decode(base64_data)
-                else:
-                    image_data = base64.b64decode(content)
-
-                pixmap = ImageUtils.bytes_to_pixmap(image_data)
-                if not pixmap.isNull():
-                    scaled_pixmap = pixmap.scaled(
-                        54,
-                        54,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                    thumbnail_label.setPixmap(scaled_pixmap)
-                    thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    thumbnail_loaded = True
-                    logger.debug("Loaded image from base64 content")
-            except Exception as e:
-                logger.warning(f"Failed to decode base64 image: {e}")
-
-        # Fallback: Show placeholder
-        if not thumbnail_loaded:
-            thumbnail_label.setText("🖼️")
-            thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            # Remove inline style, use QSS
+        # Store reference for lazy loading
+        self._thumbnail_label = thumbnail_label
+        self._preview_container = preview_container
 
         layout.addWidget(thumbnail_label)
 
@@ -513,3 +447,80 @@ class ClipboardItem(QFrame):
         w.style().unpolish(w)
         w.style().polish(w)
         w.update()
+
+    def load_image_lazy(self):
+        """Load image only when needed (lazy loading)"""
+        if self._image_loaded or not hasattr(self, "_thumbnail_label"):
+            return
+
+        try:
+            # Method 1: Try thumbnail_path first (optimized)
+            if self.item_data.get("thumbnail_path"):
+                pixmap = QPixmap(self.item_data["thumbnail_path"])
+                if not pixmap.isNull():
+                    self._cached_pixmap = pixmap.scaled(
+                        54,
+                        54,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                    self._thumbnail_label.setPixmap(self._cached_pixmap)
+                    self._image_loaded = True
+                    logger.debug(
+                        f"Lazy loaded thumbnail from {self.item_data['thumbnail_path']}"
+                    )
+                    return
+
+            # Method 2: Try file_path (full image)
+            if self.item_data.get("file_path"):
+                pixmap = QPixmap(self.item_data["file_path"])
+                if not pixmap.isNull():
+                    self._cached_pixmap = pixmap.scaled(
+                        54,
+                        54,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                    self._thumbnail_label.setPixmap(self._cached_pixmap)
+                    self._image_loaded = True
+                    logger.debug(
+                        f"Lazy loaded image from {self.item_data['file_path']}"
+                    )
+                    return
+
+            # Method 3: Try base64 content
+            if self.item_data.get("content"):
+                import base64
+
+                from utils.image_utils import ImageUtils
+
+                content = self.item_data["content"]
+                if content.startswith("data:image"):
+                    base64_data = content.split(",")[1] if "," in content else content
+                    image_data = base64.b64decode(base64_data)
+                else:
+                    image_data = base64.b64decode(content)
+
+                pixmap = ImageUtils.bytes_to_pixmap(image_data)
+                if not pixmap.isNull():
+                    self._cached_pixmap = pixmap.scaled(
+                        54,
+                        54,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                    self._thumbnail_label.setPixmap(self._cached_pixmap)
+                    self._image_loaded = True
+                    logger.debug("Lazy loaded image from base64 content")
+                    return
+
+        except Exception as e:
+            logger.warning(f"Failed to lazy load image: {e}")
+
+    def unload_image(self):
+        """Unload image to free RAM"""
+        if hasattr(self, "_cached_pixmap") and self._cached_pixmap:
+            self._cached_pixmap = None
+        if hasattr(self, "_thumbnail_label"):
+            self._thumbnail_label.setText("🖼️")
+        self._image_loaded = False

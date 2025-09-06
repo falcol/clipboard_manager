@@ -31,8 +31,10 @@ class SearchEngine:
 
         query = query.strip().lower()
 
-        # Get all items for searching
-        all_items = self.database.get_items(limit=200)  # Search in larger set
+        # Get items for searching with pagination to reduce memory usage
+        all_items = self.database.get_items(
+            limit=100, offset=0
+        )  # Reduced from 200 to 100
 
         results = []
 

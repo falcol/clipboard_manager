@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class QSSLoader:
-    """Load and apply QSS stylesheets"""
+    """Load and apply QSS stylesheets with memory optimization"""
 
     def __init__(self, styles_dir: Optional[Path] = None):
         if styles_dir is None:
@@ -29,15 +29,24 @@ class QSSLoader:
 
         self.styles_dir.mkdir(parents=True, exist_ok=True)
 
+        # Cache loaded stylesheets to avoid repeated file I/O
+        self._stylesheet_cache: dict[str, str] = {}
+
     def load_stylesheet(self, filename: str) -> str:
-        """Load QSS stylesheet from file"""
+        """Load QSS stylesheet from file with caching"""
+        # Check cache first
+        if filename in self._stylesheet_cache:
+            return self._stylesheet_cache[filename]
+
         file_path = self.styles_dir / filename
 
         try:
             if file_path.exists():
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
-                logger.debug(f"Loaded QSS from {file_path}")
+                # Cache the content
+                self._stylesheet_cache[filename] = content
+                logger.debug(f"Loaded and cached QSS from {file_path}")
                 return content
             else:
                 logger.warning(f"QSS file not found: {file_path}")
@@ -96,3 +105,17 @@ class QSSLoader:
             return []
 
         return [f.name for f in self.styles_dir.glob("*.qss")]
+
+    def clear_cache(self):
+        """Clear stylesheet cache to free memory"""
+        self._stylesheet_cache.clear()
+        logger.debug("QSS cache cleared")
+
+    def get_cache_stats(self) -> dict:
+        """Get cache statistics"""
+        total_size = sum(len(content) for content in self._stylesheet_cache.values())
+        return {
+            "cached_files": len(self._stylesheet_cache),
+            "total_size_bytes": total_size,
+            "cached_files_list": list(self._stylesheet_cache.keys()),
+        }

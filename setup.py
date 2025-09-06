@@ -61,7 +61,7 @@ def read_requirements():
             "setproctitle>=1.3.0",
             "pynput>=1.7.0",
             "pillow>=9.5.0",
-            "psutil>=5.9.0",
+            "psutil>=7.0.0",
         ]
 
     return requirements

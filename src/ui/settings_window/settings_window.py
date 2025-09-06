@@ -213,6 +213,17 @@ class SettingsWindow(QDialog):
         self.cleanup_interval_spin.setSuffix(" hours")
         performance_layout.addRow("Cleanup interval:", self.cleanup_interval_spin)
 
+        # Memory management settings
+        self.memory_threshold_spin = QSpinBox()
+        self.memory_threshold_spin.setObjectName("formControl")
+        self.memory_threshold_spin.setRange(50, 200)
+        self.memory_threshold_spin.setSuffix(" MB")
+        performance_layout.addRow("Memory threshold:", self.memory_threshold_spin)
+
+        self.auto_cleanup_check = QCheckBox("Enable automatic memory cleanup")
+        self.auto_cleanup_check.setObjectName("formCheck")
+        performance_layout.addRow(QWidget(), self.auto_cleanup_check)
+
         root.addWidget(performance_group)
         root.addStretch()
 
@@ -257,6 +268,8 @@ class SettingsWindow(QDialog):
         self.cleanup_interval_spin.setValue(
             self.config.get("cleanup_interval_hours", 12)
         )
+        self.memory_threshold_spin.setValue(self.config.get("memory_threshold_mb", 80))
+        self.auto_cleanup_check.setChecked(self.config.get("auto_memory_cleanup", True))
 
         current_theme = self.config.get("theme", "dark_win11")
         try:
@@ -306,6 +319,8 @@ class SettingsWindow(QDialog):
             self.config.set(
                 "cleanup_interval_hours", self.cleanup_interval_spin.value()
             )
+            self.config.set("memory_threshold_mb", self.memory_threshold_spin.value())
+            self.config.set("auto_memory_cleanup", self.auto_cleanup_check.isChecked())
 
             # Theme
             theme_key = self.theme_combo.currentText()

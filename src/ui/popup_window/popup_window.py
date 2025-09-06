@@ -52,6 +52,12 @@ class PopupWindow(QWidget):
         self.current_search = ""
         self.last_content_type = "text"  # Track last content type
 
+        # Memory optimization variables
+        self._visible_items = set()  # Track visible items for lazy loading
+        self._lazy_load_timer = QTimer()
+        self._lazy_load_timer.setSingleShot(True)
+        self._lazy_load_timer.timeout.connect(self._lazy_load_visible_images)
+
         # Drag support variables
         self.dragging = False
         self.drag_start_position = None
@@ -926,4 +932,37 @@ class PopupWindow(QWidget):
         self.focus_timer.stop()
         self.dragging = False
         self.drag_start_position = None
+        # Unload all images to free RAM when hiding
+        self._unload_all_images()
         super().hideEvent(event)
+
+    def _lazy_load_visible_images(self):
+        """Load images for visible items only"""
+        try:
+            # Get visible area
+            visible_rect = self.scroll_area.viewport().rect()
+            visible_rect = self.scroll_area.mapTo(self.scroll_widget, visible_rect)
+
+            for item in self.clipboard_items:
+                if item.item_data.get("content_type") == "image":
+                    item_rect = item.geometry()
+                    # Check if item is visible
+                    if visible_rect.intersects(item_rect):
+                        item.load_image_lazy()
+                    else:
+                        item.unload_image()
+
+        except Exception as e:
+            logger.error(f"Error in lazy loading: {e}")
+
+    def _unload_all_images(self):
+        """Unload all images to free RAM"""
+        for item in self.clipboard_items:
+            if hasattr(item, "unload_image"):
+                item.unload_image()
+
+    def scrollEvent(self, event):
+        """Handle scroll events to trigger lazy loading"""
+        super().scrollEvent(event)
+        # Trigger lazy loading after scroll
+        self._lazy_load_timer.start(100)  # 100ms delay
