@@ -1,8 +1,3 @@
-# ===============================================
-# FILE: src/core/content_manager.py
-# New content management system
-# ===============================================
-
 """
 Intelligent content management for clipboard items
 """

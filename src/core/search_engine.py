@@ -1,8 +1,3 @@
-# ===============================================
-# FILE: src/core/search_engine.py
-# New advanced search engine
-# ===============================================
-
 """
 Advanced search engine for clipboard content
 """

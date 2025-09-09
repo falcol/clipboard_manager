@@ -1,12 +1,7 @@
-# ===============================================
-# FILE: src/core/enhanced_database.py
-# New database with optimized schema
-# ===============================================
-
 """
 SQLite database with optimized schema for clipboard history
-Replaces the old database.py file
 """
+
 import hashlib
 import json
 import logging
