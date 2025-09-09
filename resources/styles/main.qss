@@ -45,7 +45,7 @@ QFrame#clipboardItem {
     border: 1px solid #3d3d3d;
     border-radius: 4px;
     margin: 1px;
-    padding: 3px;
+    padding: 2px 3px; /* Giảm padding top/bottom để căn giữa nội dung */
     font-size: 13px;  /* Giữ font size 13px */
 }
 
@@ -461,9 +461,18 @@ QPushButton#aboutCloseButton:hover {
 
 /* Image thumbnail container */
 QFrame#imagePreviewContainer {
-    border: 1px solid #444444;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    background: #2a2a2a;
+}
+
+/* Actual thumbnail label inside item */
+QLabel#imageThumbnail {
+    border: 1px solid #404040;
     border-radius: 4px;
-    background: #333333;
+    background-color: #2a2a2a;
+    margin-top: 0px;   /* tránh đẩy ảnh xuống */
+    margin-bottom: 0px;
 }
 
 /* Image type label */

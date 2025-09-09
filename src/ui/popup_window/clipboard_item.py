@@ -343,63 +343,75 @@ class ClipboardItem(QFrame):
         return label
 
     def _create_image_preview(self):
-        """Create image preview with lazy loading for RAM optimization"""
-        preview_container = QWidget()
-        preview_container.setFixedHeight(64)  # Larger for better image display (64px)
-        preview_container.setObjectName("imagePreviewContainer")  # Use QSS
+        """Create compact image preview similar to Windows clipboard manager"""
+        preview_container = QFrame()
+        preview_container.setFixedHeight(72)
+        preview_container.setObjectName("imagePreviewContainer")
 
         layout = QHBoxLayout(preview_container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
+        layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        # Image thumbnail with lazy loading
+        # Image thumbnail (smaller)
         thumbnail_label = QLabel()
-        thumbnail_label.setFixedSize(56, 56)  # Square thumbnail (56px)
-        # Remove inline style, use QSS
-
-        # Show placeholder initially - load image on demand
-        thumbnail_label.setText("🖼️")
+        thumbnail_label.setFixedSize(48, 48)
+        thumbnail_label.setObjectName("imageThumbnail")
         thumbnail_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        thumbnail_label.setScaledContents(True)
 
-        # Store reference for lazy loading
+        # Placeholder until lazy loaded
+        thumbnail_label.setText("🖼️")
+
+        # Store references for lazy loading
         self._thumbnail_label = thumbnail_label
         self._preview_container = preview_container
 
-        layout.addWidget(thumbnail_label)
+        layout.addWidget(thumbnail_label, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        # Image info text
+        # Try to load a small preview immediately if available
+        try:
+            if self._try_load_thumbnail_once():
+                pass
+        except Exception:
+            pass
+
+        # Compact info block
         info_widget = QWidget()
         info_layout = QVBoxLayout(info_widget)
         info_layout.setContentsMargins(0, 0, 0, 0)
-        info_layout.setSpacing(2)
+        info_layout.setSpacing(1)
 
-        # Image type and size
         width = self.item_data.get("width", 0)
         height = self.item_data.get("height", 0)
         format_type = self.item_data.get("format", "image")
 
-        type_label = QLabel(f"{format_type.upper()}")
-        type_label.setObjectName("imageTypeLabel")  # Use QSS instead of inline style
-        info_layout.addWidget(type_label)
-
         if width and height:
-            size_label = QLabel(f"{width} × {height} px")
-            size_label.setObjectName(
-                "imageSizeLabel"
-            )  # Use QSS instead of inline style
+            main_info = f"{format_type.upper()} • {width} × {height} px"
+        else:
+            main_info = f"{format_type.upper()} Image"
+
+        main_label = QLabel(main_info)
+        main_label.setObjectName("imageMainLabel")
+        main_label.setFont(QFont(QApplication.font().family(), 12, QFont.Weight.Medium))
+        info_layout.addWidget(main_label)
+
+        size_bytes = self.item_data.get("size", 0)
+        if size_bytes:
+            size_label = QLabel(self._format_file_size(int(size_bytes)))
+            size_label.setObjectName("imageSizeLabel")
+            size_label.setFont(QFont(QApplication.font().family(), 10))
             info_layout.addWidget(size_label)
 
-        # Timestamp or additional info
         timestamp = self.item_data.get("created_at", "")
         if timestamp:
-            time_label = QLabel(f"Copied: {timestamp[:16]}")  # Show date/time
-            time_label.setObjectName(
-                "imageTimeLabel"
-            )  # Use QSS instead of inline style
+            time_label = QLabel(self._format_timestamp(timestamp))
+            time_label.setObjectName("imageTimeLabel")
+            time_label.setFont(QFont(QApplication.font().family(), 10))
             info_layout.addWidget(time_label)
 
         info_layout.addStretch()
-        layout.addWidget(info_widget, 1)
+        layout.addWidget(info_widget, 1, Qt.AlignmentFlag.AlignVCenter)
 
         return preview_container
 
@@ -459,8 +471,8 @@ class ClipboardItem(QFrame):
                 pixmap = QPixmap(self.item_data["thumbnail_path"])
                 if not pixmap.isNull():
                     self._cached_pixmap = pixmap.scaled(
-                        54,
-                        54,
+                        46,
+                        46,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
@@ -476,8 +488,8 @@ class ClipboardItem(QFrame):
                 pixmap = QPixmap(self.item_data["file_path"])
                 if not pixmap.isNull():
                     self._cached_pixmap = pixmap.scaled(
-                        54,
-                        54,
+                        46,
+                        46,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
@@ -504,8 +516,8 @@ class ClipboardItem(QFrame):
                 pixmap = ImageUtils.bytes_to_pixmap(image_data)
                 if not pixmap.isNull():
                     self._cached_pixmap = pixmap.scaled(
-                        54,
-                        54,
+                        46,
+                        46,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
@@ -524,3 +536,86 @@ class ClipboardItem(QFrame):
         if hasattr(self, "_thumbnail_label"):
             self._thumbnail_label.setText("🖼️")
         self._image_loaded = False
+
+    def _set_thumbnail_pixmap(self, pixmap: QPixmap) -> bool:
+        """Set a scaled pixmap to the thumbnail label."""
+        if pixmap is None or pixmap.isNull() or not hasattr(self, "_thumbnail_label"):
+            return False
+        self._cached_pixmap = pixmap.scaled(
+            46,
+            46,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self._thumbnail_label.setPixmap(self._cached_pixmap)
+        self._image_loaded = True
+        return True
+
+    def _try_load_thumbnail_once(self) -> bool:
+        """Try to load a thumbnail synchronously for initial preview."""
+        try:
+            # 1) thumbnail_path
+            thumb = self.item_data.get("thumbnail_path")
+            if thumb:
+                pixmap = QPixmap(thumb)
+                if self._set_thumbnail_pixmap(pixmap):
+                    return True
+
+            # 2) file_path
+            fpath = self.item_data.get("file_path")
+            if fpath:
+                pixmap = QPixmap(fpath)
+                if self._set_thumbnail_pixmap(pixmap):
+                    return True
+
+            # 3) base64 content
+            content = self.item_data.get("content")
+            if content:
+                import base64
+
+                from utils.image_utils import ImageUtils
+
+                if content.startswith("data:image"):
+                    base64_data = content.split(",")[1] if "," in content else content
+                    image_data = base64.b64decode(base64_data)
+                else:
+                    image_data = base64.b64decode(content)
+
+                pixmap = ImageUtils.bytes_to_pixmap(image_data)
+                if self._set_thumbnail_pixmap(pixmap):
+                    return True
+
+        except Exception:
+            return False
+        return False
+
+    def _format_file_size(self, size_bytes: int) -> str:
+        """Format file size in human readable format"""
+        try:
+            if size_bytes < 1024:
+                return f"{size_bytes} B"
+            if size_bytes < 1024 * 1024:
+                return f"{size_bytes / 1024:.1f} KB"
+            if size_bytes < 1024 * 1024 * 1024:
+                return f"{size_bytes / (1024 * 1024):.1f} MB"
+            return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+        except Exception:
+            return str(size_bytes)
+
+    def _format_timestamp(self, timestamp: str) -> str:
+        """Format timestamp to a compact, friendly string"""
+        try:
+            from datetime import datetime, timedelta
+
+            dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
+
+            if dt.date() == now.date():
+                return f"Today {dt.strftime('%H:%M')}"
+
+            if dt.date() == (now - timedelta(days=1)).date():
+                return f"Yesterday {dt.strftime('%H:%M')}"
+
+            return dt.strftime("%m/%d %H:%M")
+        except Exception:
+            return timestamp[:16] if len(timestamp) > 16 else timestamp

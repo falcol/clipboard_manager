@@ -552,13 +552,6 @@ class PopupWindow(QWidget):
                     clipboard.setPixmap(pixmap, QClipboard.Mode.Clipboard)
                     logger.info(f"✓ Image copied from file: {item_data['file_path']}")
 
-                    # Show notification
-                    if hasattr(self, "system_tray") and self.system_tray:
-                        self.system_tray.show_notification(
-                            "Image Copied",
-                            f"Image copied to clipboard ({pixmap.width()}×{pixmap.height()})",
-                            2000,
-                        )
                     return True
                 else:
                     logger.warning(
