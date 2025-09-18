@@ -1,11 +1,7 @@
-# ===============================================
-# FILE: src/utils/_config.py
-#  configuration with Phase 1 features
-# ===============================================
+"""
+Configuration management with Phase 1 features
+"""
 
-"""
-configuration management with Phase 1 features
-"""
 import json
 import logging
 from pathlib import Path
@@ -17,27 +13,27 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
-    """configuration manager with Phase 1 features"""
+    """Configuration manager"""
 
     DEFAULT_CONFIG = {
         # Basic settings
-        "max_items": 25,  # Like Windows clipboard manager (25 items max)
-        "max_text_length": 2000000,  # 1MB text limit like Windows clipboard manager
+        "max_items": 25,
+        "max_text_length": 2000000,
         "autostart": False,
         "theme": "dark_win11",
         "show_notifications": False,
-        #  Phase 1 settings
-        "hotkey": "super+alt",  # Changed from super+c to super+alt
+        # Phase 1 settings
+        "hotkey": "super+alt",
         "search_enabled": True,
         "fuzzy_search_threshold": 0.8,
         "max_search_results": 25,
-        # Performance settings (optimized for RAM)
-        "cache_size_mb": 25,  # Reduced for RAM optimization
-        "thumbnail_size": 64,  # Reduced for RAM optimization
-        "image_quality": 85,  # Reduced for RAM optimization
+        # Performance settings
+        "cache_size_mb": 25,
+        "thumbnail_size": 64,
+        "image_quality": 85,
         "background_cleanup": True,
-        "cleanup_interval_hours": 12,  # More frequent cleanup
-        # Timings (UI/Clipboard)
+        "cleanup_interval_hours": 12,
+        # Timings
         "clipboard_signal_debounce_ms": 120,
         "clipboard_poll_ms": 300,
         "paste_delay_ms": 50,
@@ -46,27 +42,17 @@ class Config:
         # Content management
         "intelligent_deduplication": True,
         "content_analysis": True,
-        "auto_categorization": True,
-        "preserve_formatting": True,
         # Database settings
         "database_version": "v2",
         "auto_migration": True,
         "backup_before_migration": True,
-        "max_database_size_mb": 100,  # Reduced for RAM optimization
-        # UI settings (for Phase 2)
+        "max_database_size_mb": 100,
+        # UI settings
         "popup_width": 400,
         "popup_height": 500,
-        "animation_speed": 150,  # ms
-        "show_preview": True,
-        "preview_timeout": 2000,  # ms
-        # Search settingsc
-        "search_suggestions": True,
-        "search_history": True,
-        "max_search_suggestions": 10,
         # Privacy settings
         "exclude_passwords": True,
         "exclude_credit_cards": True,
-        "exclude_patterns": [],  # List of regex patterns to exclude
     }
 
     def __init__(self, config_path: Optional[Path] = None):
@@ -92,15 +78,15 @@ class Config:
                     # Handle version migration
                     self._migrate_config_if_needed()
 
-                logger.info(f"configuration loaded from {self.config_path}")
+                logger.info(f"Configuration loaded from {self.config_path}")
             else:
-                logger.info("No config file found, using  defaults")
+                logger.info("No config file found, using defaults")
                 self.save()  # Create config file with defaults
         except Exception as e:
-            logger.error(f"Failed to load  config: {e}")
+            logger.error(f"Failed to load config: {e}")
 
     def save(self):
-        """Save  configuration to file"""
+        """Save configuration to file"""
         try:
             # Add metadata with real timestamp
             from datetime import datetime
@@ -116,12 +102,12 @@ class Config:
 
             with open(self.config_path, "w") as f:
                 json.dump(config_with_metadata, f, indent=2)
-            logger.info(f" configuration saved to {self.config_path}")
+            logger.info(f"Configuration saved to {self.config_path}")
         except Exception as e:
-            logger.error(f"Failed to save  config: {e}")
+            logger.error(f"Failed to save config: {e}")
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Get configuration value with  features"""
+        """Get configuration value"""
         return self.config.get(key, default)
 
     def set(self, key: str, value: Any):
@@ -187,7 +173,7 @@ class Config:
                 logger.info(f"Added missing config key: {key}")
 
     def reset_to_defaults(self):
-        """Reset configuration to  defaults"""
+        """Reset configuration to defaults"""
         self.config = self.DEFAULT_CONFIG.copy()
         self.save()
 

@@ -1,12 +1,7 @@
-# ===============================================
-# FILE: src/core/enhanced_database.py
-# New database with optimized schema
-# ===============================================
-
 """
 SQLite database with optimized schema for clipboard history
-Replaces the old database.py file
 """
+
 import hashlib
 import json
 import logging
@@ -378,6 +373,7 @@ class ClipboardDatabase:
     def get_items(
         self,
         limit: int = 25,
+        offset: int = 0,
         include_pinned: bool = True,
         search_query: Optional[str] = None,
     ) -> List[Dict]:
@@ -418,8 +414,9 @@ class ClipboardDatabase:
                 base_query += " ORDER BY ci.is_pinned DESC, ci.timestamp DESC"
 
                 if limit:
-                    base_query += " LIMIT ?"
+                    base_query += " LIMIT ? OFFSET ?"
                     params.append(limit)
+                    params.append(offset)
 
                 cursor.execute(base_query, params)
                 rows = cursor.fetchall()

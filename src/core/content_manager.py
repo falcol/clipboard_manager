@@ -1,8 +1,3 @@
-# ===============================================
-# FILE: src/core/content_manager.py
-# New content management system
-# ===============================================
-
 """
 Intelligent content management for clipboard items
 """
@@ -32,10 +27,10 @@ class ContentManager:
         for directory in [self.images_dir, self.thumbnails_dir, self.cache_dir]:
             directory.mkdir(parents=True, exist_ok=True)
 
-        # In-memory LRU cache for frequently accessed pixmaps
+        # In-memory LRU cache for frequently accessed pixmaps - OPTIMIZED for RAM
         self.memory_cache: OrderedDict[str, QPixmap] = OrderedDict()
-        # Configure cache size (bytes)
-        limit_mb = 50 if cache_size_mb is None else max(10, min(cache_size_mb, 500))
+        # Configure cache size (bytes) - REDUCED from 50MB to 15MB default
+        limit_mb = 15 if cache_size_mb is None else max(5, min(cache_size_mb, 100))
         self.cache_size_limit = limit_mb * 1024 * 1024
         self.current_cache_size = 0
 
@@ -342,6 +337,23 @@ class ContentManager:
             logger.info(
                 f"Cache cleaned up, removed {removed} items, size={self.current_cache_size} bytes"
             )
+
+    def clear_cache(self):
+        """Clear entire memory cache to free RAM"""
+        removed_count = len(self.memory_cache)
+        self.memory_cache.clear()
+        self.current_cache_size = 0
+        logger.info(f"Cleared entire cache, freed {removed_count} items")
+
+    def get_cache_stats(self) -> dict:
+        """Get cache statistics for monitoring"""
+        return {
+            "cache_size_bytes": self.current_cache_size,
+            "cache_limit_bytes": self.cache_size_limit,
+            "cache_usage_percent": (self.current_cache_size / self.cache_size_limit)
+            * 100,
+            "cached_items": len(self.memory_cache),
+        }
 
     def _create_html_preview(self, html: str) -> str:
         """Create safe HTML preview"""

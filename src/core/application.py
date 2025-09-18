@@ -112,6 +112,55 @@ class ClipboardManager:
         # Setup performance monitoring
         self.setup_performance_monitoring()
 
+        # Initialize memory manager
+        from utils.memory_manager import memory_manager
+
+        self.memory_manager = memory_manager
+
+        # Setup automatic memory cleanup timer
+        self.memory_cleanup_timer = QTimer()
+        self.memory_cleanup_timer.timeout.connect(self._check_and_cleanup_memory)
+        self.memory_cleanup_timer.start(60000)  # Check every 60 seconds
+
+    def _check_and_cleanup_memory(self):
+        """Check memory usage and cleanup if needed"""
+        try:
+            if self.memory_manager.should_cleanup():
+                logger.info("Memory threshold exceeded, performing cleanup...")
+                result = self.memory_manager.cleanup_memory(
+                    content_manager=self.content_manager, qss_loader=self.qss_loader
+                )
+                if result.get("success"):
+                    logger.info(f"Memory cleanup successful: {result}")
+                else:
+                    logger.error(f"Memory cleanup failed: {result}")
+        except Exception as e:
+            logger.error(f"Error in memory cleanup check: {e}")
+
+    def get_memory_stats(self) -> dict:
+        """Get comprehensive memory statistics"""
+        try:
+            memory_usage = self.memory_manager.get_memory_usage()
+            system_memory = self.memory_manager.get_system_memory_info()
+            recommendations = self.memory_manager.get_memory_recommendations()
+
+            # Get cache stats if available
+            cache_stats = {}
+            if hasattr(self.content_manager, "get_cache_stats"):
+                cache_stats["content_cache"] = self.content_manager.get_cache_stats()
+            if hasattr(self.qss_loader, "get_cache_stats"):
+                cache_stats["qss_cache"] = self.qss_loader.get_cache_stats()
+
+            return {
+                "app_memory": memory_usage,
+                "system_memory": system_memory,
+                "cache_stats": cache_stats,
+                "recommendations": recommendations,
+            }
+        except Exception as e:
+            logger.error(f"Error getting memory stats: {e}")
+            return {"error": str(e)}
+
     def _handle_qt_error(self, error):
         """Handle Qt initialization errors with fallbacks"""
         fallback_platforms = ["wayland", "offscreen"]
